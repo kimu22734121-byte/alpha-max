@@ -38,6 +38,7 @@ export class BattleScene {
   // ---------------------------------------------------------------- 準備
   async enter(opts) {
     this.opts = opts;
+    this.test = opts.test || null; // 開発者の部屋の試し撃ち
     this.over = false;
     this.boss = !!opts.boss;
     this.buildArena(opts.terrain);
@@ -149,10 +150,10 @@ export class BattleScene {
   }
 
   buildUnits(list) {
-    const members = partyMembers();
+    const members = this.test ? [this.test.unit.m] : partyMembers();
     const xs = members.length === 1 ? [0] : members.length === 2 ? [-1.8, 1.8] : [-3, 0, 3];
     this.party = members.map((m, i) => {
-      const u = { side: 'party', m, mc: inMachine(m) && !G.machines[m.machine].broken ? G.machines[m.machine] : null, name: m.name };
+      const u = this.test ? { side: 'party', m, mc: this.test.unit.mc, name: m.name } : { side: 'party', m, mc: inMachine(m) && !G.machines[m.machine].broken ? G.machines[m.machine] : null, name: m.name };
       u.obj = this.makePartyObj(u);
       u.home = V(xs[i], 0, 3.4 + (i === 1 ? 0.4 : 0));
       u.obj.position.copy(u.home);
@@ -306,6 +307,7 @@ export class BattleScene {
 
   // ---------------------------------------------------------------- 進行
   async run() {
+    if (this.test) { await this.testLoop(); return; }
     while (!this.over) {
       const cmds = await this.commandPhase();
       if (this.over) return;
@@ -317,6 +319,35 @@ export class BattleScene {
       for (const u of this.party) if (u.mc) u.mc.en = Math.min(machineStats(u.mc).maxEn, u.mc.en + 5);
       this.updateHud();
     }
+  }
+
+  // ---- 試し撃ち（開発者の部屋）：的は反撃しない。撃つたびに与えたダメージの合計を出す
+  async testLoop() {
+    const u = this.party[0];
+    for (;;) {
+      this.updateHud();
+      const items = [];
+      if (u.mc) {
+        u.mc.slots.forEach((uid, i) => { if (uid) { const w = weaponByUid(uid), d = WEAPONS[w.id]; items.push({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${rangeBadge(d)}`, right: `威力${d.atk}`, value: { slot: i } }); } });
+        items.push({ label: '全砲門一斉発射', value: { allfire: true } });
+      } else items.push({ label: `${esc(memberStats(u.m).weapon.name || '素手')}で攻撃 ${rangeBadge({ target: memberStats(u.m).weapon.target || 'one' })}`, value: { slot: null } });
+      items.push({ label: '展示台にもどる', value: 'back' });
+      const v = await ui.menu({ title: '試し撃ち', className: 'battle-cmd wide', items, cancel: false });
+      if (v === 'back' || !v) break;
+      for (const e of this.enemies) { e.hp = e.maxHp; e.alive = true; e.obj.visible = true; setOpacity(e.obj, 1); e.obj.position.copy(e.home); e.obj.rotation.set(0, 0, 0); }
+      if (u.mc) { u.mc.en = machineStats(u.mc).maxEn; }
+      const def = v.slot != null && u.mc ? WEAPONS[weaponByUid(u.mc.slots[v.slot]).id] : memberStats(u.m).weapon;
+      const kind = def?.target || 'one';
+      const alive = this.aliveEnemies();
+      const target = kind === 'all' ? { all: true } : kind === 'group' ? { group: alive[0].key } : { unit: alive[0] };
+      await this.doParty(u, v.allfire ? { type: 'allfire' } : { type: 'attack', slot: v.slot, target });
+      const total = this.enemies.reduce((a, e) => a + (e.maxHp - e.hp), 0);
+      this.log(`合計 ${total.toLocaleString()} のダメージ（${this.enemies.filter((e) => e.hp < e.maxHp).length}体に命中）`);
+      this.camIdle = false; await this.camDefault(0.5); this.camIdle = true;
+    }
+    this.over = true;
+    await ui.fade(true, 0.3);
+    flow.toWorld({ after: this.test.after });
   }
 
   aliveEnemies() { return this.enemies.filter((e) => e.alive); }
@@ -912,7 +943,7 @@ export class BattleScene {
     audio.sfx('charge');
     this.camIdle = false;
     const c = u.home.clone().add(V(0, 1.4, 0));
-    const base = MACHINES[u.mc.id].seal ? MACHINES.alpha.seal[G.seal].glow : 1;
+    const base = MACHINES[u.mc.type].seal ? MACHINES.alpha.seal[G.seal].glow : 1;
     await tween(1.3, (k) => {
       const a = Math.PI * 0.2 + k * Math.PI * 1.6;
       this.camera.position.set(c.x + Math.sin(a) * 5, c.y + 1.5 - k * 0.5, c.z + Math.cos(a) * 5);

@@ -67,4 +67,59 @@ export const MACHINES = {
       { name: 'アルファマックス', mul: 2.5, glow: 3.6, finalName: 'アルファマックス' },
     ],
   },
+
+  // ---------------- 第2章以降で手に入る通常マシン（いまは開発者の部屋で出せる） ----------------
+  // start が無いマシンは、最初のセーブには入らない。手に入れたときに1台ずつ作られる
+  bulldog: {
+    name: 'ブルドッグ', desc: '分厚い装甲の戦車型。重厚タイプ', pilot: 'any', owned: false, chapter: 2,
+    colors: { primary: 0x6a5a3a, secondary: 0x3a3428, accent: 0xd8a030, glow: 0xffb04a },
+    parts: { head: 'head_heavy', body: 'body_heavy', armR: 'arm_heavy', armL: 'arm_heavy', legs: 'legs_tread', engine: 'eng_heavy' },
+    weapons: [{ id: 'gt1' }, { id: 'hammer1' }, { id: 'c105' }, null, null],
+  },
+  swift: {
+    name: 'スウィフト', desc: 'タイヤで走るバイク型。シャープタイプ', pilot: 'any', owned: false, chapter: 2,
+    colors: { primary: 0xc8302a, secondary: 0x2a2a30, accent: 0xf0f0f0, glow: 0x7af0ff },
+    parts: { head: 'head_sharp', body: 'body_sharp', armR: 'arm_light', armL: 'arm_light', legs: 'legs_wheel', engine: 'eng_turbo' },
+    weapons: [{ id: 'lm1' }, { id: 'hblade' }, { id: 'hm1' }, null, null],
+  },
+  bastion: {
+    name: 'バスティオン', desc: '四本脚で踏ん張る砲台型。重厚タイプ', pilot: 'any', owned: false, chapter: 3,
+    colors: { primary: 0x5a6a7a, secondary: 0x2a3038, accent: 0xe0c050, glow: 0x9fe8ff },
+    parts: { head: 'head_radar', body: 'body_heavy', armR: 'arm_power', armL: 'arm_power', legs: 'legs_quad', engine: 'eng_heavy' },
+    weapons: [{ id: 'v20' }, { id: 'gt1' }, { id: 'rg1' }, null, null],
+  },
+  mantis: {
+    name: 'マンティス', desc: '鎌のようなブレードを振るう四脚。シャープタイプ', pilot: 'any', owned: false, chapter: 3,
+    colors: { primary: 0x5a8a3a, secondary: 0x2a3a20, accent: 0xd8f080, glow: 0xaaff6a },
+    parts: { head: 'head_sharp', body: 'body_sharp', armR: 'arm_sharp', armL: 'arm_sharp', legs: 'legs_quad', engine: 'eng_v6' },
+    weapons: [{ id: 'lzblade' }, { id: 'hblade' }, { id: 'hm1' }, null, null],
+  },
+  drifter: {
+    name: 'ドリフター', desc: '水の上も進めるホバー型。バランスタイプ', pilot: 'any', owned: false, chapter: 3,
+    colors: { primary: 0x2a7a9a, secondary: 0xd8e4ea, accent: 0xf0a040, glow: 0x6af0ff },
+    parts: { head: 'head_radar', body: 'body_balance', armR: 'arm_std', armL: 'arm_light', legs: 'legs_hover', engine: 'eng_turbo' },
+    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null],
+  },
+  rhino: {
+    name: 'ライノ', desc: '突進が得意な重装二脚。重厚タイプ', pilot: 'any', owned: false, chapter: 4,
+    colors: { primary: 0x7a7a72, secondary: 0x3e3e3a, accent: 0xc04030, glow: 0xff7a4a },
+    parts: { head: 'head_heavy', body: 'body_heavy', armR: 'arm_heavy', armL: 'arm_power', legs: 'legs_biped', engine: 'eng_heavy' },
+    weapons: [{ id: 'pile1' }, { id: 'v20' }, { id: 'c75' }, null, null],
+  },
+  sparrow: {
+    name: 'スパロウ', desc: '索敵の得意な軽量偵察機。シャープタイプ', pilot: 'any', owned: false, chapter: 2,
+    colors: { primary: 0xe8d8a0, secondary: 0x4a4a3a, accent: 0x3a8ad0, glow: 0x7af0ff },
+    parts: { head: 'head_radar', body: 'body_sharp', armR: 'arm_light', armL: 'arm_light', legs: 'legs_sharp', engine: 'eng_v6' },
+    weapons: [{ id: 'mg7' }, { id: 'lm1' }, { id: 'hm1' }, null, null],
+  },
+  mule: {
+    name: 'ミュール', desc: '荷物も武器もたくさん積める四脚の運び屋。バランスタイプ', pilot: 'any', owned: false, chapter: 2,
+    colors: { primary: 0xb0883a, secondary: 0x4a3a2a, accent: 0x8ad0a0, glow: 0x9fffd0 },
+    parts: { head: 'head_sensor', body: 'body_balance', armR: 'arm_power', armL: 'arm_std', legs: 'legs_quad', engine: 'eng_heavy' },
+    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null],
+  },
 };
+
+// 光の強さ（開発者の部屋で調整できる）。書いていないマシンは 1
+for (const def of Object.values(MACHINES)) def.glowK ??= 1;
+

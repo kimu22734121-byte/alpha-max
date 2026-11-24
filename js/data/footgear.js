@@ -87,16 +87,18 @@ export const FOOT_GEAR = {
   jetboots: { name: 'ジェットブーツ', slot: 'feet', def: 3, eva: 6, spd: 4, price: 3900, tier: 3, desc: '小さな噴射口で身軽に動ける' },
   gravboots: { name: 'グラビティブーツ', slot: 'feet', def: 8, eva: 8, spd: 6, price: 11000, tier: 5, desc: '重力を操る靴' },
   // ================================================================ アクセサリー（10）
-  charm: { name: 'お守り', slot: 'acc', hp: 10, price: 300, tier: 1, desc: '最大体力+10' },
-  scope: { name: '照準スコープ', slot: 'acc', hit: 6, price: 800, tier: 1, desc: '命中+6' },
-  guardcharm: { name: '守りの護符', slot: 'acc', def: 5, price: 1200, tier: 2, desc: '防御+5' },
-  luckycoin: { name: '幸運のコイン', slot: 'acc', crit: 6, price: 1400, tier: 2, desc: '会心率+6%' },
-  hpring: { name: 'ライフリング', slot: 'acc', hp: 30, price: 1800, tier: 2, desc: '最大体力+30' },
-  powerbelt: { name: 'パワーベルト', slot: 'acc', atk: 5, price: 2200, tier: 3, desc: '攻撃+5' },
-  reflexchip: { name: '反射神経チップ', slot: 'acc', eva: 5, spd: 3, price: 2600, tier: 3, desc: '回避+5・素早さ+3' },
-  medpack: { name: '自動救急パック', slot: 'acc', regen: 0.1, price: 3000, tier: 3, desc: '戦闘のあと体力が最大の10%回復する' },
-  beetlehorn: { name: 'ビートルホーン', slot: 'acc', spd: 8, eva: 8, price: 0, sell: 2500, tier: 3, limited: true, from: 'メタルビートルのドロップ', desc: 'メタルビートルの角。素早さ+8・回避+8' },
-  gearmagnet: { name: 'ギアマグネット', slot: 'acc', gearUp: 0.2, price: 0, sell: 2500, tier: 3, limited: true, from: 'ゴールドドローンのドロップ', desc: '戦闘で手に入るギアが20%増える' },
+  charm: { name: 'お守り', slot: 'acc', look: { kind: 'badge' }, hp: 10, price: 300, tier: 1, desc: '最大体力+10' },
+  scope: { name: '照準スコープ', slot: 'acc', look: { kind: 'monocle', glow: 0x7affb0 }, hit: 6, price: 800, tier: 1, desc: '命中+6' },
+  guardcharm: { name: '守りの護符', slot: 'acc', look: { kind: 'badge', glow: 0xffe08a }, def: 5, price: 1200, tier: 2, desc: '防御+5' },
+  luckycoin: { name: '幸運のコイン', slot: 'acc', look: { kind: 'badge', glow: 0xffd040 }, crit: 6, price: 1400, tier: 2, desc: '会心率+6%' },
+  hpring: { name: 'ライフリング', slot: 'acc', look: { kind: 'none' }, hp: 30, price: 1800, tier: 2, desc: '最大体力+30' },
+  powerbelt: { name: 'パワーベルト', slot: 'acc', look: { kind: 'belt', accent: 0x8a5a2a }, atk: 5, price: 2200, tier: 3, desc: '攻撃+5' },
+  reflexchip: { name: '反射神経チップ', slot: 'acc', look: { kind: 'goggles', accent: 0x3a3a44, glow: 0x6af0ff }, eva: 5, spd: 3, price: 2600, tier: 3, desc: '回避+5・素早さ+3' },
+  medpack: { name: '自動救急パック', slot: 'acc', look: { kind: 'pack', color: 0xe8e8e0 }, regen: 0.1, price: 3000, tier: 3, desc: '戦闘のあと体力が最大の10%回復する' },
+  cape: { name: '旅人のマント', slot: 'acc', look: { kind: 'cape', color: 0x8a3a2a }, def: 2, eva: 3, price: 1600, tier: 2, desc: '砂ぼこりをよけるマント。防御+2・回避+3' },
+  scarf: { name: 'レッドスカーフ', slot: 'acc', look: { kind: 'scarf', color: 0xc8302a }, hit: 2, spd: 2, price: 1100, tier: 1, desc: '風になびく赤いスカーフ。命中+2・素早さ+2' },
+  beetlehorn: { name: 'ビートルホーン', slot: 'acc', look: { kind: 'badge', glow: 0xc0c8d0 }, spd: 8, eva: 8, price: 0, sell: 2500, tier: 3, limited: true, from: 'メタルビートルのドロップ', desc: 'メタルビートルの角。素早さ+8・回避+8' },
+  gearmagnet: { name: 'ギアマグネット', slot: 'acc', look: { kind: 'pack', color: 0xd8a030 }, gearUp: 0.2, price: 0, sell: 2500, tier: 3, limited: true, from: 'ゴールドドローンのドロップ', desc: '戦闘で手に入るギアが20%増える' },
 
   // ================================================================ 各キャラ専用の最強装備（第4章以降で入手。第1〜3章では手に入らない）
   // 専用武器は2段階で進化する（EVOLVE）。範囲でキャラの役割を分ける：レン＝全体／シオン＝単体／ジーナ＝グループ

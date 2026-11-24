@@ -923,6 +923,20 @@ const FURNITURE = {
     add(r, Co(0.09, 0.14, 4), m('metal'), 0, 0, 0.9, Math.PI / 2);
     grp(r, 'muzzle', 0, 0, 0.9);
   }, { dark: 0x1a1a1e, metal: 0xc8ccd4, accent: 0xff7a2a, glow: 0xff9a3a }),
+  // ---- 開発者の部屋：展示台・試し撃ちの的 ----
+  f_pedestal: (c) => furniture('pedestal', c, (r, m) => {
+    add(r, Cy(1.0, 1.1, 0.4, 24), m('metal'), 0, 0.2, 0);
+    add(r, To(1.0, 0.04, 6, 32), m('glow'), 0, 0.4, 0, Math.PI / 2);
+    add(r, Cy(0.9, 0.9, 0.02, 24), m('dark'), 0, 0.41, 0);
+  }, { metal: 0x4a5260, dark: 0x22262e, glow: 0x6ad8ff }),
+  f_target: (c) => furniture('target', { primary: 0xd83a2a, ...c }, (r, m) => {
+    add(r, Bx(0.12, 1.1, 0.12), m('dark'), 0, 0.55, -0.05);
+    add(r, Bx(0.8, 0.08, 0.5), m('dark'), 0, 0.04, -0.05);
+    add(r, Cy(0.45, 0.45, 0.06, 20), m('accent'), 0, 1.2, 0, Math.PI / 2);
+    add(r, Cy(0.32, 0.32, 0.07, 20), m('primary'), 0, 1.2, 0.005, Math.PI / 2);
+    add(r, Cy(0.18, 0.18, 0.08, 16), m('accent'), 0, 1.2, 0.01, Math.PI / 2);
+    add(r, Cy(0.07, 0.07, 0.09, 12), m('primary'), 0, 1.2, 0.015, Math.PI / 2);
+  }, { dark: 0x3a3a3a, accent: 0xf0f0e8 }),
   // ウェイポイントの広場の屋台
   f_stall: (c) => furniture('stall', c, (r, m) => {
     add(r, Bx(1.7, 0.75, 0.7), m('primary'), 0, 0.37, 0);

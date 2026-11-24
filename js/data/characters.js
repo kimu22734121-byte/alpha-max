@@ -28,6 +28,7 @@ export const CHARACTERS = {
     role: 'soldier',
     roleName: 'ソルジャー',
     model: 'gina',
+    bulk: 1.3, // 体の大きさ（装備の見た目の大きさに使う）
     desc: '賞金稼ぎの傭兵。がっしりした体格の頼れる姉御肌。生身でも強い',
     base: { hp: 74, atk: 15, def: 10, hit: 6, eva: 4, spd: 6 },
     grow: { hp: 12, atk: 3, def: 2.4, hit: 1, eva: 0.8, spd: 0.8 },

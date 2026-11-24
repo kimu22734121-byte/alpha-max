@@ -10,6 +10,7 @@ import { getModel, disposeObject, setOpacity } from '../core/assets.js';
 import { createMapView, heightAt } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { buildCharModel } from '../models/char-look.js';
+import { devStore, robotStation, charStation, showcaseModel } from './devroom.js';
 import { MAPS } from '../data/maps.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
 import { CHARACTERS } from '../data/characters.js';
@@ -45,14 +46,15 @@ function getGlowTex() {
 }
 
 export function machineSpec(mc) {
-  const def = MACHINES[mc.id];
+  const def = MACHINES[mc.type];
   // アルファは封印中はくすんだ色で光らない。封印が解けるたびに光が増える
-  const sealed = mc.id === 'alpha' && G.seal < 1;
+  const sealed = mc.type === 'alpha' && G.seal < 1;
   return {
     parts: mc.parts,
     colors: sealed ? def.brokenColors : def.colors,
     weapons: mc.slots.map((uid) => (uid ? weaponByUid(uid) : null)),
-    glow: mc.id === 'alpha' ? def.seal[G.seal].glow : undefined,
+    // 光の強さ：アルファは封印の段階、ほかは glowK（開発者の部屋で調整できる。1 のときはそのまま）
+    glow: mc.type === 'alpha' ? def.seal[G.seal].glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,
   };
 }
 export const inMachine = (m) => !!(m.machine && G.machines[m.machine]?.loc.type === 'party');
@@ -159,6 +161,7 @@ export class WorldScene {
       // 本棚が動いたあと（隠し階段が見えている）
       if (pr.data.secret && G.flags.stairsOpen) { pr.x += 1.1; if (pr.obj) pr.obj.position.x = pr.x; }
     }
+    this.refreshShowcases();
     const op = (G.flags.opened ||= {});
     this.chests = addChests(this.scene, map, (c) => !!op[`${map.id}:${c.id}`]);
     for (const c of this.chests) c.obj.position.y = heightAt(map, c.x, c.z);
@@ -348,6 +351,7 @@ export class WorldScene {
       const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
       h.mesh.material.opacity += ((near ? 0.3 : 1) - h.mesh.material.opacity) * Math.min(1, dt * 6);
     }
+    for (const o of this.showcases || []) { o.rotation.y = t * 0.6; if (o.userData.showcase === 'robot') animateMachine(o, t, 0); }
     // 転送台の光の輪がゆっくり回る
     for (const pr of this.props) if (pr.data.pad && pr.obj) { const r = pr.obj.getObjectByName('padRing'); if (r) r.rotation.y = t * 0.8; const c = pr.obj.getObjectByName('padCore'); if (c?.material.emissive) c.material.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.6; }
     // ガレージで整備中のマシンから火花
@@ -381,8 +385,8 @@ export class WorldScene {
   updateParticles(dt, moving) {
     this.particles ||= [];
     for (const a of this.avatars) {
-      const color = a.kind === 'machine' ? MACHINES[a.mc.id].particle : null;
-      if (!color || (a.mc.id === 'alpha' && G.seal < 1)) continue;
+      const color = a.kind === 'machine' ? MACHINES[a.mc.type].particle : null;
+      if (!color || (a.mc.type === 'alpha' && G.seal < 1)) continue;
       const rate = moving ? 40 : 5;
       a.pAcc = (a.pAcc || 0) + dt * rate;
       while (a.pAcc > 1) {
@@ -596,6 +600,21 @@ export class WorldScene {
     if (note) ui.toast(note);
     hud.update(true);
     this.lock(false);
+  }
+
+  // 開発者の部屋の展示台の上に、いま組んでいるロボット・キャラを飾る
+  refreshShowcases() {
+    for (const o of this.showcases || []) { this.scene.remove(o); disposeObject(o); }
+    this.showcases = [];
+    for (const pr of this.props || []) {
+      if (!pr.data.showcase) continue;
+      const o = showcaseModel(pr.data.showcase);
+      o.scale.multiplyScalar(pr.data.showcase === 'char' ? CHAR_SCALE * 1.4 : MACHINE_SCALE);
+      o.position.set(pr.x, 0.42, pr.z);
+      o.userData.showcase = pr.data.showcase;
+      this.scene.add(o);
+      this.showcases.push(o);
+    }
   }
 
   // ---------------------------------------------------------------- 転送（ガレージの転送台・ワープユニット）
@@ -831,6 +850,16 @@ export class WorldScene {
       return;
     }
     if (name === 'gearMachine') { await gearMachine(); return; }
+    if (name === 'devStore') { await devStore(this); return; }
+    if (name === 'robotStation') { await robotStation(this); this.refreshShowcases(); return; }
+    if (name === 'charStation') { await charStation(this); this.refreshShowcases(); return; }
+    if (name === 'testTargets') {
+      const v = await ui.menu({ title: '試し撃ちの的', header: '単体・グループ・全体の3種類の並びで、武器の威力や演出を確かめられる', items: [{ label: 'ロボットで試し撃ち（ロボットの展示台）', value: 'robot' }, { label: '生身で試し撃ち（キャラの展示台）', value: 'char' }] });
+      if (v === 'robot') await robotStation(this);
+      if (v === 'char') await charStation(this);
+      this.refreshShowcases();
+      return;
+    }
     if (name === 'tuning') { await ui.say('バランス調整の端末だ。値段・攻撃力・敵の強さを数字で変えられるらしい。'); await tuningMenu(); return; }
     if (name === 'rest') await restAtHome();
     else if (name === 'alpha') await runEvent('alphaRepair', this);
@@ -1028,7 +1057,7 @@ export class WorldScene {
   // シークレットマシン（レンの家の地下に眠るオメガ）を見つける
   async discoverMachine(pk) {
     const mc = pk.mc;
-    const def = MACHINES[mc.id];
+    const def = MACHINES[mc.type];
     const r = G.members.ren.name;
     await ui.say([
       { name: '', text: '格納庫の奥で、漆黒の機体が静かに眠っている。赤いラインが、呼吸するように明滅している……。' },
