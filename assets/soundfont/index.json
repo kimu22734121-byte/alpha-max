@@ -1,0 +1,113 @@
+{
+  "piano": {
+    "gm": "acoustic_grand_piano",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ]
+  },
+  "strings": {
+    "gm": "string_ensemble_1",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ]
+  },
+  "brass": {
+    "gm": "brass_section",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5"
+    ]
+  },
+  "bass": {
+    "gm": "electric_bass_finger",
+    "notes": [
+      "C1",
+      "E1",
+      "Ab1",
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4"
+    ]
+  },
+  "guitar": {
+    "gm": "overdriven_guitar",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5"
+    ]
+  },
+  "pad": {
+    "gm": "pad_2_warm",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5"
+    ]
+  },
+  "harp": {
+    "gm": "orchestral_harp",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ]
+  }
+}
