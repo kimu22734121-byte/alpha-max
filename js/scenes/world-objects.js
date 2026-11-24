@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { getModel } from '../core/assets.js';
 import { buildBuilding } from '../models/builders.js';
+import { heightAt } from '../core/map-renderer.js';
 
 // 施設ごとの建物の形と色（形は使い回して、色と大きさを変える）
 const BUILDING_STYLE = {
@@ -13,6 +14,10 @@ const BUILDING_STYLE = {
   parts: { style: 'hangar', colors: { primary: 0x8a9a8a, secondary: 0x3a6a5a } },
   item: { style: 'gable', colors: { primary: 0xd8d0b8, secondary: 0x5a7a2c } },
   garage: { style: 'hangar', colors: { primary: 0x7a7e86, secondary: 0x4a4e56, accent: 0xe8b030 } },
+  // 町ごとの特別な店（shops.js のキー）
+  junk: { style: 'flat', colors: { primary: 0x7a6a5a, secondary: 0x5a4a3a, accent: 0xc8902a } },
+  frame: { style: 'hangar', colors: { primary: 0x9a8a6a, secondary: 0x6a4a2a, accent: 0xe8b030 } },
+  market: { style: 'twostory', colors: { primary: 0xd8c890, secondary: 0x8a3a2a, accent: 0xe8c040 } },
 };
 // 町ごとに少し色合いを変える
 const TOWN_TINT = { town1: 1.0, town2: 0.85, town3: 0.95 };
@@ -107,14 +112,14 @@ function makeSign(fac, name, width) {
 export function addBuildings(scene, map) {
   const list = [];
   for (const b of map.buildings || []) {
-    const st = BUILDING_STYLE[b.facility] || BUILDING_STYLE.item;
+    const st = BUILDING_STYLE[b.shop] || BUILDING_STYLE[b.facility] || BUILDING_STYLE.item;
     const k = TOWN_TINT[map.id] ?? 1;
     const colors = Object.fromEntries(Object.entries(st.colors).map(([r, c]) => [r, new THREE.Color(c).multiplyScalar(r === 'primary' ? k : 1).getHex()]));
     const obj = buildBuilding({ style: st.style, w: b.w, d: b.h, colors });
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    obj.position.set(b.x + b.w / 2, 0, b.y + b.h / 2);
+    obj.position.set(b.x + b.w / 2, heightAt(map, b.door[0] + 0.5, b.door[1] + 1.2), b.y + b.h / 2);
     // 入口の上に看板（アイコン＋店名）。遠くからでも見える大きさ
-    const sign = makeSign(b.facility, LABEL[b.facility] || b.label, b.w - 0.6);
+    const sign = makeSign(b.facility, b.title || LABEL[b.facility] || b.label, b.w - 0.6);
     sign.position.set((b.door[0] + 0.5) - (b.x + b.w / 2), 1.75, obj.userData.frontZ + 0.12);
     obj.add(sign);
     scene.add(obj);
@@ -331,7 +336,7 @@ export function addProps(scene, map, isTaken) {
   for (const p of map.props || []) {
     let obj = null;
     if (p.model) {
-      obj = getModel(p.model);
+      obj = getModel(p.model, p.colors || {});
       obj.position.set(p.x, p.y0 || 0, p.y);
       obj.rotation.y = p.rot || 0;
       obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });

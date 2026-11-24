@@ -798,6 +798,53 @@ const FURNITURE = {
     for (const s2 of [-1, 1]) { add(r, Bx(0.12, 1.2, 0.12), m('accent'), 1.1 * s2, 0.6, -0.9); add(r, Bx(0.16, 0.04, 1.8), m('accent'), 1.0 * s2, 0.14, 0); }
     for (let i = 0; i < 6; i++) add(r, Bx(0.3, 0.02, 0.06), m('dark'), -0.9 + i * 0.36, 0.13, 0.95, 0, 0, 0.6);
   }, { accent: 0xe8b030 }),
+  // ガレージ：円形の転送台（青白く光る。上に乗って調べると転送できる）
+  f_teleporter: (c) => furniture('teleporter', c, (r, m) => {
+    add(r, Cy(1.05, 1.15, 0.2, 24), m('metal'), 0, 0.1, 0);
+    add(r, To(0.98, 0.06, 6, 32), m('accent'), 0, 0.2, 0, Math.PI / 2);
+    add(r, Cy(0.82, 0.82, 0.04, 24), m('glow'), 0, 0.22, 0, 0, 0, 0, 'padCore');
+    const ring = grp(r, 'padRing', 0, 0.24, 0);
+    for (let i = 0; i < 6; i++) { const a2 = (i / 6) * Math.PI * 2; add(ring, Bx(0.22, 0.05, 0.08), m('glow'), Math.cos(a2) * 0.6, 0, Math.sin(a2) * 0.6, 0, -a2); }
+    for (const s2 of [-1, 1]) {
+      add(r, Bx(0.18, 1.9, 0.18), m('secondary'), 1.0 * s2, 0.95, -0.55);
+      add(r, Sp(0.14, 1), m('glow'), 1.0 * s2, 1.98, -0.55);
+    }
+    add(r, Bx(2.2, 0.14, 0.2), m('secondary'), 0, 1.9, -0.55);
+  }, { metal: 0x5a6270, secondary: 0x3a4250, accent: 0x9fe8ff, glow: 0x7ae0ff }),
+  // 開発者の部屋：暗証番号の分厚い扉・キーパネル・パソコン・ギア生成マシン
+  f_vaultdoor: (c) => furniture('vaultdoor', c, (r, m) => {
+    add(r, Bx(1.15, 2.0, 0.3), m('metal'), 0, 1.0, 0);
+    for (const y of [0.35, 1.0, 1.65]) add(r, Bx(1.17, 0.08, 0.32), m('accent'), 0, y, 0);
+    add(r, Cy(0.22, 0.22, 0.06, 16), m('glow'), 0, 1.0, 0.17, Math.PI / 2);
+  }, { metal: 0x3a3f48, accent: 0xd8a030, glow: 0xff5a4a }),
+  f_keypad: (c) => furniture('keypad', c, (r, m) => {
+    add(r, Bx(0.1, 1.0, 0.1), m('dark'), 0, 0.5, 0);
+    add(r, Bx(0.36, 0.48, 0.1), m('metal'), 0, 1.15, 0.02);
+    add(r, Bx(0.28, 0.1, 0.02), m('glow'), 0, 1.3, 0.08);
+    for (let i = 0; i < 9; i++) add(r, Bx(0.06, 0.05, 0.02), m('accent'), -0.08 + (i % 3) * 0.08, 1.18 - Math.floor(i / 3) * 0.07, 0.08);
+  }, { metal: 0x4a505a, accent: 0xd0d8e0, glow: 0x7affb0 }),
+  f_devpc: (c) => furniture('devpc', c, (r, m) => {
+    add(r, Bx(1.6, 0.06, 0.6), m('primary'), 0, 0.75, 0);
+    for (const s2 of [-1, 1]) add(r, Bx(0.06, 0.75, 0.55), m('dark'), 0.75 * s2, 0.37, 0);
+    for (const s2 of [-1, 1]) { add(r, Bx(0.62, 0.42, 0.05), m('dark'), 0.36 * s2, 1.08, -0.18, 0, -0.2 * s2); add(r, Bx(0.56, 0.36, 0.02), m('glow'), 0.36 * s2, 1.08, -0.15, 0, -0.2 * s2); }
+    add(r, Bx(0.5, 0.03, 0.16), m('metal'), 0, 0.79, 0.12);
+  }, { primary: 0x2a3038, dark: 0x14181e, glow: 0x5ad8ff, metal: 0x6a707a }),
+  f_gearmachine: (c) => furniture('gearmachine', c, (r, m) => {
+    add(r, Bx(1.3, 1.7, 0.8), m('metal'), 0, 0.85, 0);
+    add(r, Cy(0.42, 0.42, 0.1, 10), m('accent'), -0.18, 1.15, 0.42, Math.PI / 2);
+    add(r, Cy(0.26, 0.26, 0.1, 8), m('accent'), 0.36, 0.82, 0.42, Math.PI / 2);
+    add(r, Bx(0.5, 0.12, 0.1), m('glow'), 0.2, 0.35, 0.42);
+    add(r, Bx(0.24, 0.2, 0.06), m('glow'), 0.38, 1.4, 0.42);
+    for (let i = 0; i < 5; i++) add(r, Cy(0.12, 0.12, 0.04, 8), m('accent'), -0.4 + i * 0.12, 0.03 + (i % 2) * 0.04, 0.6);
+  }, { metal: 0x4a3a5a, accent: 0xf0c040, glow: 0xffe07a }),
+  // ウェイポイントの広場の屋台
+  f_stall: (c) => furniture('stall', c, (r, m) => {
+    add(r, Bx(1.7, 0.75, 0.7), m('primary'), 0, 0.37, 0);
+    for (const [x, z] of [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4]]) add(r, Bx(0.07, 1.9, 0.07), m('dark'), x, 0.95, z);
+    add(r, Bx(2.0, 0.08, 1.2), m('secondary'), 0, 1.92, 0, 0.18);
+    for (let i = 0; i < 5; i++) add(r, Bx(0.4, 0.12, 1.22), m(i % 2 ? 'secondary' : 'accent'), -0.8 + i * 0.4, 1.95, 0, 0.18);
+    for (let i = 0; i < 4; i++) add(r, Bx(0.22, 0.18 + (i % 2) * 0.1, 0.22), m(['accent', 'glow', 'metal', 'accent'][i]), -0.55 + i * 0.37, 0.84, 0.05);
+  }, { primary: 0x7a5a3a, secondary: 0xd86a3a, accent: 0xf0e0c0, dark: 0x3a2a1a, glow: 0x9aff6a }),
   chest: (c) => furniture('chest', { primary: 0x6a4a2a, accent: 0xd8b040, ...c }, (r, m) => {
     add(r, Bx(0.75, 0.42, 0.5), m('primary'), 0, 0.21, 0);
     for (const x of [-0.3, 0.3]) add(r, Bx(0.06, 0.44, 0.52), m('accent'), x, 0.21, 0);

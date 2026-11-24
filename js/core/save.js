@@ -1,11 +1,17 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
 
+// 開発者の部屋（デバッグ用）にいた印は残さない：中でセーブしたら地下格納庫の入口にいたことにする
+function clean(state) {
+  if (state?.pos?.map !== 'devroom') return state;
+  return { ...state, pos: { map: 'basement', x: 22.5, y: 4.5, dir: 0 } };
+}
+
 function write(key, state, label) {
   try {
-    const data = { v: SAVE_VERSION, savedAt: Date.now(), label, state };
+    const data = { v: SAVE_VERSION, savedAt: Date.now(), label: state?.pos?.map === 'devroom' ? label.replace('開発者の部屋', '修理屋の地下') : label, state: clean(state) };
     localStorage.setItem(key, JSON.stringify(data));
     return true;
   } catch (e) {
@@ -29,8 +35,9 @@ function read(key) {
 // セーブ形式を変えたらここで古いデータを直す
 // v1 → v2：第1章の流れ（町3つ・仲間の加入・マシン構成）を作り直したので、v1 のデータは使わない
 // v2 → v3：フィールドとダンジョンを約2倍に作り直したので、そこにいたら最後の町から再開する
+// v3 → v4：町3つの形とお店の配置を作り直したので、町の中（建物の中も）にいたら町の入口から再開する
 const RESHAPED = ['field1', 'mine1', 'ship1', 'factory1'];
-const TOWN_GATE = { town1: [15, 19], town2: [14, 19], town3: [14, 19] };
+const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
 function migrate(data) {
   if (!data || !data.state) return null;
   if ((data.v || 1) < 2) return null;
@@ -47,6 +54,16 @@ function migrate(data) {
     G.flags ||= {};
     (G.flags.visited ||= {})[town] = true;
     data.v = 3;
+  }
+  if (data.v < 4) {
+    const G = data.state;
+    const m = G.pos.map;
+    const town = /^town[123]/.exec(m)?.[0];
+    if (town && m !== `${town}_shop`) {
+      const [x, y] = TOWN_GATE[town];
+      G.pos = { map: town, x: x + 0.5, y: y + 0.5, dir: Math.PI };
+    }
+    data.v = 4;
   }
   return data;
 }

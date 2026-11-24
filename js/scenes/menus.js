@@ -12,6 +12,8 @@ import { CHARACTERS, LEVEL } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import { TILES } from '../data/tiles.js';
+import { PLANETS, planetOfTown } from '../data/planets.js';
+import { DEV_ROOM, devSession } from '../data/debug.js';
 import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
@@ -26,6 +28,9 @@ if (!settings.mapV) { settings.mapMode = '3d'; settings.mapV = 1; }
 // いまいる町（建物の中なら、その建物がある町）
 export const currentTown = () => MAPS[G.pos.map]?.town || G.pos.map;
 const shopOf = () => SHOPS[currentTown()] || SHOPS[G.lastTown] || SHOPS.town1;
+// いま開いているお店の品ぞろえ（同じ種類の店が2軒ある町や、広場の屋台は shops.js の別のキーを使う）
+let curShopKey = null;
+const shopFor = (fac) => (curShopKey && (shopOf()[curShopKey] || SHOPS[curShopKey])) || shopOf()[fac] || SHOPS.town2[fac];
 // アルファがまだ修理屋の中にいるか（封印中）
 export const alphaInShop = () => G.machines.alpha?.loc.type === 'shop';
 const ren = () => G.members.ren;
@@ -58,9 +63,10 @@ const ownedWeapons = () => G.inv.weapons.filter((w) => { const on = weaponEquipp
 // =====================================================================
 // 施設
 // =====================================================================
-export async function openFacility(fac, world) {
-  const fn = { home, inn, bar, office, weapon: weaponShop, parts: partsShop, item: itemShop, garage }[fac];
-  if (fn) await fn(world);
+export async function openFacility(fac, world, shopKey) {
+  const fn = { home, inn, bar, office, weapon: weaponShop, parts: partsShop, item: itemShop, garage, dev: devShop }[fac];
+  curShopKey = shopKey || MAPS[G.pos.map]?.shopKey || null;
+  try { if (fn) await fn(world); } finally { curShopKey = null; }
 }
 
 async function home(world) {
@@ -120,7 +126,7 @@ async function home(world) {
 }
 
 async function inn() {
-  const shop = shopOf().inn;
+  const shop = shopFor('inn');
   const price = shop.pricePerMember * G.party.length;
   for (;;) {
     const v = await ui.menu({ title: '宿屋', header: `${esc(shop.keeper)}「いらっしゃい。ひと晩 ${price} ギアだよ」`, items: [{ label: '泊まる', right: `${GEAR}${price}`, value: 'stay' }, { label: 'セーブ', value: 'save' }, { label: '出る', value: null }] });
@@ -291,10 +297,18 @@ async function buyQty(name, price) {
   return v || 0;
 }
 
+// お店の名前（建物の中ならその建物の名前、屋台なら店番の名前）
+const shopTitle = (def) => {
+  const m = MAPS[G.pos.map];
+  if (m?.type === 'interior' && m.shopKey) return esc(m.name.replace(/^.*の(?=[^の]+$)/, ''));
+  if (curShopKey?.startsWith('stall')) return '屋台';
+  return def;
+};
+
 async function weaponShop() {
-  const s = shopOf().weapon;
+  const s = shopFor('weapon');
   for (;;) {
-    const v = await ui.menu({ title: '武器屋', header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: 'マシン用の武器を買う', value: 'm' }, { label: '生身の装備を買う', value: 'f' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
+    const v = await ui.menu({ title: shopTitle('武器屋'), header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: 'マシン用の武器を買う', value: 'm' }, { label: '生身の装備を買う', value: 'f' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
     if (!v) return;
     if (v === 'm') {
       for (;;) {
@@ -329,9 +343,9 @@ async function weaponShop() {
 }
 
 async function partsShop() {
-  const s = shopOf().parts;
+  const s = shopFor('parts');
   for (;;) {
-    const v = await ui.menu({ title: 'パーツ屋', header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: '買う', value: 'buy' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
+    const v = await ui.menu({ title: shopTitle('パーツ屋'), header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: '買う', value: 'buy' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
     if (!v) return;
     if (v === 'sell') { await sellMenu(); continue; }
     for (;;) {
@@ -350,9 +364,9 @@ async function partsShop() {
 }
 
 async function itemShop() {
-  const s = shopOf().item;
+  const s = shopFor('item');
   for (;;) {
-    const v = await ui.menu({ title: '道具屋', header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: '買う', value: 'buy' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
+    const v = await ui.menu({ title: shopTitle('道具屋'), header: `${esc(s.keeper)}「${esc(s.greet)}」`, items: [{ label: '買う', value: 'buy' }, { label: '売る', value: 'sell' }, { label: '出る', value: null }] });
     if (!v) return;
     if (v === 'sell') { await sellMenu(); continue; }
     for (;;) {
@@ -399,7 +413,7 @@ async function sellMenu() {
 // ---------------- ガレージ ----------------
 async function garage(world) {
   const town = currentTown();
-  const shop = shopOf().garage;
+  const shop = shopFor('garage');
   if (!G.flags.garageIntro) {
     G.flags.garageIntro = true;
     await ui.say([
@@ -415,7 +429,6 @@ async function garage(world) {
       title: 'ガレージ', header: `${esc(shop.keeper)}「何をする？」　預かり中：${here.map((m) => esc(machineName(m))).join('・') || 'なし'}`,
       items: [
         { label: '乗り込んで出発', value: 'depart' },
-        { label: '転送装置（行った町へ無料で移動）', value: 'teleport' },
         { label: '修理', value: 'repair' },
         { label: '武器の付け替え', value: 'weapons' },
         { label: 'パーツ交換', value: 'parts' },
@@ -437,25 +450,159 @@ async function garage(world) {
     if (v === 'pilot') await pilotMenu(here);
     if (v === 'tow') await towMenu(town, shop);
     if (v === 'depart') { if (await depart(world, here)) return; }
-    if (v === 'teleport') { if (await teleportMenu(world, true)) return; }
   }
 }
 
-// ---------------- 転送（ガレージの転送装置・ワープユニット） ----------------
-const TOWN_NAMES = () => Object.fromEntries(['town1', 'town2', 'town3'].map((t) => [t, MAPS[t].name]));
-export async function teleportMenu(world, fromGarage) {
+// ---------------- 転送（ガレージの転送台・ワープユニット） ----------------
+// 行き先は惑星ごとに分けて表示する。いまいる惑星は町ごと、ほかの惑星はメインの町へ。
+// まだ行ったことのない町はグレーで選べない
+export async function teleportMenu(world, fromPad) {
   const here = currentTown();
-  const names = TOWN_NAMES();
-  const visited = Object.keys(G.flags.visited || {}).filter((t) => names[t]);
-  const items = visited.map((t) => ({ label: esc(names[t]), right: t === here && fromGarage ? '<small>いまいる町</small>' : MAPS[t].subtitle ? `<small>${esc(MAPS[t].subtitle)}</small>` : '', value: t, disabled: t === here && fromGarage }));
-  if (items.filter((i) => !i.disabled).length === 0) { await ui.say('まだ転送できる町がない。ほかの町に行くと登録される。'); return false; }
-  const to = await ui.menu({ title: fromGarage ? '転送装置：どの町へ？（無料）' : 'ワープユニット：どの町へ？', header: fromGarage ? 'ガレージに預けたマシンも一緒に転送されます' : '', items });
+  const visited = G.flags.visited || {};
+  const cur = planetOfTown(here) || planetOfTown(G.lastTown) || PLANETS[0];
+  const items = [];
+  for (const pl of [cur, ...PLANETS.filter((p) => p !== cur)]) {
+    items.push({ separator: true, label: `第${pl.chapter}章　${esc(pl.name)}` });
+    const reached = pl.towns.some((t) => visited[t]);
+    const towns = pl === cur ? pl.towns : [pl.main];
+    for (const t of towns) {
+      const ok = pl === cur ? !!visited[t] : reached;
+      const isHere = t === here && fromPad;
+      items.push({
+        label: ok ? esc(MAPS[t].name) : `<span class="grey">${esc(MAPS[t].name)}</span>`,
+        right: isHere ? '<small>いまいる町</small>' : ok ? `<small>${esc(MAPS[t].subtitle || '')}</small>` : '<small>まだ行ったことがない</small>',
+        value: t,
+        disabled: !ok || isHere,
+      });
+    }
+  }
+  if (!items.some((i) => !i.separator && !i.disabled)) { await ui.say('まだ転送できる町がない。ほかの町に行くと転送台に登録される。'); return false; }
+  const to = await ui.menu({
+    title: fromPad ? '転送台：どこへ転送する？（無料）' : 'ワープユニット：どこへ？',
+    header: fromPad ? '行き先の町の転送台に転送されます。ガレージに預けたマシンも一緒に運ばれます' : '行き先の町の入口に転送されます',
+    items, className: 'teleport-menu',
+  });
   if (!to) return false;
   ui.closeAll();
-  if (!fromGarage) addItem('warpunit', -1);
-  await world.teleport(to, { garage: fromGarage, from: here });
+  if (!fromPad) addItem('warpunit', -1);
+  await world.teleport(to, { pad: fromPad, from: here });
   return true;
 }
+
+// ---------------- 開発者の部屋（デバッグ用） ----------------
+// 扉の横のキーパネル：携帯電話のテンキーのような数字ボタンで8桁を入れる
+export function keypad() {
+  return new Promise((resolve) => {
+    const len = DEV_ROOM.password.length;
+    let code = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'keypad-wrap';
+    wrap.innerHTML = `<div class="keypad"><div class="kp-title">暗証番号を入力（${len}桁）</div><div class="kp-disp"></div>
+      <div class="kp-keys">${['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'].map((k) => `<button class="kp-key${/\d/.test(k) ? '' : ' kp-fn'}" data-k="${k}">${k}</button>`).join('')}</div>
+      <div class="kp-row"><button class="kp-cancel">やめる</button></div></div>`;
+    document.getElementById('ui').appendChild(wrap);
+    const disp = wrap.querySelector('.kp-disp');
+    const draw = () => { disp.innerHTML = Array.from({ length: len }, (_, i) => `<i class="${i < code.length ? 'on' : ''}">${i < code.length ? '●' : ''}</i>`).join(''); };
+    const finish = (ok) => { window.removeEventListener('keydown', onKey, true); wrap.remove(); resolve(ok); };
+    const press = (k) => {
+      if (k === 'C') { audio.sfx('cancel'); code = ''; draw(); return; }
+      if (k === '⌫') { audio.sfx('cursor'); code = code.slice(0, -1); draw(); return; }
+      if (code.length >= len) return;
+      audio.sfx('cursor');
+      code += k;
+      draw();
+      if (code.length === len) {
+        if (code === DEV_ROOM.password) { audio.sfx('levelup'); disp.classList.add('ok'); setTimeout(() => finish(true), 500); }
+        else { audio.sfx('error'); disp.classList.add('ng'); setTimeout(() => { disp.classList.remove('ng'); code = ''; draw(); }, 600); }
+      }
+    };
+    wrap.querySelector('.kp-keys').addEventListener('click', (e) => { const b = e.target.closest('.kp-key'); if (b) { e.stopPropagation(); press(b.dataset.k); } });
+    wrap.querySelector('.kp-cancel').addEventListener('click', (e) => { e.stopPropagation(); audio.sfx('cancel'); finish(false); });
+    const onKey = (e) => {
+      e.stopPropagation(); e.preventDefault();
+      if (/^\d$/.test(e.key)) press(e.key);
+      else if (e.key === 'Backspace') press('⌫');
+      else if (e.key === 'Escape' || e.key === 'x') { audio.sfx('cancel'); finish(false); }
+    };
+    window.addEventListener('keydown', onKey, true);
+    draw();
+  });
+}
+
+// 開発者の部屋のお店：全武器・全パーツ・全アイテムを無料で受け取れる
+async function devShop() {
+  const n = DEV_ROOM.itemCount;
+  for (;;) {
+    const v = await ui.menu({
+      title: '開発者の部屋', header: '開発者「ここにあるものは全部タダだ。テストに使ってくれ」',
+      items: [
+        { label: 'マシンの武器を受け取る（1つずつ）', value: 'w' },
+        { label: 'パーツを受け取る（1つずつ）', value: 'p' },
+        { label: 'アイテムを受け取る（1つずつ）', value: 'i' },
+        { label: '生身の装備を受け取る（1つずつ）', value: 'f' },
+        { separator: true, label: 'まとめて' },
+        { label: '全武器を1つずつ受け取る', value: 'allw' },
+        { label: '全パーツを1つずつ受け取る', value: 'allp' },
+        { label: `全アイテムを${n}個ずつ受け取る`, value: 'alli' },
+        { label: '生身の装備を全部受け取る', value: 'allf' },
+        { label: `素材を${n}個ずつ受け取る`, value: 'allm' },
+        { label: '出る', value: null },
+      ],
+    });
+    if (!v) return;
+    const ok = (t) => { audio.sfx('buy'); ui.toast(t); };
+    if (v === 'w') {
+      for (;;) {
+        const id = await ui.menu({ title: '武器を受け取る', wide: true, desc: true, items: Object.entries(WEAPONS).map(([id, w]) => ({ label: `${WEAPON_CATS[w.cat].icon} ${esc(w.name)} ${rangeBadge(w)}`, right: w.only ? `<small>${esc(MACHINES[w.only].name)}専用</small>` : '', value: id, desc: weaponDesc(w) })) });
+        if (!id) break;
+        addWeapon(id); ok(`${WEAPONS[id].name}を受け取った`);
+      }
+    }
+    if (v === 'p') {
+      for (;;) {
+        const id = await ui.menu({ title: 'パーツを受け取る', wide: true, desc: true, items: Object.entries(PARTS).map(([id, pt]) => ({ label: esc(pt.name), right: `×${G.inv.parts[id] || 0}`, value: id, desc: partDesc(pt) })) });
+        if (!id) break;
+        addPart(id); ok(`${PARTS[id].name}を受け取った`);
+      }
+    }
+    if (v === 'i') {
+      for (;;) {
+        const id = await ui.menu({ title: 'アイテムを受け取る', desc: true, items: Object.entries(ITEMS).map(([id, it]) => ({ label: esc(it.name), right: `×${G.inv.items[id] || 0}`, value: id, desc: esc(it.desc) })) });
+        if (!id) break;
+        addItem(id, 1); ok(`${ITEMS[id].name}を受け取った`);
+      }
+    }
+    if (v === 'f') {
+      for (;;) {
+        const id = await ui.menu({ title: '生身の装備を受け取る', desc: true, items: Object.entries(FOOT_GEAR).map(([id, f]) => ({ label: esc(f.name), right: `×${G.inv.foot[id] || 0}`, value: id, desc: footDesc(f) })) });
+        if (!id) break;
+        addFoot(id); ok(`${FOOT_GEAR[id].name}を受け取った`);
+      }
+    }
+    if (v === 'allw') { for (const id of Object.keys(WEAPONS)) addWeapon(id); ok(`武器を${Object.keys(WEAPONS).length}種類受け取った`); }
+    if (v === 'allp') { for (const id of Object.keys(PARTS)) addPart(id); ok(`パーツを${Object.keys(PARTS).length}種類受け取った`); }
+    if (v === 'alli') { for (const id of Object.keys(ITEMS)) addItem(id, n); ok(`アイテムを${n}個ずつ受け取った`); }
+    if (v === 'allf') { for (const id of Object.keys(FOOT_GEAR)) addFoot(id); ok('生身の装備を全部受け取った'); }
+    if (v === 'allm') { for (const id of Object.keys(MATERIALS)) addMat(id, n); ok(`素材を${n}個ずつ受け取った`); }
+  }
+}
+
+// ギアを増やす機械
+export async function gearMachine() {
+  for (;;) {
+    const v = await ui.menu({
+      title: 'ギア生成マシン', header: `ガチャン、ガチャン……歯車が回っている。　所持：${GEAR}${fmt(G.gear)}`,
+      items: [...DEV_ROOM.gearButtons.map((g) => ({ label: `${GEAR}${fmt(g)} 増やす`, value: g })), { label: '最大（999,999）にする', value: 'max' }, { label: 'やめる', value: null }],
+    });
+    if (!v) return;
+    addGear(v === 'max' ? 999999 : v);
+    audio.sfx('levelup');
+    ui.toast(`チャリーン！ 所持ギア ${fmt(G.gear)}`);
+  }
+}
+
+export const devDoorOpen = () => devSession.open;
+export function openDevDoor() { devSession.open = true; }
 
 // ---------------- 装備の比較（今の値 → 変更後の値（差）） ----------------
 export const rangeBadge = (def) => `<b class="rg rg-${def.target}">${RANGES[def.target].name}</b>`;

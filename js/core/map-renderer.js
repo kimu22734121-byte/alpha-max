@@ -279,6 +279,12 @@ export function heightField(map) {
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const t = map.grid[y][x];
     let h = 0;
+    // 段差のある町：行の範囲ごとに地面の高さを決める（間の行は坂道）
+    if (map.tiers) {
+      const tier = map.tiers.find(([y0, y1]) => y >= y0 && y <= y1);
+      if (tier) h = tier[2];
+      else { const up = map.tiers.find(([, y1]) => y1 === y - 1), dn = map.tiers.find(([y0]) => y0 === y + 1); h = ((up?.[2] ?? 0) + (dn?.[2] ?? 0)) / 2; }
+    }
     if (hills) {
       const base = (Math.sin(x * 0.11 + 1.3) + Math.sin(y * 0.13 + 2.1) + Math.sin((x + y) * 0.06) + Math.sin((x - y) * 0.08 + 0.7)) * 0.2 + 0.25;
       h = Math.max(0, base) * 1.1;
@@ -382,7 +388,7 @@ function add3D(map, group, disposables, view) {
   const place = (inst, i, x, y, k, kx, ky) => {
     const hs = k.h[0] + rng(x, y, 3) * (k.h[1] - k.h[0]);
     const ws = k.w[0] + rng(x, y, 4) * (k.w[1] - k.w[0]);
-    const gy = k.onTerrain ? heightAt(map, x + 0.5, y + 0.5) : 0;
+    const gy = k.onTerrain || map.tiers ? heightAt(map, x + 0.5, y + 0.5) : 0;
     e.set(0, k.rotZ ? 0 : rng(x, y, 1) * 6.28, k.rotZ ? Math.PI / 2 : 0);
     q.setFromEuler(e);
     v.set(x + 0.5 + (kx || 0), gy + k.y * hs, y + 0.5 + (ky || 0));

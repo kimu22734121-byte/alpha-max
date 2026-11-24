@@ -136,6 +136,8 @@ const TEMPLATES = {
     W: 16, H: 10, keeper: { x: 3, y: 3.2 }, showMachines: [[8.5, 4.4], [12.5, 4.4], [8.5, 7.2], [12.5, 7.2]], maintenance: true,
     props: [
       { id: 'lift', model: 'f_lift', x: 8.5, y: 4.4 },
+      // 転送台：調べると行ったことのある町へ転送できる（上に乗って調べる）
+      { id: 'teleporter', model: 'f_teleporter', x: 4.6, y: 7.0, block: null, pad: true, search: { event: 'teleport' } },
       { id: 'workbench', model: 'f_workbench', x: 3, y: 1.6, block: [1.8, 0.8], search: { text: '整備用の作業台。工具がきれいに並べてある。' } },
       { id: 'toolbox', model: 'f_toolbox', x: 1.4, y: 6, rot: Math.PI / 2, block: [0.6, 0.8], search: { loot: { mat: 'scrap', n: 2 }, rare: { mat: 'alloy', n: 1, rate: 0.3 } } },
       { id: 'toolbox2', model: 'f_toolbox', x: 5.6, y: 1.5, block: [0.8, 0.5], search: { text: 'レンチにトルクドライバー……どれも年季が入っている。' } },
@@ -172,7 +174,8 @@ export function addInteriors(MAPS) {
       const exitX = Math.floor(tpl.W / 2);
       const map = {
         id,
-        name: b.facility === 'home' ? 'レンの修理屋' : `${town.name}の${TITLES[b.facility]}`,
+        name: b.facility === 'home' ? 'レンの修理屋' : `${town.name}の${b.title || TITLES[b.facility]}`,
+        shopKey: b.shop, // 同じ種類の店が町に2軒あるときなどの品ぞろえの切り替え（shops.js のキー）
         type: 'interior',
         town: town.id,
         facility: b.facility,
@@ -184,7 +187,7 @@ export function addInteriors(MAPS) {
         arrive: [exitX, tpl.H - 2],
         props: tpl.props,
         showMachines: tpl.showMachines,
-        npcs: tpl.keeper ? [{ id: 'keeper', name: '', model: KEEPERS[b.facility].model, colors: KEEPERS[b.facility].colors, scale: KEEPERS[b.facility].scale, x: tpl.keeper.x - 0.5, y: tpl.keeper.y - 0.5, facility: b.facility, range: 2.6, lines: [] }] : [],
+        npcs: tpl.keeper ? [{ id: 'keeper', name: '', model: KEEPERS[b.facility].model, colors: KEEPERS[b.facility].colors, scale: KEEPERS[b.facility].scale, x: tpl.keeper.x - 0.5, y: tpl.keeper.y - 0.5, facility: b.facility, shop: b.shop, range: 2.6, lines: [] }] : [],
         theme: { ...TOWN_THEME[town.id], ...FAC_THEME[b.facility] },
         maintenance: tpl.maintenance,
       };
@@ -201,3 +204,35 @@ export function addInteriors(MAPS) {
     }
   }
 }
+
+// ---------------- 開発者の部屋（デバッグ用の隠し部屋） ----------------
+// 修理屋の地下（オメガの格納庫）の奥、機械の陰の隠し通路の先。扉の暗証番号は js/data/debug.js
+export function addDevRoom(MAPS) {
+  const W = 14, H = 10;
+  const map = {
+    id: 'devroom',
+    name: '開発者の部屋',
+    type: 'interior',
+    bgm: 'town',
+    machineAllowed: false,
+    ground: '#101418',
+    rows: room(W, H),
+    warps: [{ x: 7, y: H - 1, to: 'basement', tx: 22, ty: 4, dir: 'down', door: true }],
+    arrive: [7, H - 2],
+    theme: { floor: 'metal', floorColor: '#2a3340', wallColor: '#1a2028', light: 0x8fe8ff, lightK: 1.1, rug: [4, 4, 9, 7], rugColor: '#1a4a5a' },
+    props: [
+      { id: 'pc1', model: 'f_devpc', x: 2.4, y: 1.4, block: [1.6, 0.6], search: { text: '画面に数字の表がびっしり……「weapons.js」「parts.js」と書いてある。ここでこの星のすべてが決められているらしい。' } },
+      { id: 'pc2', model: 'f_devpc', x: 4.6, y: 1.4, block: [1.6, 0.6], search: { text: '「TODO：第2章 風の惑星」と書かれたメモが貼ってある。' } },
+      { id: 'gearmachine', model: 'f_gearmachine', x: 11.4, y: 1.6, block: [1.4, 0.8], search: { event: 'gearMachine' } },
+      { id: 'shelf1', model: 'f_shelf', x: 1.4, y: 5.2, rot: Math.PI / 2, block: [0.5, 1.8], search: { text: 'まだどこにも登場していない武器の設計図が並んでいる。' } },
+      { id: 'crate1', model: 'f_crate', x: 12.4, y: 7.6, block: [0.8, 0.8], search: { text: '「テスト用」とだけ書かれた木箱。中は空っぽだ。' } },
+      { id: 'lamp1', model: 'f_lamp', x: 12.6, y: 4.6, block: [0.5, 0.5] },
+      { id: 'plant1', model: 'f_plant', x: 1.4, y: 8.2, block: [0.6, 0.6], search: { text: 'プラスチックの観葉植物。ほこりひとつない。' } },
+    ],
+    npcs: [{ id: 'devkeeper', name: '開発者', model: 'npc_clerk', colors: { primary: 0x1a2a3a, secondary: 0x0a0e14 }, x: 7.5 - 0.5, y: 2.4 - 0.5, facility: 'dev', range: 2.8, lines: [] }],
+  };
+  map.grid = parseRows(map.rows);
+  map.width = W; map.height = H;
+  MAPS.devroom = map;
+}
+
