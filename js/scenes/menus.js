@@ -15,12 +15,18 @@ import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import { TILES } from '../data/tiles.js';
 import { PLANETS, planetOfTown } from '../data/planets.js';
 import { DEV_ROOM, devSession } from '../data/debug.js';
-import { TUNE_TABLES, FIELD_NAMES, fieldsOf, defaultOf, isChanged, changedCount, setTuning, resetTuning, exportTuning } from '../game/tuning.js';
+import { TUNE_TABLES, FIELD_NAMES, CHOICES, fieldsOf, defaultOf, valueOf, isChanged, isColor, stepOf, showValue, changedCount, setTuning, resetTuning, exportTuning } from '../game/tuning.js';
+import { devStore } from './devroom.js';
 import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
   healParty, repairMachine, machinesInGarage, sealInfo, typeBoost, FOOT_SLOT_KEYS, canWearFoot,
+  partCount, removePart, testTag, TEST_MARK, testFootCount, addTest, resetTestItems, createMachine,
 } from '../game/state.js';
+import { compareView } from './compare.js';
+import { buildMachineModel } from '../models/mech.js';
+import { buildCharModel } from '../models/char-look.js';
+import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
 
 export const settings = audio.settings;
@@ -298,7 +304,7 @@ export async function bountyList() {
 const sellPrice = (def) => def.sell ?? Math.floor((def.price || 0) / 2);
 const ownCount = {
   w: (id) => G.inv.weapons.filter((w) => w.id === id).length,
-  p: (id) => G.inv.parts[id] || 0,
+  p: (id) => partCount(id),
   i: (id) => G.inv.items[id] || 0,
   f: (id) => (G.inv.foot[id] || 0) + Object.values(G.members).filter((m) => m.joined && Object.values(m.equip).includes(id)).length,
 };
@@ -312,7 +318,7 @@ const partyMachines = () => partyMembers().map((m) => m.machine && G.machines[m.
 function mountCompare(def) {
   const rows = [];
   for (const mc of partyMachines()) {
-    if (def.only && def.only !== mc.id) { rows.push(`<tr><th>${esc(machineName(mc))}</th><td colspan="4"><small>専用ではないので付けられない</small></td></tr>`); continue; }
+    if (def.only && def.only !== mc.type) { rows.push(`<tr><th>${esc(machineName(mc))}</th><td colspan="4"><small>専用ではないので付けられない</small></td></tr>`); continue; }
     const st = machineStats(mc);
     const slots = [...Array(st.slots).keys()].filter((i) => SLOT_INFO[i].mount === def.mount);
     if (!slots.length) continue;
@@ -430,14 +436,16 @@ async function sellMenu() {
     const ws = {};
     for (const w of ownedWeapons()) {
       if (weaponEquippedOn(w.uid) || WEAPONS[w.id].unique) continue;
-      (ws[`${w.id}+${w.plus || 0}`] ||= []).push(w);
+      (ws[`${w.id}+${w.plus || 0}+${w.test ? 1 : 0}`] ||= []).push(w);
     }
     for (const list of Object.values(ws)) {
-      const w = list[0], def = WEAPONS[w.id], price = sellPrice(def);
-      out.push({ kind: 'w', group: 'マシンの武器', list, price, label: `${WEAPON_CATS[def.cat].icon} ${esc(weaponLabel(w))} ×${list.length}`, right: `${GEAR}${fmt(price)}`, can: () => true,
+      const w = list[0], def = WEAPONS[w.id], price = w.test ? 0 : sellPrice(def);
+      out.push({ kind: 'w', group: 'マシンの武器', list, price, label: `${WEAPON_CATS[def.cat].icon} ${esc(weaponLabel(w))} ×${list.length}${testTag(w)}`, right: `${GEAR}${fmt(price)}`, can: () => true,
         detail: () => detailBox(esc(weaponLabel(w)), null, list.length, `${weaponDesc(def, w)}<br>売値 ${GEAR}${fmt(price)}（1つ）`) });
     }
-    for (const [id, n] of Object.entries(G.inv.parts)) if (n > 0) { const price = sellPrice(PARTS[id]); out.push({ kind: 'p', group: 'パーツ', id, n, price, label: `${esc(PARTS[id].name)} ×${n}`, right: `${GEAR}${fmt(price)}`, can: () => true, detail: () => detailBox(esc(PARTS[id].name), null, n, `${partDesc(PARTS[id])}<br>売値 ${GEAR}${fmt(price)}（1つ）`) }); }
+    const pg = {};
+    for (const p of G.inv.parts) (pg[`${p.id}|${p.test ? 1 : 0}`] ||= []).push(p);
+    for (const list of Object.values(pg)) { const id = list[0].id, n = list.length, test = !!list[0].test; const price = test ? 0 : sellPrice(PARTS[id]); out.push({ kind: 'p', group: 'パーツ', id, n, test, price, label: `${esc(PARTS[id].name)} ×${n}${testTag(list[0])}`, right: `${GEAR}${fmt(price)}`, can: () => true, detail: () => detailBox(esc(PARTS[id].name), null, n, `${partDesc(PARTS[id])}<br>売値 ${GEAR}${fmt(price)}（1つ）`) }); }
     for (const [id, n] of Object.entries(G.inv.items)) if (n > 0) { const price = sellPrice(ITEMS[id]); out.push({ kind: 'i', group: '道具', id, n, price, label: `${esc(ITEMS[id].name)} ×${n}`, right: `${GEAR}${fmt(price)}`, can: () => true, detail: () => detailBox(esc(ITEMS[id].name), null, n, `${esc(ITEMS[id].desc)}<br>売値 ${GEAR}${fmt(price)}（1つ）`) }); }
     for (const [id, n] of Object.entries(G.inv.foot)) if (n > 0) { const f = FOOT_GEAR[id], price = sellPrice(f); out.push({ kind: 'f', group: '生身の装備', id, n, price, label: `${esc(f.name)} ×${n}`, right: price ? `${GEAR}${fmt(price)}` : '<small>売れない</small>', can: () => (price > 0 ? true : '売れない品'), detail: () => detailBox(esc(f.name), null, n, `${footDesc(f)}<br>${price ? `売値 ${GEAR}${fmt(price)}（1つ）` : '大切な装備なので売れない'}`) }); }
     return out;
@@ -451,7 +459,7 @@ async function sellMenu() {
       if (!n) return;
       if (!(await ui.confirm(`${esc(name)}を ${n}個、${fmt(it.price * n)} ギアで売りますか？`, '売る', 'やめる'))) return;
       if (it.kind === 'w') { const gone = new Set(it.list.slice(0, n).map((w) => w.uid)); G.inv.weapons = G.inv.weapons.filter((w) => !gone.has(w.uid)); }
-      if (it.kind === 'p') { G.inv.parts[it.id] -= n; if (G.inv.parts[it.id] <= 0) delete G.inv.parts[it.id]; }
+      if (it.kind === 'p') removePart(it.id, n, it.test);
       if (it.kind === 'i') addItem(it.id, -n);
       if (it.kind === 'f') addFoot(it.id, -n);
       addGear(it.price * n); audio.sfx('buy');
@@ -509,7 +517,7 @@ async function garage(world) {
   for (;;) {
     const here = machinesInGarage(town);
     const v = await ui.menu({
-      title: 'ガレージ', header: `${esc(shop.keeper)}「何をする？」　預かり中：${here.map((m) => esc(machineName(m))).join('・') || 'なし'}`,
+      title: 'ガレージ', header: `${esc(shop.keeper)}「何をする？」　預かり中：${here.map((m) => esc(machineName(m)) + testTag(m)).join('・') || 'なし'}`,
       items: [
         { label: '乗り込んで出発', value: 'depart' },
         { label: '修理', value: 'repair' },
@@ -614,66 +622,8 @@ export function keypad() {
   });
 }
 
-// 開発者の部屋のお店：全武器・全パーツ・全アイテムを無料で受け取れる
-async function devShop() {
-  const n = DEV_ROOM.itemCount;
-  for (;;) {
-    const v = await ui.menu({
-      title: '開発者の部屋', header: '開発者「ここにあるものは全部タダだ。テストに使ってくれ」',
-      items: [
-        { label: 'マシンの武器を受け取る（1つずつ）', value: 'w' },
-        { label: 'パーツを受け取る（1つずつ）', value: 'p' },
-        { label: 'アイテムを受け取る（1つずつ）', value: 'i' },
-        { label: '生身の装備を受け取る（1つずつ）', value: 'f' },
-        { separator: true, label: 'まとめて' },
-        { label: '全武器を1つずつ受け取る', value: 'allw' },
-        { label: '全パーツを1つずつ受け取る', value: 'allp' },
-        { label: `全アイテムを${n}個ずつ受け取る`, value: 'alli' },
-        { label: '生身の装備を全部受け取る', value: 'allf' },
-        { label: `素材を${n}個ずつ受け取る`, value: 'allm' },
-        { separator: true, label: '調整' },
-        { label: 'バランス調整（数値を変える）', value: 'tune' },
-        { label: '出る', value: null },
-      ],
-    });
-    if (!v) return;
-    if (v === 'tune') { await tuningMenu(); continue; }
-    const ok = (t) => { audio.sfx('buy'); ui.toast(t); };
-    if (v === 'w') {
-      for (;;) {
-        const id = await ui.menu({ title: '武器を受け取る', wide: true, desc: true, items: Object.entries(WEAPONS).map(([id, w]) => ({ label: `${WEAPON_CATS[w.cat].icon} ${esc(w.name)} ${rangeBadge(w)}`, right: w.only ? `<small>${esc(MACHINES[w.only].name)}専用</small>` : '', value: id, desc: weaponDesc(w) })) });
-        if (!id) break;
-        addWeapon(id); ok(`${WEAPONS[id].name}を受け取った`);
-      }
-    }
-    if (v === 'p') {
-      for (;;) {
-        const id = await ui.menu({ title: 'パーツを受け取る', wide: true, desc: true, items: Object.entries(PARTS).map(([id, pt]) => ({ label: esc(pt.name), right: `×${G.inv.parts[id] || 0}`, value: id, desc: partDesc(pt) })) });
-        if (!id) break;
-        addPart(id); ok(`${PARTS[id].name}を受け取った`);
-      }
-    }
-    if (v === 'i') {
-      for (;;) {
-        const id = await ui.menu({ title: 'アイテムを受け取る', desc: true, items: Object.entries(ITEMS).map(([id, it]) => ({ label: esc(it.name), right: `×${G.inv.items[id] || 0}`, value: id, desc: esc(it.desc) })) });
-        if (!id) break;
-        addItem(id, 1); ok(`${ITEMS[id].name}を受け取った`);
-      }
-    }
-    if (v === 'f') {
-      for (;;) {
-        const id = await ui.menu({ title: '生身の装備を受け取る', desc: true, items: Object.entries(FOOT_GEAR).map(([id, f]) => ({ label: esc(f.name), right: `×${G.inv.foot[id] || 0}`, value: id, desc: footDesc(f) })) });
-        if (!id) break;
-        addFoot(id); ok(`${FOOT_GEAR[id].name}を受け取った`);
-      }
-    }
-    if (v === 'allw') { for (const id of Object.keys(WEAPONS)) addWeapon(id); ok(`武器を${Object.keys(WEAPONS).length}種類受け取った`); }
-    if (v === 'allp') { for (const id of Object.keys(PARTS)) addPart(id); ok(`パーツを${Object.keys(PARTS).length}種類受け取った`); }
-    if (v === 'alli') { for (const id of Object.keys(ITEMS)) addItem(id, n); ok(`アイテムを${n}個ずつ受け取った`); }
-    if (v === 'allf') { for (const id of Object.keys(FOOT_GEAR)) addFoot(id); ok('生身の装備を全部受け取った'); }
-    if (v === 'allm') { for (const id of Object.keys(MATERIALS)) addMat(id, n); ok(`素材を${n}個ずつ受け取った`); }
-  }
-}
+// 開発者の部屋のお店（開発者に話しかける）＝入手端末と同じ（js/scenes/devroom.js）
+async function devShop(world) { await devStore(world); }
 
 // バランス調整：値段・攻撃力などの数値と、敵の強さを数字で変える（ブラウザに保存してゲーム全体に反映）
 export async function tuningMenu() {
@@ -705,25 +655,45 @@ async function tuningTable(tk) {
       title: esc(t.name), wide: true,
       items: Object.entries(t.table).filter(([rid]) => fieldsOf(tk, rid).length).map(([rid, row]) => ({
         label: `${changedCount(tk, rid) ? '<b class="ok">●</b> ' : ''}${esc(row.name)}`,
-        right: `<small>${fieldsOf(tk, rid).slice(0, 4).map((f) => `${FIELD_NAMES[f]}${row[f]}`).join(' ')}</small>`, value: rid,
+        right: `<small>${fieldsOf(tk, rid).slice(0, 4).map((f) => `${FIELD_NAMES[f]}${showValue(f, valueOf(tk, rid, f))}`).join(' ')}</small>`, value: rid,
       })),
     });
     if (!id) return;
-    for (;;) {
-      const row = t.table[id];
-      const f = await ui.menu({
-        title: `${esc(row.name)}の数値`, wide: true, header: '●＝変更した数値（かっこの中は初期値）',
-        items: fieldsOf(tk, id).map((k) => ({ label: `${isChanged(tk, id, k) ? '<b class="ok">●</b> ' : ''}${FIELD_NAMES[k] || k}`, right: `${row[k]}${isChanged(tk, id, k) ? `　<small>（${defaultOf(tk, id, k)}）</small>` : ''}`, value: k })),
-      });
-      if (!f) break;
-      const step = f === 'atkMul' ? 0.05 : 1;
-      const nv = await ui.numberEntry({ title: `${esc(row.name)}：${FIELD_NAMES[f] || f}`, value: row[f], def: defaultOf(tk, id, f), step, note: `${esc(t.file)} の ${id}.${f}` });
-      if (nv == null) continue;
-      setTuning(tk, id, f, step < 1 ? Math.round(nv * 100) / 100 : Math.round(nv));
-      audio.sfx('ok');
-    }
+    await editTuningRow(tk, id);
   }
 }
+// 1つの物（武器・パーツ・装備・敵・マシンの色など）の数値を変える。展示台（devroom.js）からも使う
+export async function editTuningRow(tk, id, onChange) {
+  const t = TUNE_TABLES[tk];
+  for (;;) {
+    const row = t.table[id];
+    const f = await ui.menu({
+      title: `${esc(row.name)}の数値`, wide: true, header: '●＝変更した数値（かっこの中は初期値）。変えた値は「数値を書き出す」でまとめてコピーできます',
+      items: fieldsOf(tk, id).map((k) => {
+        const v = valueOf(tk, id, k);
+        const sw = isColor(k) ? `<i class="swatch" style="background:#${Number(v).toString(16).padStart(6, '0')}"></i>` : '';
+        return { label: `${isChanged(tk, id, k) ? '<b class="ok">●</b> ' : ''}${FIELD_NAMES[k] || k}`, right: `${sw}${showValue(k, v)}${isChanged(tk, id, k) ? `　<small>（${showValue(k, defaultOf(tk, id, k))}）</small>` : ''}`, value: k };
+      }),
+    });
+    if (!f) return;
+    let nv;
+    if (CHOICES[f]) {
+      nv = await ui.menu({ title: `${esc(row.name)}：${FIELD_NAMES[f]}`, items: Object.entries(CHOICES[f]).map(([k, n]) => ({ label: n, value: k, right: k === valueOf(tk, id, f) ? '今' : '' })) });
+    } else if (isColor(f)) {
+      nv = await ui.colorEntry({ title: `${esc(row.name)}：${FIELD_NAMES[f]}`, value: valueOf(tk, id, f), def: defaultOf(tk, id, f) });
+    } else {
+      const step = stepOf(f);
+      nv = await ui.numberEntry({ title: `${esc(row.name)}：${FIELD_NAMES[f] || f}`, value: valueOf(tk, id, f), def: defaultOf(tk, id, f) ?? 0, step, note: `${esc(t.file)} の ${id}.${f}` });
+      if (nv != null) nv = step < 1 ? Math.round(nv * 100) / 100 : Math.round(nv);
+    }
+    if (nv == null) continue;
+    setTuning(tk, id, f, nv);
+    audio.sfx('ok');
+    onChange?.();
+  }
+}
+export { exportTuningUI };
+
 // 変更した数値を一覧のテキストにしてクリップボードへ（Claude Code に貼って設定ファイルに反映してもらう）
 async function exportTuningUI() {
   const text = exportTuning();
@@ -747,7 +717,7 @@ export async function gearMachine() {
       items: [...DEV_ROOM.gearButtons.map((g) => ({ label: `${GEAR}${fmt(g)} 増やす`, value: g })), { label: '最大（999,999）にする', value: 'max' }, { label: 'やめる', value: null }],
     });
     if (!v) return;
-    addGear(v === 'max' ? 999999 : v);
+    addTest('gear', v === 'max' ? 999999 : v);
     audio.sfx('levelup');
     ui.toast(`チャリーン！ 所持ギア ${fmt(G.gear)}`);
   }
@@ -758,7 +728,7 @@ export function openDevDoor() { devSession.open = true; }
 
 // ---------------- 装備の比較（今の値 → 変更後の値（差）） ----------------
 export const rangeBadge = (def) => `<b class="rg rg-${def.target}">${RANGES[def.target].name}</b>`;
-function compareTable(rows, onlyChanged = false) {
+export function compareTable(rows, onlyChanged = false) {
   if (onlyChanged) { rows = rows.filter((r) => r[1] !== r[2]); if (!rows.length) return '<div class="cmp-none">ステータスは変わらない</div>'; }
   const cell = (r) => {
     const [label, a, b, opt = {}] = r;
@@ -798,7 +768,7 @@ function weaponCompare(mc, slot, newUid) {
     ['積める重さ', a.cap, b.cap],
   ]) + (b.weight > b.cap ? '<b class="warn">重量オーバー</b>' : '');
 }
-function partRows(mc, slotKey, partId) {
+export function partRows(mc, slotKey, partId) {
   const clone = { ...mc, parts: { ...mc.parts, [slotKey]: partId }, slots: [...mc.slots] };
   const a = machineStats(mc), b = machineStats(clone);
   const rows = [
@@ -814,7 +784,7 @@ function partCompare(mc, slotKey, partId) {
   const b = machineStats(clone);
   return `<div class="cmp-head">${esc(PARTS[partId].name)}</div>` + compareTable(partRows(mc, slotKey, partId)) + (b.weight > b.cap ? '<b class="warn">重量オーバー</b>' : '');
 }
-function footRows(m, kind, id) {
+export function footRows(m, kind, id) {
   const clone = { ...m, equip: { ...m.equip, [kind]: id } };
   const a = memberStats(m), b = memberStats(clone);
   const rng = (st) => (st.weapon.atk ? RANGES[st.weapon.target || 'one'].name : '―');
@@ -833,7 +803,7 @@ function footCompare(m, kind, id) {
 async function pickMachine(list) {
   if (!list.length) { await ui.say('ガレージに預けているマシンがない。'); return null; }
   if (list.length === 1) return list[0];
-  return ui.menu({ title: 'どのマシン？', items: list.map((mc) => ({ label: esc(machineName(mc)), right: pilotName(mc), value: mc })) });
+  return ui.menu({ title: 'どのマシン？', items: list.map((mc) => ({ label: esc(machineName(mc)) + testTag(mc), right: pilotName(mc), value: mc })) });
 }
 const pilotName = (mc) => { const p = partyMembers().find((m) => m.machine === mc.id); return p ? esc(p.name) : '<small>乗り手なし</small>'; };
 
@@ -884,14 +854,19 @@ async function weaponSlots(mc) {
     const list = cands.map((w) => {
       const on = weaponEquippedOn(w.uid);
       const err = checkMount(mc, slot, w);
-      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + weaponCompare(mc, slot, w.uid) };
+      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}${testTag(w)}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + weaponCompare(mc, slot, w.uid) };
     });
     if (mc.slots[slot]) list.unshift({ label: '外す', value: '__none', desc: weaponCompare(mc, slot, null) });
     if (!list.length) { await ui.say('付けられる武器を持っていない。武器屋で買おう。'); continue; }
     const uid = await ui.menu({ title: `${info.name}に付ける武器`, header: '選んでいる武器に替えたときの「今 → 変更後（差）」', wide: true, desc: true, className: 'cmp-menu', items: list });
     if (!uid) continue;
+    const clone = { ...mc, parts: { ...mc.parts }, slots: mc.slots.map((u) => (u === uid ? null : u)) };
+    clone.slots[slot] = uid === '__none' ? null : uid;
+    const wname = uid === '__none' ? '外す' : esc(weaponLabel(weaponByUid(uid)));
+    const ok = await compareView({ title: `${esc(machineName(mc))}：${info.name}に ${wname}`, before: () => buildMachineModel(machineSpec(mc)), after: () => buildMachineModel(machineSpec(clone)), stats: weaponCompare(mc, slot, uid === '__none' ? null : uid) });
+    if (!ok) continue;
     const err = equipWeapon(mc, slot, uid === '__none' ? null : uid);
-    if (err) { audio.sfx('error'); await ui.say(err); } else audio.sfx('repair');
+    if (err) { audio.sfx('error'); await ui.say(err); }
   }
 }
 
@@ -907,16 +882,23 @@ async function partSlots(mc) {
     });
     if (!slotKey) return;
     const want = slotKey.startsWith('arm') ? 'arm' : slotKey;
-    const cands = Object.keys(G.inv.parts).filter((id) => PARTS[id].slot === want);
+    // 同じ種類・同じ印（テスト入手かどうか）のパーツはまとめて「×個数」で表示する
+    const groups = {};
+    for (const p of G.inv.parts) if (PARTS[p.id]?.slot === want) (groups[`${p.id}|${p.test ? 1 : 0}`] ||= []).push(p);
+    const cands = Object.values(groups);
     if (!cands.length) { await ui.say('付け替えられるパーツを持っていない。パーツ屋で買おう。'); continue; }
-    const id = await ui.menu({
+    const uid = await ui.menu({
       title: '付け替えるパーツ', wide: true, desc: true,
       header: '選んでいるパーツに替えたときの「今 → 変更後（差）」', className: 'cmp-menu',
-      items: cands.map((id) => { const err = checkPart(mc, slotKey, id); return { label: `${esc(PARTS[id].name)} ×${G.inv.parts[id]}`, value: id, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + partCompare(mc, slotKey, id) }; }),
+      items: cands.map((list) => { const id = list[0].id; const err = checkPart(mc, slotKey, id); return { label: `${esc(PARTS[id].name)} ×${list.length}${testTag(list[0])}`, value: list[0].uid, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + partCompare(mc, slotKey, id) }; }),
     });
-    if (!id) continue;
-    const err = equipPart(mc, slotKey, id);
-    if (err) { audio.sfx('error'); await ui.say(err); } else { audio.sfx('repair'); ui.toast('パーツを付け替えた。見た目も変わったぞ'); }
+    if (!uid) continue;
+    const pid = G.inv.parts.find((p) => p.uid === uid).id;
+    const clone = { ...mc, parts: { ...mc.parts, [slotKey]: pid }, slots: [...mc.slots] };
+    const ok = await compareView({ title: `${esc(machineName(mc))}：${PART_SLOTS.find(([k]) => k === slotKey)[1]}を ${esc(PARTS[pid].name)} に`, before: () => buildMachineModel(machineSpec(mc)), after: () => buildMachineModel(machineSpec(clone)), stats: compareTable(partRows(mc, slotKey, pid)) });
+    if (!ok) continue;
+    const err = equipPart(mc, slotKey, uid);
+    if (err) { audio.sfx('error'); await ui.say(err); } else { ui.toast('パーツを付け替えた。見た目も変わったぞ'); }
   }
 }
 
@@ -984,7 +966,7 @@ async function pilotMenu(here) {
   const m = await ui.menu({ title: '誰の乗るマシンを決める？', items: partyMembers().map((mm) => ({ label: esc(mm.name), right: mm.machine ? esc(machineName(G.machines[mm.machine])) : '生身', value: mm })) });
   if (!m) return;
   const owned = Object.values(G.machines).filter((mc) => mc.owned);
-  const items = owned.map((mc) => ({ label: esc(machineName(mc)), right: pilotName(mc), value: mc.id, disabled: !canPilot(m, mc), desc: !canPilot(m, mc) ? 'メカニック専用の機体だ' : '' }));
+  const items = owned.map((mc) => ({ label: esc(machineName(mc)) + testTag(mc), right: pilotName(mc), value: mc.id, disabled: !canPilot(m, mc), desc: !canPilot(m, mc) ? 'メカニック専用の機体だ' : '' }));
   items.push({ label: '生身で戦う', value: '__foot' });
   const id = await ui.menu({ title: `${esc(m.name)}が乗るマシン`, desc: true, items });
   if (!id) return;
@@ -1009,13 +991,13 @@ async function towMenu(town, shop) {
 }
 
 // ---------------- 説明文 ----------------
-function weaponDesc(w, inst) {
+export function weaponDesc(w, inst) {
   const tgt = { one: '単体', group: 'グループ', all: '全体' }[w.target];
   const el = w.elem ? `　属性:${w.elem === 'elec' ? '<b class="elec">電気</b>' : '<b class="fire">火</b>'}` : '';
   const atk = inst ? weaponAtk(inst) : w.atk;
   return `${WEAPON_CATS[w.cat].name}（${w.mount === 'arm' ? '腕' : '背中'}）　攻撃${atk}　命中${w.hit >= 0 ? '+' : ''}${w.hit}　重さ${w.wt}　${tgt}${el}${w.en ? `　EN${w.en}` : ''}`;
 }
-function footDesc(f) {
+export function footDesc(f) {
   const n = (k, label, unit = '') => (f[k] ? `　${label}${f[k] > 0 ? '+' : ''}${f[k]}${unit}` : '');
   const head = f.slot === 'weapon' ? `${FOOT_CATS[f.cat]?.name || '武器'}　攻撃${f.atk}${n('hit', '命中')}　${RANGES[f.target || 'one'].name}${f.elem ? `　属性:${f.elem === 'elec' ? '<b class="elec">電気</b>' : '<b class="fire">火</b>'}` : ''}` : `${FOOT_SLOTS[f.slot].name}の防具${n('def', '防御')}`;
   let s = head + (f.slot !== 'weapon' ? n('atk', '攻撃') + n('hit', '命中') : '') + n('eva', '回避') + n('spd', '素早さ') + n('hp', '最大体力') + n('crit', '会心率', '%');
@@ -1027,7 +1009,7 @@ function footDesc(f) {
   if (f.desc) s += `<br><small>${esc(f.desc)}</small>`;
   return s;
 }
-function partDesc(p, cur) {
+export function partDesc(p, cur) {
   const diff = (k) => (cur && cur[k] != null ? ` <small>(${(p[k] || 0) - (cur[k] || 0) >= 0 ? '+' : ''}${(p[k] || 0) - (cur[k] || 0)})</small>` : '');
   if (p.slot === 'engine') return `積める重さ${p.cap}${diff('cap')}　エネルギー${p.en}${diff('en')}`;
   let s = `装甲${p.armor}${diff('armor')}　防御${p.def}${diff('def')}　重さ${p.wt}${diff('wt')}`;
@@ -1115,7 +1097,7 @@ async function statusMenu() {
     const mc = G.machines[m.machine];
     const ms = machineStats(mc);
     const ws = mc.slots.map((uid, i) => (uid ? `<li>${SLOT_INFO[i].name}：${esc(weaponLabel(weaponByUid(uid)))}</li>` : '')).join('');
-    mhtml = `<h4>マシン：${esc(machineName(mc))}　<small>${esc(ms.typeName)}タイプ${mc.id === 'alpha' ? `・${esc(sealInfo().name)}` : ''}</small></h4>
+    mhtml = `<h4>マシン：${esc(machineName(mc))}　<small>${esc(ms.typeName)}タイプ${mc.type === 'alpha' ? `・${esc(sealInfo().name)}` : ''}</small></h4>
       <table class="kv"><tr><th>装甲</th><td>${mc.armor}/${ms.maxArmor}</td><th>EN</th><td>${mc.en}/${ms.maxEn}</td></tr>
       <tr><th>防御</th><td>${ms.def}</td><th>命中</th><td>+${ms.hit}</td></tr><tr><th>回避</th><td>${ms.eva}</td><th>重さ</th><td>${ms.weight}/${ms.cap}</td></tr></table><ul class="wlist">${ws}</ul>`;
   }
@@ -1200,12 +1182,15 @@ async function equipMenu() {
       const owned = Object.entries(G.inv.foot).filter(([id, n]) => n > 0 && FOOT_GEAR[id]?.slot === kind);
       const items = owned.map(([id, n]) => {
         const ok = canWearFoot(m, id);
-        return { label: `${esc(FOOT_GEAR[id].name)} ×${n}${FOOT_GEAR[id].only ? ' <b class="excl">専用</b>' : ''}`, value: id, disabled: !ok, desc: ok ? footCompare(m, kind, id) : `<b class="warn">${esc(CHARACTERS[FOOT_GEAR[id].only].defaultName)}専用の装備だ</b>` };
+        return { label: `${esc(FOOT_GEAR[id].name)} ×${n}${FOOT_GEAR[id].only ? ' <b class="excl">専用</b>' : ''}${testFootCount(id) ? ` ${TEST_MARK}<small>×${Math.min(n, testFootCount(id))}</small>` : ''}`, value: id, disabled: !ok, desc: ok ? footCompare(m, kind, id) : `<b class="warn">${esc(CHARACTERS[FOOT_GEAR[id].only].defaultName)}専用の装備だ</b>` };
       });
       if (m.equip[kind] && kind !== 'weapon') items.unshift({ label: '外す', value: '__none', desc: footCompare(m, kind, null) });
       if (!items.length) { await ui.say('付け替えられる装備がない。武器屋で買おう。'); continue; }
       const id = await ui.menu({ title: `${FOOT_SLOTS[kind].name}を付け替える`, header: '選んでいる装備に替えたときの「今 → 変更後（差）」', desc: true, wide: true, className: 'cmp-menu', items });
       if (!id) continue;
+      const clone = { ...m, equip: { ...m.equip, [kind]: id === '__none' ? null : id } };
+      const ok = await compareView({ title: `${esc(m.name)}：${FOOT_SLOTS[kind].name}を ${id === '__none' ? '外す' : esc(FOOT_GEAR[id].name)}`, before: () => buildCharModel(m), after: () => buildCharModel(clone), stats: compareTable(footRows(m, kind, id === '__none' ? null : id)) });
+      if (!ok) continue;
       const old = m.equip[kind];
       if (old) addFoot(old, 1);
       if (id !== '__none') addFoot(id, -1);
@@ -1219,16 +1204,16 @@ async function equipMenu() {
 async function machineList() {
   const owned = Object.values(G.machines).filter((mc) => mc.owned);
   const where = (mc) => (mc.loc.type === 'party' ? '乗っている' : mc.loc.type === 'garage' ? `${MAPS[mc.loc.town].name}のガレージ` : `${MAPS[mc.loc.map].name}に駐車`);
-  const mc = await ui.menu({ title: 'マシン', wide: true, items: owned.map((m) => ({ label: esc(machineName(m)), right: `${esc(where(m))}　${pilotName(m)}`, value: m })) });
+  const mc = await ui.menu({ title: 'マシン', wide: true, items: owned.map((m) => ({ label: esc(machineName(m)) + testTag(m), right: `${esc(where(m))}　${pilotName(m)}`, value: m })) });
   if (!mc) return;
   const st = machineStats(mc);
-  const def = MACHINES[mc.id];
+  const def = MACHINES[mc.type];
   const parts = PART_SLOTS.map(([k, n]) => `<tr><th>${n}</th><td>${esc(PARTS[mc.parts[k]].name)}</td></tr>`).join('');
   const ws = SLOT_INFO.map((info, i) => `<tr><th>${info.name}</th><td>${i >= st.slots ? '<small>（未解放）</small>' : mc.slots[i] ? esc(weaponLabel(weaponByUid(mc.slots[i]))) : '<small>なし</small>'}</td></tr>`).join('');
   await ui.panel(`
     <p>${esc(def.desc || '')}</p>
     <p><b>${esc(st.typeName)}タイプ</b>：<small>${esc(MACHINE_TYPES[st.type].desc)}</small></p>
-    ${mc.id === 'alpha' ? `<p>メカニック専用。状態：<b>${esc(sealInfo().name)}</b></p>` : `<p class="note">${def.pilot === 'any' ? '誰でも乗れる' : 'メカニック専用'}</p>`}
+    ${mc.type === 'alpha' ? `<p>メカニック専用。状態：<b>${esc(sealInfo().name)}</b></p>` : `<p class="note">${def.pilot === 'any' ? '誰でも乗れる' : 'メカニック専用'}</p>`}
     <table class="kv"><tr><th>装甲</th><td>${mc.armor}/${st.maxArmor}${mc.broken ? ' <b class="warn">大破</b>' : ''}</td><th>EN</th><td>${mc.en}/${st.maxEn}</td></tr>
     <tr><th>防御</th><td>${st.def}</td><th>重さ</th><td>${st.weight}/${st.cap}</td></tr></table>
     <div class="cols"><table class="kv">${parts}</table><table class="kv">${ws}</table></div>

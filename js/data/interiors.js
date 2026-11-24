@@ -208,7 +208,7 @@ export function addInteriors(MAPS) {
 // ---------------- 開発者の部屋（デバッグ用の隠し部屋） ----------------
 // 修理屋の地下（オメガの格納庫）の奥、機械の陰の隠し通路の先。扉の暗証番号は js/data/debug.js
 export function addDevRoom(MAPS) {
-  const W = 14, H = 10;
+  const W = 20, H = 12;
   const map = {
     id: 'devroom',
     name: '開発者の部屋',
@@ -217,22 +217,29 @@ export function addDevRoom(MAPS) {
     machineAllowed: false,
     ground: '#101418',
     rows: room(W, H),
-    warps: [{ x: 7, y: H - 1, to: 'basement', tx: 22, ty: 4, dir: 'down', door: true }],
-    arrive: [7, H - 2],
-    theme: { floor: 'metal', floorColor: '#2a3340', wallColor: '#1a2028', light: 0x8fe8ff, lightK: 1.1, rug: [4, 4, 9, 7], rugColor: '#1a4a5a' },
+    warps: [{ x: 10, y: H - 1, to: 'basement', tx: 22, ty: 4, dir: 'down', door: true }],
+    arrive: [10, H - 2],
+    theme: { floor: 'metal', floorColor: '#2a3340', wallColor: '#1a2028', light: 0x8fe8ff, lightK: 1.3, rug: [7, 5, 13, 9], rugColor: '#1a4a5a' },
     props: [
-      { id: 'pc1', model: 'f_devpc', x: 2.4, y: 1.4, block: [1.6, 0.6], search: { text: '画面に数字の表がびっしり……「weapons.js」「parts.js」と書いてある。ここでこの星のすべてが決められているらしい。' } },
+      { id: 'pc1', model: 'f_devpc', x: 2.4, y: 1.4, block: [1.6, 0.6], search: { text: '画面に数字の表がびっしり……「catalog.js」と書いてある。ここに足したものは、ゲームのあちこちに自動で現れるらしい。' } },
       { id: 'pc2', model: 'f_devpc', x: 4.6, y: 1.4, block: [1.6, 0.6], search: { event: 'tuning' } }, // バランス調整の端末
-      { id: 'gearmachine', model: 'f_gearmachine', x: 11.4, y: 1.6, block: [1.4, 0.8], search: { event: 'gearMachine' } },
-      { id: 'shelf1', model: 'f_shelf', x: 1.4, y: 5.2, rot: Math.PI / 2, block: [0.5, 1.8], search: { text: 'まだどこにも登場していない武器の設計図が並んでいる。' } },
-      { id: 'crate1', model: 'f_crate', x: 12.4, y: 7.6, block: [0.8, 0.8], search: { text: '「テスト用」とだけ書かれた木箱。中は空っぽだ。' } },
-      { id: 'lamp1', model: 'f_lamp', x: 12.6, y: 4.6, block: [0.5, 0.5] },
-      { id: 'plant1', model: 'f_plant', x: 1.4, y: 8.2, block: [0.6, 0.6], search: { text: 'プラスチックの観葉植物。ほこりひとつない。' } },
+      { id: 'store', model: 'f_devpc', x: 15.4, y: 1.4, block: [1.6, 0.6], search: { event: 'devStore' } }, // 入手端末
+      { id: 'gearmachine', model: 'f_gearmachine', x: 18.2, y: 1.6, block: [1.4, 0.8], search: { event: 'gearMachine' } },
+      // ロボットの展示台（38）とキャラの展示台（41）
+      { id: 'robotPedestal', model: 'f_pedestal', x: 4.5, y: 6.8, block: [2.1, 2.1], showcase: 'robot', search: { event: 'robotStation' } },
+      { id: 'charPedestal', model: 'f_pedestal', x: 15.5, y: 6.8, block: [2.1, 2.1], showcase: 'char', search: { event: 'charStation' } },
+      // 試し撃ちの的（単体・グループ・全体）
+      { id: 'target1', model: 'f_target', x: 9.0, y: 3.4, rot: 0, block: [0.6, 0.5], search: { event: 'testTargets' } },
+      { id: 'target2', model: 'f_target', x: 10.0, y: 3.2, block: [0.6, 0.5], search: { event: 'testTargets' } },
+      { id: 'target3', model: 'f_target', x: 11.0, y: 3.4, block: [0.6, 0.5], search: { event: 'testTargets' } },
+      { id: 'shelf1', model: 'f_shelf', x: 1.4, y: 9.2, rot: Math.PI / 2, block: [0.5, 1.8], search: { text: 'まだどこにも登場していない武器の設計図が並んでいる。' } },
+      { id: 'crate1', model: 'f_crate', x: 18.4, y: 9.8, block: [0.8, 0.8], search: { text: '「テスト用」とだけ書かれた木箱。中は空っぽだ。' } },
+      { id: 'lamp1', model: 'f_lamp', x: 18.6, y: 5.4, block: [0.5, 0.5] },
+      { id: 'plant1', model: 'f_plant', x: 1.4, y: 4.2, block: [0.6, 0.6], search: { text: 'プラスチックの観葉植物。ほこりひとつない。' } },
     ],
-    npcs: [{ id: 'devkeeper', name: '開発者', model: 'npc_clerk', colors: { primary: 0x1a2a3a, secondary: 0x0a0e14 }, x: 7.5 - 0.5, y: 2.4 - 0.5, facility: 'dev', range: 2.8, lines: [] }],
+    npcs: [{ id: 'devkeeper', name: '開発者', model: 'npc_clerk', colors: { primary: 0x1a2a3a, secondary: 0x0a0e14 }, x: 7.0, y: 1.6, facility: 'dev', range: 2.8, lines: [] }],
   };
   map.grid = parseRows(map.rows);
   map.width = W; map.height = H;
   MAPS.devroom = map;
 }
-

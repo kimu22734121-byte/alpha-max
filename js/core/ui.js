@@ -199,6 +199,21 @@ export const ui = {
     });
   },
 
+  // ---- 自由な中身のモーダル（展示台の画面など）。build(panel, done) が onKey を返してもよい ----
+  custom({ className = '', build }) {
+    return new Promise((resolve) => {
+      const wrap = el('div', 'modal modal-menu');
+      const panel = el('div', `menu-panel ${className}`);
+      wrap.appendChild(panel);
+      let cleanup = null;
+      const done = (v) => { cleanup?.(); popModal(m); resolve(v); };
+      const m = { el: wrap, isMenu: true, onKey: (e) => { if (['Escape', 'x', 'X'].includes(e.key)) { e.preventDefault(); audio.sfx('cancel'); done(null); } else m.keys?.(e); } };
+      pushModal(m);
+      const r = build(panel, done, (fn) => { cleanup = fn; });
+      if (typeof r === 'function') m.keys = r;
+    });
+  },
+
   // ---- お店の画面 ----
   // 左に商品の一覧、右に詳細（効果・値段・所持数・装備の比較）。選んでも買わず、右の「買う」ボタンを押した時だけ
   //   items(): [{ label, right, detail: () => html, price, can: () => true|'理由', group }]
@@ -340,6 +355,30 @@ export const ui = {
       const m = { el: wrap, isMenu: true, onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); done(val()); } else if (e.key === 'Escape') { e.preventDefault(); done(null); } } };
       pushModal(m);
       setTimeout(() => inp.focus(), 50);
+    });
+  },
+
+  // ---- 色の入力（マシンの色の調整用）。やめたら null ----
+  colorEntry({ title, value, def }) {
+    const hex = (v) => `#${Number(v ?? 0).toString(16).padStart(6, '0')}`;
+    return new Promise((resolve) => {
+      const wrap = el('div', 'modal modal-menu');
+      const panel = el('div', 'menu-panel qty-panel');
+      panel.appendChild(el('div', 'menu-title', title));
+      const box = el('div', 'qty-box');
+      const inp = el('input', 'color-input'); inp.type = 'color'; inp.value = hex(value);
+      const txt = el('div', 'qty-total', hex(value));
+      inp.addEventListener('input', () => { txt.textContent = inp.value; });
+      box.append(inp);
+      const okB = el('button', 'menu-item focus qty-ok', '決定'), resetB = el('button', 'menu-item', `初期値（${hex(def)}）に戻す`), ngB = el('button', 'menu-item qty-ng', 'やめる');
+      panel.append(box, txt, okB, resetB, ngB);
+      wrap.appendChild(panel);
+      const done = (v) => { audio.sfx(v == null ? 'cancel' : 'ok'); popModal(m); resolve(v); };
+      okB.addEventListener('click', (e) => { e.stopPropagation(); done(parseInt(inp.value.slice(1), 16)); });
+      resetB.addEventListener('click', (e) => { e.stopPropagation(); done(def); });
+      ngB.addEventListener('click', (e) => { e.stopPropagation(); done(null); });
+      const m = { el: wrap, isMenu: true, onKey: (e) => { if (e.key === 'Escape') { e.preventDefault(); done(null); } } };
+      pushModal(m);
     });
   },
 

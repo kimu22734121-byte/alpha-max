@@ -6,6 +6,10 @@
 // flee: 毎ターン逃げる確率（レア敵用）
 // 同じ形の色違いで強い版を作る（colors で色替え）
 export const ENEMIES = {
+  // ---------------- 開発者の部屋の試し撃ち用の的（devOnly：一覧や調整には出さない） ----------------
+  dummy: { name: '試し撃ちの的', model: 'f_target', type: 'dummy', devOnly: true, hp: 999999, atk: 0, def: 0, hit: 0, eva: 0, spd: 0, exp: 0, gear: 0, fx: 'shot', desc: '何度撃っても壊れない的' },
+  dummyB: { name: '試し撃ちの的B', model: 'f_target', colors: { primary: 0x3a6ad8 }, type: 'dummy', devOnly: true, hp: 999999, atk: 0, def: 0, hit: 0, eva: 0, spd: 0, exp: 0, gear: 0, fx: 'shot', desc: '何度撃っても壊れない的（別の種類）' },
+
   // ---------------- フィールド（6種類） ----------------
   hijackbot: {
     name: 'ハイジャックボット', model: 'en_bot', type: 'machine',

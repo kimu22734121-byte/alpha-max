@@ -1,5 +1,5 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 import { START_EQUIP } from '../data/footgear.js';
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
@@ -74,6 +74,20 @@ function migrate(data) {
       m.equip = { weapon: old.weapon ?? base.weapon ?? null, head: base.head ?? null, body: old.armor ?? base.body ?? null, hands: base.hands ?? null, feet: base.feet ?? null, acc: null };
     }
     data.v = 5;
+  }
+  // v5 → v6：同じマシン・パーツを複数持てるように、1台・1個ずつ別のものとして管理する
+  if (data.v < 6) {
+    const G = data.state;
+    let uid = G.uid || 1;
+    for (const [key, mc] of Object.entries(G.machines || {})) {
+      mc.id = key; mc.type ||= key;
+      mc.partInst ||= Object.fromEntries(Object.keys(mc.parts || {}).map((k) => [k, { uid: `p${uid++}` }]));
+    }
+    const old = G.inv?.parts || {};
+    if (!Array.isArray(old)) G.inv.parts = Object.entries(old).flatMap(([id, n]) => Array.from({ length: Math.max(0, n) }, () => ({ uid: `p${uid++}`, id })));
+    G.testGot ||= { foot: {}, items: {}, mats: {}, gear: 0 };
+    G.uid = uid;
+    data.v = 6;
   }
   return data;
 }

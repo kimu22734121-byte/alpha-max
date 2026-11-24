@@ -330,7 +330,7 @@ export const MAPS = {
     warps: [
       { x: 2, y: 11, to: 'town1_shop', tx: 9, ty: 2, dir: 'down' },
       // 開発者の部屋：扉の横のキーパネルで8桁の暗証番号を入れると開く（開いたかはセーブしない）
-      { x: 22, y: 3, to: 'devroom', tx: 7, ty: 8, dir: 'up', requireDev: true, door: true, lockedText: '分厚い金属の扉が閉まっている。横のキーパネルで暗証番号を入れるらしい。' },
+      { x: 22, y: 3, to: 'devroom', tx: 10, ty: 10, dir: 'up', requireDev: true, door: true, lockedText: '分厚い金属の扉が閉まっている。横のキーパネルで暗証番号を入れるらしい。' },
     ],
     props: [
       { id: 'vaultdoor', model: 'f_vaultdoor', x: 22.5, y: 3.4, block: null, devDoor: true },
