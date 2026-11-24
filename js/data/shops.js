@@ -1,4 +1,5 @@
 // 町ごとのお店の品ぞろえ。町を進むほど強いものが売られる
+// 生身の装備（foot）は footgear.js の tier の順：町1＝tier1、町2＝tier2、町3＝tier3。tier4以降は第2章からのお店に並べる
 export const SHOPS = {
   // 町1：辺境の町ラストヘイヴン（武器屋はなく、ジャンク屋が中古の武器を少しだけ売っている）
   town1: {
@@ -6,7 +7,7 @@ export const SHOPS = {
       keeper: 'ジャンク屋のネジ',
       greet: 'ボルツじいちゃんが拾ってきた中古品だよ。ちゃんと動くって！ ……たぶん。',
       machine: ['mg7', 'sc1', 'c75', 'hblade'],
-      foot: ['handgun', 'vest'],
+      foot: ['handgun', 'stunrod', 'pipebomb', 'knife', 'cap', 'helmet', 'vest', 'gloves', 'runshoes', 'scope'],
     },
     parts: {
       keeper: 'パーツ屋のミナ',
@@ -17,6 +18,7 @@ export const SHOPS = {
       keeper: '道具屋のおばちゃん',
       greet: 'ケガも故障も、そなえあればうれいなしだよ。',
       items: ['kitS', 'repS', 'batS', 'kitM', 'revive', 'warpunit'],
+      foot: ['charm'],
     },
     inn: { pricePerMember: 20, keeper: '宿屋のハル' },
     garage: { keeper: 'ガレージ長のトト', repairPerArmor: 1, repairPerEn: 1, towFee: 200 },
@@ -27,7 +29,7 @@ export const SHOPS = {
       keeper: '武器屋のボーグ',
       greet: '掘り出し物ばかりだ。……鉱山だけにな。',
       machine: ['gt1', 'lm1', 'c75', 'rg1', 'rpod', 'hm1', 'cm1', 'flm1', 'emp1', 'tsl1', 'lzblade', 'hammer1', 'pile1'],
-      foot: ['shotgun', 'rifle', 'pilotsuit'],
+      foot: ['shotgun', 'rifle', 'magnum', 'grenadel', 'handgat', 'combathelm', 'pilotsuit', 'heavyarmor', 'tacgloves', 'gauntlet', 'combatboots'],
     },
     // グレイロックはパーツが充実：パーツ屋（頭・腕・脚）とフレーム工房（ボディ・エンジン・脚）の2軒
     parts: {
@@ -44,6 +46,7 @@ export const SHOPS = {
       keeper: '道具屋のピコ',
       greet: '坑道に入るなら、修理キットは多めにね。',
       items: ['kitS', 'kitM', 'repS', 'repM', 'batS', 'batM', 'maint', 'revive', 'warpunit'],
+      foot: ['guardcharm', 'luckycoin', 'hpring'],
     },
     inn: { pricePerMember: 30, keeper: '宿屋のおかみ' },
     garage: { keeper: '整備士のロック', repairPerArmor: 1, repairPerEn: 1, towFee: 250 },
@@ -54,7 +57,7 @@ export const SHOPS = {
       keeper: '武器商人ヴァンス',
       greet: '宇宙港から流れてきた品だ。値は張るが、性能は保証する。',
       machine: ['v20', 'lm1', 'rg1', 'pc1', 'hm2', 'cm1', 'npm1', 'tsl1', 'lzblade', 'pile1'],
-      foot: ['rifle', 'lblade', 'heavyarmor'],
+      foot: ['sniper1', 'lblade', 'lasergun', 'riotgun', 'greatsword', 'clusterbomb', 'visorhelm', 'compvest', 'powergloves', 'jetboots'],
     },
     parts: {
       keeper: 'パーツ屋のリズ',
@@ -71,10 +74,11 @@ export const SHOPS = {
       keeper: 'マーケットの支配人ルゥ',
       greet: '宇宙港から届いた上物ばかり。ボス戦の準備ならここで全部そろうよ。',
       items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      foot: ['hpring', 'powerbelt', 'reflexchip', 'medpack'],
     },
     stall_food: { keeper: '屋台のおやじ', greet: '安いよ安いよ！ 旅のおともにどうだい！', items: ['kitS', 'repS', 'batS', 'warpunit'] },
     stall_food2: { keeper: '果物売りの娘', greet: 'となりの星の果物でつくった薬よ。よく効くんだから。', items: ['kitS', 'kitM', 'revive'] },
-    stall_arms: { keeper: '流れ者の武器商', greet: '……出どころは聞かないでくれ。性能はたしかだ。', machine: ['gt1', 'rpod', 'flm1', 'hammer1', 'sc1'], foot: ['shotgun', 'vest'] },
+    stall_arms: { keeper: '流れ者の武器商', greet: '……出どころは聞かないでくれ。性能はたしかだ。', machine: ['gt1', 'rpod', 'flm1', 'hammer1', 'sc1'], foot: ['shotgun', 'knife', 'handgat', 'combatboots'] },
     stall_parts: { keeper: '中古パーツ屋', greet: '中古だけど、ちゃんと整備してあるよ。', parts: ['arm_light', 'legs_wheel', 'head_sensor', 'eng_v6'] },
     stall_parts2: { keeper: 'がらくた拾い', greet: '墜落船のまわりで拾ったんだ。見ていってよ。', parts: ['arm_std', 'legs_biped', 'legs_quad'] },
     inn: { pricePerMember: 40, keeper: '宿の主人' },

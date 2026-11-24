@@ -24,17 +24,8 @@ export const MATERIALS = {
   cell: { name: 'エネルギーセル', desc: '乗っ取られた機械の動力。少しめずらしい' },
   alloy: { name: '硬化合金', desc: '頑丈な機械から取れる合金' },
   core: { name: '寄生コア', desc: '賞金首の体内にあった謎の核。強化の切り札' },
+  relic: { name: '古代の結晶', desc: '光の惑星の遺跡で見つかる結晶。専用武器の進化に使うらしい（第5章）' },
 };
 
-// 生身の武器・防具
-export const FOOT_GEAR = {
-  wrench: { name: 'モンキーレンチ', type: 'weapon', atk: 6, hit: 0, price: 0, desc: 'レン愛用の工具。殴るとけっこう痛い' },
-  handgun: { name: 'ハンドガン', type: 'weapon', atk: 10, hit: 8, price: 300 },
-  shotgun: { name: 'ショットガン', type: 'weapon', atk: 16, hit: -4, price: 900, target: 'group' },
-  rifle: { name: 'アサルトライフル', type: 'weapon', atk: 18, hit: 2, price: 1400 },
-  lblade: { name: 'レーザーブレード', type: 'weapon', atk: 24, hit: 4, price: 2800, elem: 'elec' },
-  workwear: { name: '作業着', type: 'armor', def: 3, eva: 0, price: 0 },
-  vest: { name: '防弾ベスト', type: 'armor', def: 7, eva: 0, price: 500 },
-  pilotsuit: { name: 'パイロットスーツ', type: 'armor', def: 5, eva: 6, price: 1200 },
-  heavyarmor: { name: 'ヘビーアーマー', type: 'armor', def: 12, eva: -3, price: 2400 },
-};
+// 生身の装備は js/data/footgear.js（武器・頭・体・手・足・アクセサリー）
+export { FOOT_GEAR } from './footgear.js';

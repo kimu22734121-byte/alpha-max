@@ -222,7 +222,7 @@ export function addDevRoom(MAPS) {
     theme: { floor: 'metal', floorColor: '#2a3340', wallColor: '#1a2028', light: 0x8fe8ff, lightK: 1.1, rug: [4, 4, 9, 7], rugColor: '#1a4a5a' },
     props: [
       { id: 'pc1', model: 'f_devpc', x: 2.4, y: 1.4, block: [1.6, 0.6], search: { text: '画面に数字の表がびっしり……「weapons.js」「parts.js」と書いてある。ここでこの星のすべてが決められているらしい。' } },
-      { id: 'pc2', model: 'f_devpc', x: 4.6, y: 1.4, block: [1.6, 0.6], search: { text: '「TODO：第2章 風の惑星」と書かれたメモが貼ってある。' } },
+      { id: 'pc2', model: 'f_devpc', x: 4.6, y: 1.4, block: [1.6, 0.6], search: { event: 'tuning' } }, // バランス調整の端末
       { id: 'gearmachine', model: 'f_gearmachine', x: 11.4, y: 1.6, block: [1.4, 0.8], search: { event: 'gearMachine' } },
       { id: 'shelf1', model: 'f_shelf', x: 1.4, y: 5.2, rot: Math.PI / 2, block: [0.5, 1.8], search: { text: 'まだどこにも登場していない武器の設計図が並んでいる。' } },
       { id: 'crate1', model: 'f_crate', x: 12.4, y: 7.6, block: [0.8, 0.8], search: { text: '「テスト用」とだけ書かれた木箱。中は空っぽだ。' } },
