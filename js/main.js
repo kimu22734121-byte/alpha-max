@@ -6,7 +6,7 @@ import { hud } from './core/hud.js';
 import { audio } from './core/audio.js';
 import { loadModels } from './core/assets.js';
 import { flow } from './game/flow.js';
-import { G, newGame, setState, partyMembers, healParty, machineName } from './game/state.js';
+import { G, newGame, setState, partyMembers, healParty, machineName, machineStats } from './game/state.js';
 import { MAPS } from './data/maps.js';
 import { CHARACTERS } from './data/characters.js';
 import { MACHINES } from './data/machines.js';
@@ -76,13 +76,23 @@ flow.onBossDefeated = async (def) => {
       { name: r, text: 'やった……！ アルファ、きみ本当にすごいよ！' },
       { name: '', text: 'ラストドリラーの残骸から、脈打つ「寄生コア」がこぼれ落ちた。' },
       { name: r, text: 'これが宇宙生物の核……？ マシンに取りついて動かしてたのか。' },
-      { name: '', text: '（ハンターオフィスで賞金を受け取ろう。酒場の無口なパイロットも、何か知っていそうだ）' },
+      { name: '', text: '（ハンターオフィスで賞金を受け取ろう。この先、北の鉱山町グレイロックへ行けそうだ）' },
     ]);
   } else if (def.bounty === 'skywraith') {
     await ui.say([
       { name: r, text: '空の賞金首も撃ち落としたぞ！' },
       { name: '', text: '墜ちた輸送ドローンの積み荷には、東の廃工場の紋章が刻まれていた。' },
     ]);
+  } else if (def.flag === 'shipBoss') {
+    const g = G.members.gina.joined ? G.members.gina.name : r;
+    G.flags.factoryKey = true;
+    audio.sfx('levelup');
+    await ui.say([
+      { name: '', text: 'ネストクイーンが崩れ落ちると、巣の奥で何かが光った。' },
+      { name: '', text: '海賊の船長室の金庫から「セキュリティキー」を手に入れた！' },
+      { name: g, text: 'これで東の廃工場のゲートが開くね。いよいよ本番だよ！' },
+    ]);
+    ui.banner('セキュリティキーを手に入れた', '廃工場のゲートが開けられるようになった');
   } else if (def.bounty === 'grindtitan') {
     await endingChapter1();
   }
@@ -91,26 +101,33 @@ flow.onBossDefeated = async (def) => {
 async function endingChapter1() {
   const r = G.members.ren.name;
   G.seal = Math.max(G.seal, 1);
+  // アルファが目覚める：ラストヘイヴンのガレージで乗れるようになる
   const alpha = G.machines.alpha;
-  alpha.armor = Math.max(alpha.armor, 1);
+  alpha.owned = true;
+  alpha.loc = { type: 'garage', town: 'town1' };
+  alpha.armor = machineStats(alpha).maxArmor;
+  alpha.en = machineStats(alpha).maxEn;
   audio.sfx('seal');
   await ui.say([
     { name: '', text: 'グラインドタイタンが崩れ落ちると、工場の奥から紫の光があふれ出した……。' },
-    { name: '', text: '光はアルファへと吸い込まれ――コアの封印が、ひとつ音を立てて外れた。' },
-    { name: r, text: 'アルファが……光ってる！ 出力が上がってる、こんなの見たことない！' },
+    { name: '', text: '光の筋は空へ昇り、西へ――ラストヘイヴンの方角へと飛んでいった。' },
+    { name: '', text: '――同じころ。修理屋の作業場で眠っていた白い機体の胸に、青白い光がともった。' },
+    { name: '', text: 'コアの封印が、ひとつ音を立てて外れる。金の装甲に光のラインが走り、背中の翼がゆっくりと開いた。' },
   ]);
-  ui.banner('アルファ 第一封印 解放', '装甲・攻撃・エネルギーが大きく上がった');
+  ui.banner('アルファ 第一封印 解放', '伝説の機体アルファが目を覚ました');
   await wait(2.6);
   await ui.say([
     { name: '', text: 'アルファのモニターに、見知らぬ星図が浮かび上がる。' },
     { name: '', text: '「……マザー……コア……」　かすかなノイズの向こうで、誰かの声がした。' },
-    { name: r, text: '宇宙生物がマシンを乗っ取る理由……きっとこの先にあるんだ。' },
-    { name: r, text: '行こう、アルファ。次の惑星へ！' },
+    { name: r, text: 'ガレージから通信……アルファが、動いた!? ' },
+    { name: r, text: 'モニターに見知らぬ星図が出てる。宇宙生物がマシンを乗っ取る理由……きっとこの先にあるんだ。' },
+    { name: r, text: 'それに、地下に眠ってたオメガのことも。……行こう、アルファ。次の惑星へ！' },
   ]);
   audio.playSong('title', { restart: true });
   await ui.panel(`<div class="ending">
     <div class="ending-big">第1章「土」の惑星　クリア！</div>
-    <p>伝説の機体アルファは、封印のひとつを取り戻した。</p>
+    <p>伝説の機体アルファは、封印のひとつを取り戻して目を覚ました。</p>
+    <p>（アルファはラストヘイヴンのガレージにいます。「乗る人を決める」でレンが乗れます）</p>
     <p>宇宙生物「マザーコア」の謎を追い、旅は次の惑星へ――</p>
     <p class="note">To be continued…　（このまま第1章を遊び続けられます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
@@ -118,7 +135,7 @@ async function endingChapter1() {
 }
 
 async function startNewGame() {
-  const names = await ui.nameEntry(['ren', 'shion', 'gald'].map((id) => ({ role: `${CHARACTERS[id].roleName}`, value: CHARACTERS[id].defaultName })));
+  const names = await ui.nameEntry(['ren', 'shion', 'gina'].map((id) => ({ role: `${CHARACTERS[id].roleName}`, value: CHARACTERS[id].defaultName })));
   newGame(names);
   await ui.fade(true, 0.5);
   await engine.setScene(scenes.world, {
@@ -127,10 +144,11 @@ async function startNewGame() {
       const r = G.members.ren.name;
       await ui.say([
         { name: '', text: '――あの日から三か月。' },
-        { name: r, text: 'できた……！ 拾ってきたロボット、ついに動くようになったぞ！' },
-        { name: r, text: '名前は「アルファ」。コアに刻まれてた文字なんだ。メカニック以外は動かせない、不思議な機体……。' },
-        { name: r, text: '最近、宇宙生物に乗っ取られたマシンが荒野で暴れてる。アルファとなら、なんとかできるかもしれない！' },
-        { name: '', text: '（アルファは町の入口のガレージに預けてある。ハンターオフィスで手配書を見てみよう）' },
+        { name: r, text: 'よし……装甲も関節も、ぜんぶ直した。がらくたの山で拾った、白と金のロボット。' },
+        { name: r, text: '名前は「アルファ」。コアに刻まれてた文字なんだ。……なのに、コアの「封印」だけが開かない。' },
+        { name: r, text: '封印を解く手がかりを探さなきゃ。それに、宇宙生物に乗っ取られたマシンが荒野で暴れてる。' },
+        { name: r, text: 'アルファが動けるようになるまで、相棒のハウンドで出発だ！' },
+        { name: '', text: '（ハウンドは町の入口のガレージに預けてある。ハンターオフィスで手配書を見てみよう）' },
         { name: '', text: '【操作】左手で画面をなぞると移動／右下のボタンで調べる・話す／右上でメニュー。PCは矢印キー・Enter・Esc' },
       ]);
     },

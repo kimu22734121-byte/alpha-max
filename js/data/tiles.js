@@ -23,6 +23,12 @@ export const TILES = {
   19: { name: '町', walk: true, step: 'warp' }, // j
   20: { name: '廃工場', walk: true, step: 'warp' }, // k
   21: { name: '崩れた岩', walk: true, enc: 'rock' }, // l（見た目は山。隠し通路）
+  22: { name: '墜落した宇宙船', walk: true, step: 'warp' }, // m
+  23: { name: '坑道の入口', walk: true, step: 'warp' }, // n
+  24: { name: '坑道の壁', walk: false }, // o
+  25: { name: '線路', walk: true, enc: 'rock' }, // p
+  26: { name: '船の床', walk: true, enc: 'ship' }, // q
+  27: { name: '船の壁', walk: false }, // r
 };
 
 export function tileAt(map, x, y) {

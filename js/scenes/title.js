@@ -32,7 +32,7 @@ export class TitleScene {
     const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 48), new THREE.MeshStandardMaterial({ color: 0x2a2620, roughness: 0.6, metalness: 0.4 }));
     floor.rotation.x = -Math.PI / 2; s.add(floor);
     const def = MACHINES.alpha;
-    this.alpha = buildMachineModel({ parts: def.parts, colors: def.colors, weapons: [{ id: 'mg7' }, { id: 'gt1' }, { id: 'rg1' }, { id: 'hm1' }, { id: 'hm1' }], glow: 1.5 });
+    this.alpha = buildMachineModel({ parts: def.parts, colors: def.colors, weapons: [{ id: 'lm1' }, { id: 'lzblade', plus: 5 }, { id: 'rg1' }, { id: 'hm1' }, { id: 'hm1' }], glow: 1.8 });
     s.add(this.alpha);
     this.camera.position.set(0, 1.6, 6.5);
     this.camera.lookAt(0, 1.4, 0);
@@ -42,7 +42,7 @@ export class TitleScene {
     this.el.innerHTML = `
       <div class="title-logo"><div class="title-jp">アルファマックス</div><div class="title-en">ALPHA MAX</div></div>
       <div class="title-press">タップしてスタート</div>
-      <div class="title-foot">v0.1 第1章「土」の惑星 ／ © Alpha Max project</div>`;
+      <div class="title-foot">v0.2 第1章「土」の惑星 ／ © Alpha Max project</div>`;
     document.body.appendChild(this.el);
     this.el.addEventListener('click', () => this.start());
     this.offKey = input.on('action', () => this.start());

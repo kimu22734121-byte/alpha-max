@@ -6,22 +6,22 @@ import { save, describeSave } from '../core/save.js';
 import { MAPS } from '../data/maps.js';
 import { SHOPS } from '../data/shops.js';
 import { WEAPONS, WEAPON_CATS, UPGRADE } from '../data/weapons.js';
-import { PARTS, MODS, SLOT_INFO } from '../data/parts.js';
+import { PARTS, MODS, SLOT_INFO, MACHINE_TYPES } from '../data/parts.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
-import { CHARACTERS } from '../data/characters.js';
+import { CHARACTERS, LEVEL } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
-  healParty, repairMachine, machinesInGarage, sealInfo,
+  healParty, repairMachine, machinesInGarage, sealInfo, typeBoost,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 
 export const settings = audio.settings;
 settings.mapMode ||= '2d';
 
-const shopOf = () => SHOPS[G.lastTown] || SHOPS.town1;
+const shopOf = () => SHOPS[G.pos.map] || SHOPS[G.lastTown] || SHOPS.town1;
 const ren = () => G.members.ren;
 
 export function autosave() {
@@ -57,25 +57,59 @@ export async function openFacility(fac, world) {
   if (fn) await fn(world);
 }
 
-async function home() {
+async function home(world) {
   const r = ren().name;
   if (!G.flags.homeVisited) {
     G.flags.homeVisited = true;
     await ui.say([
       { name: r, text: 'ただいまー。……って、誰もいないんだけどね。' },
-      { name: r, text: 'アルファはガレージに置いてある。荒野に出るときはガレージで乗り込もう！' },
+      { name: r, text: 'ハウンドはガレージに置いてある。荒野に出るときはガレージで乗り込もう！' },
     ]);
   }
   for (;;) {
-    const v = await ui.menu({ title: `${esc(r)}の修理屋`, items: [{ label: '休む（無料）', value: 'rest' }, { label: 'セーブ', value: 'save' }, { label: '作業台を見る', value: 'look' }, { label: '出る', value: null }] });
+    const v = await ui.menu({
+      title: `${esc(r)}の修理屋`,
+      items: [
+        { label: '休む（無料）', value: 'rest' },
+        { label: 'セーブ', value: 'save' },
+        { label: 'アルファの様子を見る', value: 'alpha' },
+        { label: '自分の部屋を調べる', value: 'room' },
+        { label: '出る', value: null },
+      ],
+    });
     if (!v) return;
     if (v === 'rest') { await ui.fade(true, 0.5); healParty(); await ui.fade(false, 0.5); audio.sfx('heal'); await ui.say('ぐっすり眠った。みんなの体力が回復した！'); }
     if (v === 'save') await saveMenu();
-    if (v === 'look') await ui.say([
-      '油のしみた作業台。工具がずらりと並んでいる。',
-      'アルファを拾ったときの写真が貼ってある。廃墟の中で、ひっそり眠っていた機体……。',
-      sealInfo().mul > 1 ? 'アルファのフレームの奥で、封印の光がかすかに脈打っている。' : 'アルファのコアには、どうしても開けられない封印がある。',
-    ]);
+    if (v === 'alpha') {
+      if (G.seal < 1) {
+        audio.sfx('repair');
+        await ui.say([
+          '作業場の奥で、白い機体が眠っている。がらくたの山から運んできた伝説の機体「アルファ」だ。',
+          { name: r, text: '装甲はほとんど直した。関節も、配線も、ぜんぶ組み直したのに……。' },
+          { name: r, text: 'コアの「封印」だけは、どうやっても開かないんだ。これが解けない限り、アルファは動かない。' },
+          '胸のコアの奥で、青白い光がかすかに……ほんの一瞬だけ、またたいた気がした。',
+        ]);
+      } else {
+        await ui.say([
+          { name: r, text: 'アルファはガレージで待ってる。封印がひとつ解けて、やっと動けるようになったんだ！' },
+          '作業場には、アルファを直したときの工具がまだ散らばっている。',
+        ]);
+      }
+    }
+    if (v === 'room') {
+      if (!G.flags.omegaFound) {
+        await ui.say([
+          'ベッドに本棚、油まみれの設計図……いつもの自分の部屋だ。',
+          '……ん？ 床板の一枚だけ、ほかと色が違う。すき間から冷たい風が吹き上がってくる。',
+          { name: r, text: 'ゴウン、ゴウンって音……ここから聞こえてたのか！' },
+        ]);
+      } else await ui.say('床板の下の隠し通路は、地下の格納庫につながっている。');
+      if (await ui.confirm('隠し通路を降りてみますか？', '降りる', 'やめておく')) {
+        ui.closeAll();
+        await world.warp({ to: 'basement', tx: 2, ty: 10, dir: 'up' });
+        return;
+      }
+    }
   }
 }
 
@@ -101,57 +135,90 @@ async function inn() {
 }
 
 async function bar() {
-  const r = ren().name;
-  const hints = [
-    'マスター「賞金首を倒したら、ハンターオフィスで賞金を受け取れるぞ」',
-    'マスター「メタルビートルって知ってるか？ すぐ逃げるが、倒せば経験値がどっさりだ」',
-    'マスター「金ピカのドローンを見たら逃がすなよ。ギアをたんまり落とすって噂だ」',
-    'マスター「ジャンク屋のじいさん、昔は南東の山まで部品を拾いに行ってたらしい」',
-    'マスター「廃工場の奥は、マシンに乗ったまま入れる。生身じゃとても無理だろうな」',
-  ];
+  const hints = {
+    town1: [
+      'マスター「賞金首を倒したら、ハンターオフィスで賞金を受け取れるぞ」',
+      'マスター「メタルビートルって知ってるか？ すぐ逃げるが、倒せば経験値がどっさりだ」',
+      'マスター「北の鉱山町グレイロックには、腕のいいパイロットが流れ着いたらしい」',
+      'マスター「ボルツじいさんが言ってたぞ。おまえさんの家の下から変な音がするって」',
+    ],
+    town2: [
+      'マスター「坑道を抜けたら山脈の東側だ。あっちの敵は一段手ごわいぞ」',
+      'マスター「金ピカのドローンを見たら逃がすなよ。ギアをたんまり落とすって噂だ」',
+      'マスター「レーダーヘッドを付けると、弾がよく当たるようになる」',
+    ],
+    town3: [
+      'マスター「海賊船の中は狭い。マシンは外に置いて、生身で行くしかない」',
+      'マスター「廃工場の奥は、マシンに乗ったまま入れる。生身じゃとても無理だろうな」',
+      'マスター「全員まとめて治せるメガリカバリー、ボス戦の前に持っていきな」',
+    ],
+  }[G.pos.map] || ['マスター「いらっしゃい」'];
+  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート' }[G.pos.map] || '酒場';
   for (;;) {
-    const items = [{ label: 'マスターと話す', value: 'master' }];
-    if (!G.members.gald.joined) items.push({ label: '大柄な傭兵に話しかける', value: 'gald' });
-    if (!G.members.shion.joined) items.push({ label: '隅の席のパイロットに話しかける', value: 'shion' });
-    items.push({ label: '出る', value: null });
-    const v = await ui.menu({ title: '酒場「ラストオアシス」', items });
+    const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
     if (!v) return;
-    if (v === 'master') { G.flags.hint = ((G.flags.hint || 0) + 1) % hints.length; await ui.say(hints[G.flags.hint]); }
-    if (v === 'gald') {
-      const g = G.members.gald.name;
-      await ui.say([
-        { name: g, text: 'よう、修理屋。噂は聞いてるぜ。伝説みてえなロボットを直したんだってな。' },
-        { name: g, text: 'おれは賞金稼ぎだ。荒野の賞金首を狩るなら、腕っぷしの立つ相棒がいるだろ？' },
-        { name: r, text: 'ほんと!? 一緒に来てくれるの？' },
-        { name: g, text: 'がっはっは！ 決まりだ。生身のケンカなら任せとけ！' },
-      ]);
-      join('gald');
-    }
-    if (v === 'shion') {
-      const s = G.members.shion.name;
-      if (!G.bounties.rustdriller) {
-        await ui.say([{ name: s, text: '……。' }, { name: '', text: 'ヘルメットを抱えたパイロットは、黙ってグラスを見つめている。' }, { name: s, text: '……北の岩場の賞金首。あれを倒せたら、話くらいは聞く。' }]);
-      } else {
-        await ui.say([
-          { name: s, text: '……ラストドリラーを倒したのは、あなたたち？' },
-          { name: s, text: '元宇宙軍、第4機動隊。……宇宙生物がマシンに取りつく理由を、ずっと追っている。' },
-          { name: r, text: 'それなら一緒に行こうよ！ アルファにも、何か関係がある気がするんだ。' },
-          { name: s, text: '……わかった。足手まといにはならない。' },
-        ]);
-        join('shion');
-      }
-    }
+    const k = `hint_${G.pos.map}`;
+    G.flags[k] = ((G.flags[k] ?? -1) + 1) % hints.length;
+    await ui.say(hints[G.flags[k]]);
   }
 }
 
-function join(id) {
+// 仲間の加入（新しい仲間はレンのレベルに合わせる）
+function join(id, machineId) {
   const m = G.members[id];
   m.joined = true;
   if (!G.party.includes(id)) G.party.push(id);
+  m.lv = Math.max(m.lv, ren().lv);
+  m.exp = Math.max(m.exp, LEVEL.expFor(m.lv));
   m.hp = memberStats(m).maxHp;
   audio.sfx('levelup');
   ui.banner(`${esc(m.name)}が仲間になった！`, `${CHARACTERS[id].roleName}：${CHARACTERS[id].desc}`);
+  if (machineId) {
+    const mc = G.machines[machineId];
+    mc.owned = true;
+    repairMachine(mc);
+    m.machine = machineId;
+  }
   autosave();
+}
+
+// NPCから始まるイベント（world.js から呼ばれる）
+export async function runEvent(name, world) {
+  const r = ren().name;
+  if (name === 'joinShion') {
+    const s = G.members.shion.name;
+    await ui.say([
+      { name: s, text: '……あなたが、ラストヘイヴンの修理屋？' },
+      { name: r, text: 'そうだけど……きみは？' },
+      { name: s, text: '乗機のファルコの調子が悪い。この町の整備士では、出力の偏りが直せなかった。……見てほしい。' },
+    ]);
+    await ui.fade(true, 0.4);
+    audio.sfx('repair');
+    await new Promise((res) => setTimeout(res, 700));
+    await ui.fade(false, 0.4);
+    await ui.say([
+      { name: '', text: `（${r}はファルコのコンバーターを分解し、あっという間に組み直した）` },
+      { name: s, text: '……すごい。前より反応が速い。' },
+      { name: s, text: '元宇宙軍、第4機動隊。シオン。宇宙生物がマシンに取りつく理由を、ひとりで追っている。' },
+      { name: r, text: 'それなら一緒に行こうよ！ 動かないアルファの封印も、きっと関係ある気がするんだ。' },
+      { name: s, text: '……わかった。腕のいいメカニックがいるなら、心強い。' },
+    ]);
+    join('shion', 'falco');
+    await ui.say(`シャープタイプのマシン「ファルコ」がガレージに入った。（${s}が乗ります）`);
+  }
+  if (name === 'joinGina') {
+    const g = G.members.gina.name;
+    await ui.say([
+      { name: g, text: 'へえ、あんたたちが坑道を抜けてきた連中かい。やるじゃないか。' },
+      { name: g, text: 'あたしはジーナ。賞金稼ぎさ。南西に墜ちた海賊船、あそこに用があってね。' },
+      { name: g, text: '中は狭くてマシンじゃ入れない。生身の腕っぷしがいる仕事だよ。' },
+      { name: r, text: '海賊船って……廃工場のセキュリティキーを盗んだっていう？' },
+      { name: g, text: '話が早いね。あたしと組みな。そのかわり、あたしのゴライアスの整備はあんたに任せたよ、メカニック！' },
+    ]);
+    join('gina', 'goliath');
+    await ui.say(`重厚タイプのマシン「ゴライアス」がガレージに入った。（${g}が乗ります）`);
+  }
+  void world;
 }
 
 async function office() {
@@ -311,8 +378,9 @@ async function garage(world) {
   if (!G.flags.garageIntro) {
     G.flags.garageIntro = true;
     await ui.say([
-      { name: shop.keeper, text: 'よう、レン！ アルファはちゃんと預かってるぞ。' },
+      { name: shop.keeper, text: 'よう、レン！ ハウンドはちゃんと預かってるぞ。' },
       { name: shop.keeper, text: 'ここでは修理、パーツと武器の付け替え、武器強化、改造ができる。メカニックのおまえさんなら改造費は3割引きだ。' },
+      { name: shop.keeper, text: 'マシンのタイプはボディで決まる。重厚・バランス・シャープで得意な武器が違うぞ。' },
       { name: shop.keeper, text: '荒野に出るときは「乗り込んで出発」を選ぶんだぞ。' },
     ].map((l) => ({ ...l, text: l.text.replace('レン', ren().name) })));
   }
@@ -391,16 +459,18 @@ async function weaponSlots(mc) {
     const items = SLOT_INFO.map((info, i) => {
       const w = mc.slots[i] ? weaponByUid(mc.slots[i]) : null;
       const locked = i >= st.slots;
-      return { label: `${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? esc(weaponLabel(w)) : '<small>なし</small>'}`, value: i, disabled: locked, desc: w ? weaponDesc(WEAPONS[w.id], w) : (info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）を付けられる' : '背中には主砲・ミサイル・特殊兵器（背中用）を付けられる') };
+      return { label: `${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? esc(weaponLabel(w)) : '<small>なし</small>'}`, value: i, disabled: locked, desc: w ? weaponDesc(WEAPONS[w.id], w) : (info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付けられる' : '背中には主砲・ミサイル・特殊兵器（背中用）を付けられる') };
     });
-    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `重さ ${st.weight}/${st.cap}　スロット ${st.slots}/5`, wide: true, desc: true, items });
+    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/5`, wide: true, desc: true, items });
     if (slot == null) return;
     const info = SLOT_INFO[slot];
     const cands = ownedWeapons().filter((w) => WEAPONS[w.id].mount === info.mount && mc.slots[slot] !== w.uid);
     const list = cands.map((w) => {
       const on = weaponEquippedOn(w.uid);
       const err = checkMount(mc, slot, w);
-      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: err ? `<b class="warn">${esc(err)}</b>` : weaponDesc(WEAPONS[w.id], w) };
+      const boost = typeBoost(mc, WEAPONS[w.id]);
+      const tip = boost > 1 ? `<br><b class="ok">${esc(machineStats(mc).typeName)}タイプの得意武器（威力×${boost.toFixed(2)}）</b>` : '';
+      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: err ? `<b class="warn">${esc(err)}</b>` : weaponDesc(WEAPONS[w.id], w) + tip };
     });
     if (mc.slots[slot]) list.unshift({ label: '外す', value: '__none' });
     if (!list.length) { await ui.say('付けられる武器を持っていない。武器屋で買おう。'); continue; }
@@ -418,7 +488,7 @@ async function partSlots(mc) {
   for (;;) {
     const st = machineStats(mc);
     const slotKey = await ui.menu({
-      title: `${esc(machineName(mc))}のパーツ`, header: `装甲 ${st.maxArmor}　防御 ${st.def}　重さ ${st.weight}/${st.cap}`, wide: true, desc: true,
+      title: `${esc(machineName(mc))}のパーツ`, header: `${esc(st.typeName)}タイプ　装甲 ${st.maxArmor}　防御 ${st.def}　重さ ${st.weight}/${st.cap}`, wide: true, desc: true,
       items: PART_SLOTS.map(([k, n]) => ({ label: `${n}：${esc(PARTS[mc.parts[k]].name)}`, value: k, desc: partDesc(PARTS[mc.parts[k]]) })),
     });
     if (!slotKey) return;
@@ -540,7 +610,8 @@ function partDesc(p, cur) {
   if (p.slot === 'head') s += `　命中+${p.hit}　索敵${p.scan}`;
   if (p.slot === 'arm') s += `　攻撃×${p.atkMul}　命中${p.hit >= 0 ? '+' : ''}${p.hit}${p.power ? '　<b>重い腕武器OK</b>' : ''}`;
   if (p.slot === 'legs') s += `　回避${p.eva >= 0 ? '+' : ''}${p.eva}`;
-  if (p.slot === 'body') s += `　武器スロット${p.slots}（最大${p.maxSlots}）`;
+  if (p.slot === 'body') s += `　武器スロット${p.slots}（最大${p.maxSlots}）　<b>${MACHINE_TYPES[p.mtype].name}タイプ</b>`;
+  if (p.slot === 'legs' && p.spd) s += `　速さ${p.spd >= 0 ? '+' : ''}${p.spd}`;
   return s;
 }
 
@@ -589,7 +660,7 @@ async function statusMenu() {
     const mc = G.machines[m.machine];
     const ms = machineStats(mc);
     const ws = mc.slots.map((uid, i) => (uid ? `<li>${SLOT_INFO[i].name}：${esc(weaponLabel(weaponByUid(uid)))}</li>` : '')).join('');
-    mhtml = `<h4>マシン：${esc(machineName(mc))}${mc.id === 'alpha' ? `　<small>${esc(sealInfo().name)}</small>` : ''}</h4>
+    mhtml = `<h4>マシン：${esc(machineName(mc))}　<small>${esc(ms.typeName)}タイプ${mc.id === 'alpha' ? `・${esc(sealInfo().name)}` : ''}</small></h4>
       <table class="kv"><tr><th>装甲</th><td>${mc.armor}/${ms.maxArmor}</td><th>EN</th><td>${mc.en}/${ms.maxEn}</td></tr>
       <tr><th>防御</th><td>${ms.def}</td><th>命中</th><td>+${ms.hit}</td></tr><tr><th>回避</th><td>${ms.eva}</td><th>重さ</th><td>${ms.weight}/${ms.cap}</td></tr></table><ul class="wlist">${ws}</ul>`;
   }
@@ -677,7 +748,9 @@ async function machineList() {
   const parts = PART_SLOTS.map(([k, n]) => `<tr><th>${n}</th><td>${esc(PARTS[mc.parts[k]].name)}</td></tr>`).join('');
   const ws = SLOT_INFO.map((info, i) => `<tr><th>${info.name}</th><td>${i >= st.slots ? '<small>（未解放）</small>' : mc.slots[i] ? esc(weaponLabel(weaponByUid(mc.slots[i]))) : '<small>なし</small>'}</td></tr>`).join('');
   await ui.panel(`
-    ${mc.id === 'alpha' ? `<p>伝説の機体。メカニック専用。状態：<b>${esc(sealInfo().name)}</b></p>` : `<p>${def.pilot === 'any' ? '誰でも乗れる' : 'メカニック専用'}マシン</p>`}
+    <p>${esc(def.desc || '')}</p>
+    <p><b>${esc(st.typeName)}タイプ</b>：<small>${esc(MACHINE_TYPES[st.type].desc)}</small></p>
+    ${mc.id === 'alpha' ? `<p>メカニック専用。状態：<b>${esc(sealInfo().name)}</b></p>` : `<p class="note">${def.pilot === 'any' ? '誰でも乗れる' : 'メカニック専用'}</p>`}
     <table class="kv"><tr><th>装甲</th><td>${mc.armor}/${st.maxArmor}${mc.broken ? ' <b class="warn">大破</b>' : ''}</td><th>EN</th><td>${mc.en}/${st.maxEn}</td></tr>
     <tr><th>防御</th><td>${st.def}</td><th>重さ</th><td>${st.weight}/${st.cap}</td></tr></table>
     <div class="cols"><table class="kv">${parts}</table><table class="kv">${ws}</table></div>

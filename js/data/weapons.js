@@ -1,4 +1,4 @@
-// マシン用武器の表（4カテゴリ × 10種類 = 40種類）
+// マシン用武器の表（4カテゴリ × 10種類 = 40種類＋近接ブレード）
 // cat: cannon=主砲 / mg=機銃 / missile=ミサイル / special=特殊兵器
 // mount: back=背中のスロット / arm=腕のスロット
 // target: one=単体 / group=敵グループ / all=敵全体
@@ -53,6 +53,11 @@ export const WEAPONS = {
   inferno: { name: 'インフェルノ', cat: 'special', mount: 'back', target: 'all', atk: 76, hit: 10, wt: 14, price: 41000, tier: 5, model: 'wpn_special', color: 0xff4a0a, size: 1.25, elem: 'fire', en: 22 },
   thor: { name: 'サンダーボルト', cat: 'special', mount: 'back', target: 'all', atk: 100, hit: 15, wt: 15, price: 68000, tier: 6, model: 'wpn_special', color: 0x8aaaff, size: 1.3, elem: 'elec', en: 26 },
   solflare: { name: 'ソルフレア', cat: 'special', mount: 'back', target: 'all', atk: 160, hit: 25, wt: 12, price: 0, tier: 7, model: 'wpn_special', color: 0xffe08a, size: 1.3, elem: 'fire', en: 30, unique: true },
+
+  // ---------------- 近接（腕に持つブレード。シャープタイプが得意） ----------------
+  hblade: { name: 'ヒートブレード', cat: 'blade', mount: 'arm', target: 'one', atk: 34, hit: 15, wt: 4, price: 900, tier: 1, model: 'wpn_blade', color: 0x8a4a2a, size: 0.9, elem: 'fire' },
+  lzblade: { name: 'レーザーブレードLB', cat: 'blade', mount: 'arm', target: 'one', atk: 46, hit: 18, wt: 5, price: 2800, tier: 1, model: 'wpn_blade', color: 0x3a8aaa, size: 1.0, elem: 'elec' },
+  pzblade: { name: 'プラズマブレード', cat: 'blade', mount: 'arm', target: 'one', atk: 95, hit: 20, wt: 6, price: 16000, tier: 3, model: 'wpn_blade', color: 0x9a3aaa, size: 1.15 },
 };
 
 export const WEAPON_CATS = {
@@ -60,6 +65,7 @@ export const WEAPON_CATS = {
   mg: { name: '機銃', icon: '≡' },
   missile: { name: 'ミサイル', icon: '▲' },
   special: { name: '特殊', icon: '✦' },
+  blade: { name: '近接', icon: '†' },
 };
 
 // 武器強化（+1〜+5）。plus が1上がるごとに攻撃力が上がる

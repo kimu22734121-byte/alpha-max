@@ -95,6 +95,33 @@ const DRAW = {
 DRAW[6] = (g, px, py) => { g.fillStyle = '#555'; g.fillRect(px, py, TS, TS); };
 DRAW[19] = DRAW[0];
 DRAW[20] = DRAW[0];
+DRAW[22] = DRAW[0];
+DRAW[23] = DRAW[1];
+// 坑道の壁
+DRAW[24] = (g, px, py, x, y) => {
+  g.fillStyle = '#2a221c'; g.fillRect(px, py, TS, TS);
+  for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? '#3e3228' : '#4a3c30'; g.beginPath(); g.ellipse(px + 6 + rng(x, y, i) * 20, py + 6 + rng(x, y, i + 4) * 20, 6 + rng(x, y, i + 8) * 5, 4 + rng(x, y, i + 9) * 4, 0, 0, 7); g.fill(); }
+  if (rng(x, y, 3) < 0.08) { g.fillStyle = '#7ad0ff'; g.fillRect(px + 14, py + 12, 3, 3); }
+};
+// 線路
+DRAW[25] = (g, px, py, x, y) => {
+  DRAW[1](g, px, py, x, y);
+  g.fillStyle = '#5a4430'; for (let i = 0; i < 4; i++) g.fillRect(px + 2 + i * 8, py + 6, 4, TS - 12);
+  g.fillStyle = '#9aa0a8'; g.fillRect(px, py + 9, TS, 2); g.fillRect(px, py + TS - 11, TS, 2);
+};
+// 船の床・船の壁
+DRAW[26] = (g, px, py, x, y) => {
+  g.fillStyle = '#3a4052'; g.fillRect(px, py, TS, TS);
+  g.strokeStyle = '#2a2e3c'; g.lineWidth = 2; g.strokeRect(px + 1, py + 1, TS - 2, TS - 2);
+  g.fillStyle = '#4a5066'; g.fillRect(px + 4, py + 4, TS - 8, 3);
+  if (rng(x, y) < 0.12) { g.fillStyle = 'rgba(160,70,200,0.5)'; g.beginPath(); g.ellipse(px + 16, py + 18, 10, 6, 0.4, 0, 7); g.fill(); }
+  if (rng(x, y, 2) < 0.06) { g.fillStyle = '#ff5a5a'; g.fillRect(px + 24, py + 24, 3, 3); }
+};
+DRAW[27] = (g, px, py, x, y) => {
+  g.fillStyle = '#1c1e28'; g.fillRect(px, py, TS, TS);
+  g.fillStyle = '#2c3040'; g.fillRect(px + 2, py + 2, TS - 4, TS / 2 - 3); g.fillRect(px + 2, py + TS / 2 + 1, TS - 4, TS / 2 - 3);
+  if (rng(x, y) < 0.1) { g.fillStyle = '#5a6aff'; g.fillRect(px + 6, py + 6, 4, 2); }
+};
 
 function drawBuilding(g, b) {
   const x = b.x * TS, y = b.y * TS, w = b.w * TS, h = b.h * TS;
@@ -135,6 +162,21 @@ function drawIcon(g, cx, cy, kind) {
     g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, 38, Math.PI, 0); g.fill();
     g.strokeStyle = '#3a4a58'; g.lineWidth = 2; for (let i = -2; i <= 2; i++) { g.beginPath(); g.ellipse(cx, cy, Math.abs(i) * 9 + 2, 38, 0, Math.PI, 0); g.stroke(); }
     g.fillStyle = '#2a2018'; g.fillRect(cx - 7, cy + 2, 14, 12);
+  } else if (kind === 'mine') {
+    g.fillStyle = '#5a4430'; g.beginPath(); g.moveTo(cx - 40, cy + 16); g.lineTo(cx - 22, cy - 24); g.lineTo(cx + 22, cy - 24); g.lineTo(cx + 40, cy + 16); g.fill();
+    g.fillStyle = '#0e0b08'; g.beginPath(); g.arc(cx, cy + 6, 16, Math.PI, 0); g.fillRect(cx - 16, cy + 6, 32, 10); g.fill();
+    g.fillStyle = '#8a6a40'; g.fillRect(cx - 20, cy - 12, 40, 5); g.fillRect(cx - 20, cy - 12, 5, 28); g.fillRect(cx + 15, cy - 12, 5, 28);
+    g.fillStyle = '#9aa0a8'; g.fillRect(cx - 10, cy + 14, 2, 8); g.fillRect(cx + 8, cy + 14, 2, 8);
+  } else if (kind === 'ship') {
+    g.fillStyle = 'rgba(0,0,0,0.3)'; g.beginPath(); g.ellipse(cx, cy + 14, 50, 12, 0, 0, 7); g.fill();
+    g.save(); g.translate(cx, cy); g.rotate(-0.25);
+    g.fillStyle = '#5a5e6e'; g.beginPath(); g.ellipse(0, 0, 50, 16, 0, 0, 7); g.fill();
+    g.fillStyle = '#7a7e8e'; g.beginPath(); g.ellipse(-6, -4, 38, 8, 0, 0, 7); g.fill();
+    g.fillStyle = '#3a3e4e'; g.beginPath(); g.moveTo(10, -10); g.lineTo(30, -34); g.lineTo(38, -30); g.lineTo(26, -6); g.fill();
+    g.fillStyle = '#8affff'; g.fillRect(28, -6, 10, 5);
+    g.fillStyle = '#1a1612'; g.fillRect(-10, 2, 14, 10);
+    g.restore();
+    g.fillStyle = 'rgba(90,90,90,0.5)'; g.beginPath(); g.arc(cx + 30, cy - 30, 9, 0, 7); g.arc(cx + 38, cy - 42, 12, 0, 7); g.fill();
   } else {
     g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(cx - 44, cy + 10, 92, 10);
     g.fillStyle = '#5a5048'; g.fillRect(cx - 42, cy - 18, 84, 32);
@@ -158,6 +200,19 @@ export function drawMapCanvas(map) {
     const t = map.grid[y][x];
     if (t === 19) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'town');
     if (t === 20) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'factory');
+    if (t === 22) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'ship');
+    if (t === 23) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'mine');
+  }
+  // 大きなマップはスマホのGPUにやさしいように縮める
+  const MAX = 2560;
+  if (cv.width > MAX || cv.height > MAX) {
+    const k = MAX / Math.max(cv.width, cv.height);
+    const small = document.createElement('canvas');
+    small.width = Math.round(cv.width * k); small.height = Math.round(cv.height * k);
+    const sg = small.getContext('2d');
+    sg.imageSmoothingQuality = 'high';
+    sg.drawImage(cv, 0, 0, small.width, small.height);
+    return small;
   }
   return cv;
 }
@@ -197,6 +252,8 @@ function add3D(map, group, disposables) {
     21: { geo: new THREE.ConeGeometry(0.6, 1.1, 5), mat: new THREE.MeshStandardMaterial({ color: 0x9a7a52, flatShading: true }), y: 0.55, walkThrough: true },
     4: { geo: new THREE.BoxGeometry(1, 1.4, 1), mat: new THREE.MeshStandardMaterial({ color: 0x3c4148 }), y: 0.7 },
     10: { geo: new THREE.BoxGeometry(1, 1.8, 1), mat: new THREE.MeshStandardMaterial({ color: 0x43566a }), y: 0.9 },
+    24: { geo: new THREE.BoxGeometry(1, 1.5, 1), mat: new THREE.MeshStandardMaterial({ color: 0x3a3028, flatShading: true }), y: 0.75 },
+    27: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: new THREE.MeshStandardMaterial({ color: 0x2a2e3c }), y: 0.8 },
     15: { geo: new THREE.BoxGeometry(0.9, 0.9, 0.9), mat: new THREE.MeshStandardMaterial({ color: 0x5a5f66, flatShading: true }), y: 0.45 },
     6: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: new THREE.MeshStandardMaterial({ color: 0x7a6f62 }), y: 0.8 },
   };

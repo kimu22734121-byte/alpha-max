@@ -87,6 +87,8 @@ export function buildMachineModel(spec) {
     hover: !!legs.userData.hover,
     radar: head.getObjectByName('radar'),
   };
+  const wR = body.getObjectByName('wingR'), wL = body.getObjectByName('wingL');
+  if (wR || wL) { root.userData.wings = [wR, wL]; root.userData.wingBase = [wR?.rotation.z || 0, wL?.rotation.z || 0]; }
   if (spec.glow != null) setGlow(root, spec.glow);
   return root;
 }
@@ -109,6 +111,15 @@ export function animateMachine(obj, t, speed) {
     u.legs.position.y = 0.15 + Math.sin(t * 3) * 0.05;
   } else if (u.legType === 'tread') {
     u.body.position.y = Math.sin(t * 30) * 0.01 * speed;
+  } else if (u.legType === 'wheel') {
+    for (const n of ['wheelF', 'wheelB']) { const w = u.legs.getObjectByName(n); if (w) w.rotation.x += speed * 0.35; }
+    u.body.position.y = Math.sin(t * 20) * 0.01 * speed;
+  }
+  // 伝説の機体の翼（ゆっくり開いたり閉じたり）
+  if (u.wings) {
+    const k = 0.08 * Math.sin(t * 1.6) + speed * 0.15;
+    if (u.wings[0]) u.wings[0].rotation.z = u.wingBase[0] - k;
+    if (u.wings[1]) u.wings[1].rotation.z = u.wingBase[1] + k;
   }
   if (u.radar) u.radar.rotation.y = t * 2;
 }

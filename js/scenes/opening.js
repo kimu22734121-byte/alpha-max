@@ -127,7 +127,7 @@ export class OpeningScene {
     }
     // 壊れたアルファ
     const def = MACHINES.alpha;
-    const alpha = buildMachineModel({ parts: def.parts, colors: { ...def.colors, primary: 0x8a7a6a, secondary: 0x5a5048, accent: 0x6a3a2a }, weapons: [], glow: 0.0 });
+    const alpha = buildMachineModel({ parts: def.parts, colors: def.brokenColors, weapons: [], glow: 0.0 });
     alpha.position.set(0, -0.35, -3);
     alpha.rotation.set(0.12, 0.5, 0.18);
     s.add(alpha);

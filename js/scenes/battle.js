@@ -7,12 +7,13 @@ import { getModel, flashModel, resetFlash, setGlow, setOpacity, disposeObject } 
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { BattleFX } from './battle-fx.js';
 import { ENEMIES, BOUNTIES, ELEMENT_RATE, WEAKNESS } from '../data/enemies.js';
+import { MAPS } from '../data/maps.js';
 import { WEAPONS, WEAPON_CATS } from '../data/weapons.js';
 import { CHARACTERS } from '../data/characters.js';
 import { MATERIALS, ITEMS } from '../data/items.js';
 import { MACHINES } from '../data/machines.js';
 import {
-  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot,
+  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost,
 } from '../game/state.js';
 import { inMachine, machineSpec } from './world.js';
 import { itemMenu, applyItem } from './menus.js';
@@ -45,7 +46,8 @@ export class BattleScene {
     this.camIdle = false;
     await ui.fade(false, 0.3);
     const names = [...new Set(this.enemies.map((e) => e.def.name))];
-    this.log(this.boss ? `賞金首 ${names[0]} があらわれた！` : `${names.join('、')}があらわれた！`);
+    const bossDef = this.enemies.find((e) => e.def.boss)?.def;
+    this.log(bossDef ? `${bossDef.bounty ? '賞金首' : 'ボス'} ${bossDef.name} があらわれた！` : `${names.join('、')}があらわれた！`);
     await this.camTo(V(7, 5.5, 9.5), V(0, 1, -0.5), 1.4, Ease.inOut);
     this.camIdle = true;
     this.run();
@@ -58,7 +60,8 @@ export class BattleScene {
   }
 
   buildArena(terrain = 'sand') {
-    const dungeon = terrain === 'metal' && G.pos.map === 'factory1';
+    const dungeon = !!MAPS[G.pos.map]?.dark;
+    const veins = G.pos.map === 'factory1' || G.pos.map === 'ship1';
     const pal = {
       sand: { g: '#c4a068', s: ['#b08c58', '#d4b07a'], sky: [0xe8b878, 0x8a5a3a], fog: 0xd8a870 },
       road: { g: '#b49462', s: ['#a08050', '#c4a472'], sky: [0xe8b878, 0x8a5a3a], fog: 0xd8a870 },
@@ -72,7 +75,7 @@ export class BattleScene {
     g.fillStyle = dark ? '#3a3c42' : pal.g; g.fillRect(0, 0, 512, 512);
     for (let i = 0; i < 1800; i++) { g.fillStyle = dark ? (i % 2 ? '#2e3036' : '#474a50') : pal.s[i % 2]; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
     if (dark || terrain === 'metal') { g.strokeStyle = dark ? '#2a2c30' : '#5a6068'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
-    if (dark) { g.strokeStyle = 'rgba(180,70,220,0.5)'; g.lineWidth = 4; for (let i = 0; i < 10; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512); g.stroke(); } }
+    if (dark && veins) { g.strokeStyle = 'rgba(180,70,220,0.5)'; g.lineWidth = 4; for (let i = 0; i < 10; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512); g.stroke(); } }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 6);
     const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
@@ -369,7 +372,7 @@ export class BattleScene {
     const order = [];
     for (const c of cmds) {
       const st = memberStats(c.u.m);
-      order.push({ kind: 'party', u: c.u, cmd: c, spd: (c.type === 'guard' ? 999 : st.spd + (c.u.mc ? 2 : 0) + rand(0, 4)) });
+      order.push({ kind: 'party', u: c.u, cmd: c, spd: (c.type === 'guard' ? 999 : st.spd + (c.u.mc ? 2 + machineStats(c.u.mc).spd : 0) + rand(0, 4)) });
     }
     for (const e of this.aliveEnemies()) for (let k = 0; k < (e.def.acts || 1); k++) order.push({ kind: 'enemy', e, spd: e.def.spd + rand(0, 4) - k * 3 });
     order.sort((a, b) => b.spd - a.spd);
@@ -490,7 +493,20 @@ export class BattleScene {
   async fireWeapon(u, slot, def, targets, ctx, fast = false) {
     const from = () => this.muzzleOf(u, slot);
     const big = def.unique;
-    if (def.cat === 'cannon') {
+    if (def.cat === 'blade') {
+      // 近接：ブースターで一気に間合いをつめて斬る
+      for (const e of targets) {
+        const back = u.obj.position.clone();
+        const to = e.obj.position.clone().add(V(0.6, 0, 1.6));
+        audio.sfx('charge');
+        await tweenTo(u.obj.position, { x: to.x, z: to.z }, fast ? 0.15 : 0.25, Ease.in);
+        audio.sfx(def.elem === 'elec' ? 'laser' : 'metalhit');
+        this.fx.claw(this.hitPoint(e), def.elem === 'elec' ? 0x8affff : def.elem === 'fire' ? 0xffa040 : 0xffffff);
+        this.fx.sparks(this.hitPoint(e), def.elem === 'elec' ? 0x8affff : 0xffc060, 14);
+        await this.applyHit(u, e, ctx, 0.12);
+        await tweenTo(u.obj.position, { x: back.x, z: back.z }, 0.25);
+      }
+    } else if (def.cat === 'cannon') {
       for (const e of targets) {
         audio.sfx(def.elem === 'elec' || def.model === 'wpn_alpha_buster' || def.id === 'pc1' ? 'beam' : 'cannon');
         u.obj.position.z += 0.25; tweenTo(u.obj.position, { z: u.obj.position.z - 0.25 }, 0.3);
@@ -545,7 +561,7 @@ export class BattleScene {
     if (ctx.def) {
       const ms = machineStats(u.mc);
       const arm = ctx.slot === 0 ? ms.armMul.R : ctx.slot === 1 ? ms.armMul.L : 1;
-      atk = weaponAtk(ctx.w) * arm * ms.mul + st.atk * 0.3;
+      atk = weaponAtk(ctx.w) * arm * ms.mul * typeBoost(u.mc, ctx.def) + st.atk * 0.3;
       if (ctx.skill === 'rampage') atk *= 1.5;
       if (ctx.allfire) atk *= 1.2;
     } else {
@@ -804,8 +820,9 @@ export class BattleScene {
       const ups = gainExp(u.m, exp);
       if (ups) lines.push(`${u.m.name}はレベル${u.m.lv}に上がった！${before}→${u.m.lv}`);
     }
-    const boss = killed.find((e) => e.def.bounty);
-    if (boss) { G.bounties[boss.def.bounty] = 1; lines.push(`賞金首 ${boss.def.name} を倒した！ ハンターオフィスで賞金 ${BOUNTIES[boss.def.bounty].reward.toLocaleString()} ギアを受け取ろう。`); }
+    const boss = killed.find((e) => e.def.bounty || e.def.flag);
+    if (boss?.def.bounty) { G.bounties[boss.def.bounty] = 1; lines.push(`賞金首 ${boss.def.name} を倒した！ ハンターオフィスで賞金 ${BOUNTIES[boss.def.bounty].reward.toLocaleString()} ギアを受け取ろう。`); }
+    if (boss?.def.flag) G.flags[boss.def.flag] = true;
     await wait(0.8);
     if (lines.some((l) => l.includes('レベル'))) audio.sfx('levelup');
     await ui.say(lines);

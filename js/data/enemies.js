@@ -58,7 +58,69 @@ export const ENEMIES = {
     desc: '金ピカのドローン。倒すとギアがたくさん',
   },
 
-  // ---------------- ダンジョン（廃工場, 4種類） ----------------
+  // ---------------- 荒野の東側（坑道を抜けた先）は少し強い色違い ----------------
+  hijackbot2: {
+    name: 'ハイジャックボットII', model: 'en_bot', type: 'machine', colors: { primary: 0x3a8a8a, secondary: 0x2a3a3a },
+    hp: 62, atk: 16, def: 9, hit: 82, eva: 4, spd: 7, exp: 18, gear: 50, fx: 'claw', scale: 1.1,
+    drops: [['scrap', 0.7, 1], ['cell', 0.1, 1]],
+    desc: '東の荒野に多い、装甲を足された作業ロボット',
+  },
+  grub2: {
+    name: 'サンドグラブ', model: 'en_crawler', type: 'bio', colors: { primary: 0x9a7a3a, organic: 0xc08a3a },
+    hp: 50, atk: 15, def: 6, hit: 86, eva: 8, spd: 9, exp: 22, gear: 10, fx: 'bite', scale: 1.15,
+    drops: [['bio', 0.6, 1]],
+    desc: '大きく育ったデザートグラブ',
+  },
+
+  // ---------------- 坑道（マシンで進む序盤のダンジョン, 4種類） ----------------
+  minebot: {
+    name: 'マイニングボット', model: 'en_bot', type: 'machine', colors: { primary: 0xb08a2a, secondary: 0x4a4030, organic: 0x7a3a9a },
+    hp: 48, atk: 13, def: 8, hit: 82, eva: 2, spd: 5, exp: 12, gear: 40, fx: 'claw',
+    drops: [['scrap', 0.7, 1], ['alloy', 0.08, 1]],
+    desc: '坑道で使われていた採掘ロボット',
+  },
+  cavegrub: {
+    name: 'ケイブワーム', model: 'en_crawler', type: 'bio', colors: { primary: 0x6a6a6a, organic: 0x8a7a9a },
+    hp: 38, atk: 12, def: 5, hit: 85, eva: 6, spd: 8, exp: 14, gear: 6, fx: 'bite',
+    drops: [['bio', 0.5, 1]],
+    desc: '暗い坑道に住む灰色の虫',
+  },
+  cavedrone: {
+    name: 'ランプドローン', model: 'en_drone', type: 'machine', flying: true, colors: { primary: 0x5a5040, glow: 0xffd060 },
+    hp: 30, atk: 11, def: 4, hit: 85, eva: 14, spd: 12, exp: 9, gear: 26, fx: 'laser',
+    drops: [['cell', 0.12, 1], ['scrap', 0.4, 1]],
+    desc: '坑道を照らしていた照明ドローン',
+  },
+  // ロックスパイダーも坑道に出る
+
+  // ---------------- 墜落した宇宙船（生身専用, 3種類＋小ボス） ----------------
+  shippirate: {
+    name: '海賊の残党', model: 'npc_pirate', type: 'pirate', colors: { primary: 0x3a3a5a, accent: 0x8a2a2a },
+    hp: 46, atk: 13, def: 6, hit: 85, eva: 8, spd: 9, exp: 18, gear: 50, fx: 'shot',
+    drops: [['scrap', 0.3, 1]], loot: [['kitS', 0.3]],
+    desc: '墜落した海賊船に取り残された下っ端',
+  },
+  nestspider: {
+    name: 'ネストスパイダー', model: 'en_spider', type: 'bio', colors: { primary: 0x4a2a5a, organic: 0x8a3aaa },
+    hp: 36, atk: 12, def: 5, hit: 86, eva: 10, spd: 11, exp: 20, gear: 8, fx: 'bite', scale: 0.8,
+    drops: [['bio', 0.6, 1]],
+    desc: '船内に巣を作った宇宙生物の子ども',
+  },
+  shipslime: {
+    name: 'ヴォイドスライム', model: 'en_blob', type: 'bio', colors: { organic: 0x5a4aca, organicGlow: 0x1a1060 },
+    hp: 52, atk: 13, def: 6, hit: 84, eva: 3, spd: 5, exp: 24, gear: 10, fx: 'bite', scale: 0.75,
+    drops: [['bio', 0.6, 1], ['cell', 0.1, 1]],
+    desc: '宇宙船の燃料を吸った不定形の生物',
+  },
+  nestqueen: {
+    name: 'ネストクイーン', model: 'en_spider', type: 'bio', boss: true, flag: 'shipBoss', colors: { primary: 0x5a1a4a, organic: 0xc03ab0, glow: 0xff4ae0 },
+    hp: 380, atk: 15, def: 8, hit: 88, eva: 6, spd: 10, exp: 320, gear: 400, fx: 'bite', scale: 1.4,
+    skills: [{ name: '毒の糸', mul: 0.8, target: 'all', chance: 0.25, fx: 'beam' }, { name: 'のしかかり', mul: 1.6, target: 'one', chance: 0.25, fx: 'press' }],
+    drops: [['core', 1, 1], ['bio', 1, 3]], loot: [['megaheal', 1]],
+    desc: '墜落した宇宙船の奥に巣を作った宇宙生物の女王（生身で戦う小ボス）',
+  },
+
+  // ---------------- 廃工場（最後のダンジョン, 4種類） ----------------
   pressbot: {
     name: 'プレスボット', model: 'en_bot', type: 'machine', colors: { primary: 0x5a7a9a, secondary: 0x2a3a4a },
     hp: 84, atk: 19, def: 13, hit: 82, eva: 2, spd: 6, exp: 26, gear: 70, fx: 'claw', scale: 1.2,

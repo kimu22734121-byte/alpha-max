@@ -1,5 +1,5 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
 
@@ -27,8 +27,10 @@ function read(key) {
 }
 
 // セーブ形式を変えたらここで古いデータを直す
+// v1 → v2：第1章の流れ（町3つ・仲間の加入・マシン構成）を作り直したので、v1 のデータは使わない
 function migrate(data) {
   if (!data || !data.state) return null;
+  if ((data.v || 1) < 2) return null;
   return data;
 }
 

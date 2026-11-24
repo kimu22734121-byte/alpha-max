@@ -22,16 +22,16 @@ export const CHARACTERS = {
     equip: { weapon: 'handgun', armor: 'pilotsuit' },
     skill: { id: 'snipe', name: '狙い撃ち', desc: '必ず当たり、会心が出やすい攻撃' },
   },
-  gald: {
-    defaultName: 'ガルド',
+  gina: {
+    defaultName: 'ジーナ',
     role: 'soldier',
     roleName: 'ソルジャー',
-    model: 'gald',
-    desc: '賞金稼ぎの傭兵。豪快で頼れる兄貴分。生身でも強い',
+    model: 'gina',
+    desc: '賞金稼ぎの傭兵。がっしりした体格の頼れる姉御肌。生身でも強い',
     base: { hp: 74, atk: 15, def: 10, hit: 6, eva: 4, spd: 6 },
     grow: { hp: 12, atk: 3, def: 2.4, hit: 1, eva: 0.8, spd: 0.8 },
     equip: { weapon: 'rifle', armor: 'heavyarmor' },
-    skill: { id: 'rampage', name: '猛攻', desc: '生身で強烈な一撃。マシンの時は主砲の威力アップ' },
+    skill: { id: 'rampage', name: '猛攻', desc: '生身で強烈な一撃。マシンの時は威力1.5倍' },
   },
 };
 

@@ -18,18 +18,34 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openFacility, openFieldMenu, autosave, settings } from './menus.js';
+import { openFacility, openFieldMenu, autosave, settings, runEvent } from './menus.js';
 
 const MACHINE_SCALE = 0.72;
 const CHAR_SCALE = 0.9;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
+// 光の粒子（アルファ・オメガが動くと舞う）
+let glowTex = null;
+function getGlowTex() {
+  if (glowTex) return glowTex;
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(0.4, 'rgba(255,255,255,0.5)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = grd; g.fillRect(0, 0, 32, 32);
+  glowTex = new THREE.CanvasTexture(c);
+  return glowTex;
+}
+
 export function machineSpec(mc) {
+  const def = MACHINES[mc.id];
+  // アルファは封印中はくすんだ色で光らない。封印が解けるたびに光が増える
+  const sealed = mc.id === 'alpha' && G.seal < 1;
   return {
     parts: mc.parts,
-    colors: MACHINES[mc.id].colors,
+    colors: sealed ? def.brokenColors : def.colors,
     weapons: mc.slots.map((uid) => (uid ? weaponByUid(uid) : null)),
-    glow: mc.id === 'alpha' ? MACHINES.alpha.seal[G.seal].glow : undefined,
+    glow: mc.id === 'alpha' ? def.seal[G.seal].glow : undefined,
   };
 }
 export const inMachine = (m) => !!(m.machine && G.machines[m.machine]?.loc.type === 'party');
@@ -74,6 +90,7 @@ export class WorldScene {
 
   // ---------------------------------------------------------------- 組み立て
   clear() {
+    this.particles = [];
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
     this.mapView?.dispose();
   }
@@ -105,7 +122,7 @@ export class WorldScene {
     // （ドームの骨組みは視界をさえぎるので表示しない。addDome は今後の3Dマップ用に残す）
 
     // NPC
-    this.npcs = (map.npcs || []).map((n) => {
+    this.npcs = (map.npcs || []).filter((n) => !(n.hideIfJoined && G.members[n.hideIfJoined]?.joined)).map((n) => {
       const obj = getModel(n.model, n.colors || {});
       obj.scale.setScalar(CHAR_SCALE);
       obj.position.set(n.x + 0.5, 0, n.y + 0.5);
@@ -116,7 +133,7 @@ export class WorldScene {
     });
 
     // 賞金首のシンボル
-    this.symbols = (map.symbols || []).filter((s) => !G.bounties[s.bounty]).map((s) => {
+    this.symbols = (map.symbols || []).filter((s) => (s.bounty ? !G.bounties[s.bounty] : !G.flags[s.flag])).map((s) => {
       const def = ENEMIES[s.enemies[0][0]];
       const obj = getModel(s.model, def.colors || {});
       obj.scale.setScalar(s.scale || 0.5);
@@ -190,7 +207,6 @@ export class WorldScene {
     obj.position.set(mc.loc.x, 0, mc.loc.y);
     obj.rotation.y = mc.loc.dir || 0;
     obj.userData.entity = { kind: mc.owned ? 'parked' : 'hiddenMachine', mc };
-    if (!mc.owned) obj.traverse((o) => { if (o.isMesh) { o.material.color.multiplyScalar(0.55); } });
     this.scene.add(obj);
     this.parked.push({ mc, obj });
   }
@@ -206,7 +222,8 @@ export class WorldScene {
       const mv = input.getMove();
       const mag = Math.hypot(mv.x, mv.y);
       if (mag > 0.05) {
-        const speed = (lead.kind === 'machine' ? 4.4 : 3.6) * Math.min(1, mag * 1.2);
+        const mspd = lead.kind === 'machine' ? machineStats(lead.mc).spd : 0;
+        const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2);
         const dx = mv.x * speed * dt / Math.max(mag, 1), dz = mv.y * speed * dt / Math.max(mag, 1);
         const r = lead.kind === 'machine' ? 0.4 : 0.26;
         const p = G.pos;
@@ -231,6 +248,7 @@ export class WorldScene {
     lead.obj.rotation.y = turnTo(lead.obj.rotation.y, p.dir || 0, dt * 12);
     this.animAvatar(lead, t, moving);
     this.updateFollowers(dt, false, moving);
+    this.updateParticles(dt, moving);
     // NPC・シンボル
     for (const n of this.npcs) animateChar(n.obj, t + n.x, 0);
     for (const s of this.symbols) {
@@ -248,6 +266,31 @@ export class WorldScene {
       for (const s of this.symbols) {
         if (Math.hypot(s.x - p.x, s.z - p.y) < 1.1) { this.challengeSymbol(s); break; }
       }
+    }
+  }
+
+  updateParticles(dt, moving) {
+    this.particles ||= [];
+    for (const a of this.avatars) {
+      const color = a.kind === 'machine' ? MACHINES[a.mc.id].particle : null;
+      if (!color || (a.mc.id === 'alpha' && G.seal < 1)) continue;
+      const rate = moving ? 40 : 5;
+      a.pAcc = (a.pAcc || 0) + dt * rate;
+      while (a.pAcc > 1) {
+        a.pAcc -= 1;
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTex(), color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        const o = a.obj.position;
+        sp.position.set(o.x + (Math.random() - 0.5) * 0.9, 0.4 + Math.random() * 1.3, o.z + (Math.random() - 0.5) * 0.9);
+        sp.scale.setScalar(0.12 + Math.random() * 0.12);
+        this.scene.add(sp);
+        this.particles.push({ sp, t: 0, life: 0.8 + Math.random() * 0.6, vy: 0.4 + Math.random() * 0.6 });
+      }
+    }
+    for (const p of [...this.particles]) {
+      p.t += dt;
+      p.sp.position.y += p.vy * dt;
+      p.sp.material.opacity = 1 - p.t / p.life;
+      if (p.t >= p.life) { this.scene.remove(p.sp); p.sp.material.dispose(); this.particles.splice(this.particles.indexOf(p), 1); }
     }
   }
 
@@ -347,7 +390,9 @@ export class WorldScene {
       G.encounterIn -= info.enc === 'road' ? (enc.roadRate ?? 0.5) : 1;
       if (G.encounterIn <= 0) {
         G.encounterIn = randInt(enc.steps[0], enc.steps[1]);
-        const table = enc.tables[info.enc] || enc.tables[Object.keys(enc.tables)[0]];
+        const zone = (enc.zones || []).find((z) => tx >= z.x0 && tx < z.x1 && ty >= z.y0 && ty < z.y1);
+        const tables = zone ? zone.tables : enc.tables;
+        const table = tables[info.enc] || tables[Object.keys(tables)[0]];
         const group = pickWeighted(table);
         this.startBattle({ enemies: group.enemies, terrain: info.enc });
       }
@@ -356,6 +401,15 @@ export class WorldScene {
 
   async warp(w) {
     this.lock(true);
+    // 鍵が必要な入口
+    if (w.require && !G.flags[w.require]) {
+      await ui.say(w.lockedText || 'ここはまだ通れないようだ。');
+      const p = G.pos;
+      p.y += 1; // 一歩下がる
+      this.lastTile = `${Math.floor(p.x)},${Math.floor(p.y)}`;
+      this.lock(false);
+      return;
+    }
     audio.sfx('warp');
     await ui.fade(true, 0.35);
     const toMap = MAPS[w.to];
@@ -397,7 +451,8 @@ export class WorldScene {
     this.lock(true);
     const def = ENEMIES[s.data.enemies[0][0]];
     const b = BOUNTIES[s.data.bounty];
-    await ui.say([{ name: '', text: `賞金首「${def.name}」だ！` }, { name: '', text: `賞金 ${b.reward.toLocaleString()} ギア。${def.desc}` }]);
+    if (b) await ui.say([{ name: '', text: `賞金首「${def.name}」だ！` }, { name: '', text: `賞金 ${b.reward.toLocaleString()} ギア。${def.desc}` }]);
+    else await ui.say([{ name: '', text: `奥に巨大な影がうごめいている……「${def.name}」だ！` }, { name: '', text: def.desc }]);
     const ok = await ui.confirm('戦いますか？', '戦う', 'やめておく');
     if (!ok) {
       // 少し離れる
@@ -495,6 +550,13 @@ export class WorldScene {
   }
 
   async talk(n) {
+    if (n.data.event) {
+      const p0 = G.pos;
+      n.obj.rotation.y = Math.atan2(p0.x - n.x, p0.y - n.z);
+      await runEvent(n.data.event, this);
+      if (this.active) this.build();
+      return;
+    }
     const p = G.pos;
     n.obj.rotation.y = Math.atan2(p.x - n.x, p.y - n.z);
     this.avatars[0].obj.rotation.y = Math.atan2(n.x - p.x, n.z - p.y);
@@ -594,23 +656,32 @@ export class WorldScene {
     autosave();
   }
 
+  // シークレットマシン（レンの家の地下に眠るオメガ）を見つける
   async discoverMachine(pk) {
     const mc = pk.mc;
     const def = MACHINES[mc.id];
+    const r = G.members.ren.name;
     await ui.say([
-      '山に囲まれたくぼ地に、古い機体が眠っている……。',
-      `${G.members.ren.name}「すごい……ほこりをかぶってるけど、フレームもエンジンも生きてる！」`,
-      `${G.members.ren.name}「ちょっと整備すれば動くぞ。誰でも乗れるタイプだ！」`,
+      { name: '', text: '格納庫の奥で、漆黒の機体が静かに眠っている。赤いラインが、呼吸するように明滅している……。' },
+      { name: r, text: 'うそだろ……うちの地下に、こんなものが……！？' },
+      { name: r, text: 'この形……アルファにそっくりだ。フレームも、コアの作りも。まるで兄弟みたいな……。' },
+      { name: '', text: '機体の胸に、かすれた文字が刻まれている。「OMEGA」――。' },
+      { name: r, text: 'オメガ……。こっちは封印もない。完全に動く。誰でも乗れるぞ！' },
+      { name: r, text: '父さんは、どうしてこんなものを隠してたんだろう……。' },
     ]);
     mc.owned = true;
+    G.flags.omegaFound = true;
     const st = machineStats(mc);
     mc.armor = st.maxArmor; mc.en = st.maxEn;
-    audio.sfx('levelup');
-    ui.banner(`${esc(def.name)}を手に入れた！`, '制限なしで誰でも乗れる強力なマシン');
-    // 色を元に戻す
+    audio.sfx('seal');
+    // 格納庫のリフトでガレージへ上げる
+    pk.obj.userData.entity = null;
+    await tween(1.2, (k) => { pk.obj.position.y = k * 4; });
     this.scene.remove(pk.obj);
     this.parked = this.parked.filter((p) => p !== pk);
-    this.addParked(mc);
+    mc.loc = { type: 'garage', town: 'town1' };
+    ui.banner(`${esc(def.name)}を手に入れた！`, '制限なしで誰でも乗れる最強クラスのシークレットマシン');
+    await ui.say('オメガは格納庫のリフトで、ラストヘイヴンのガレージへ運ばれた。（ガレージの「乗る人を決める」で乗りかえられます）');
     autosave();
   }
 

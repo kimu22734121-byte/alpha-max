@@ -1,7 +1,7 @@
 // ゲームの状態（セーブされる中身）と、ステータス計算などのルール
 import { CHARACTERS, LEVEL } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
-import { PARTS, MODS, SLOT_INFO, HEAVY_ARM_WEAPON } from '../data/parts.js';
+import { PARTS, MODS, SLOT_INFO, HEAVY_ARM_WEAPON, MACHINE_TYPES } from '../data/parts.js';
 import { WEAPONS, UPGRADE } from '../data/weapons.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
 import { SAVE_VERSION } from '../core/save.js';
@@ -21,7 +21,6 @@ export function newGame(names) {
     inv: { items: { kitS: 3, repS: 2, batS: 1 }, mats: {}, weapons: [], parts: {}, foot: {} },
     uid: 1,
     pos: { map: 'town1', x: 5.5, y: 6.5, dir: 0 },
-    boarded: false,
     lastTown: 'town1',
     flags: {},
     bounties: {},
@@ -30,15 +29,17 @@ export function newGame(names) {
     encounterIn: 14,
   };
   G = s;
-  ['ren', 'shion', 'gald'].forEach((id, i) => {
+  // 最初はレン1人。シオン（町2）とジーナ（町3）は加入イベントで仲間になる
+  ['ren', 'shion', 'gina'].forEach((id, i) => {
     const c = CHARACTERS[id];
-    s.members[id] = { id, name: names?.[i] || c.defaultName, lv: 1, exp: 0, hp: c.base.hp, ko: false, equip: { ...c.equip }, machine: id === 'ren' ? 'alpha' : null, joined: id === 'ren' };
+    s.members[id] = { id, name: names?.[i] || c.defaultName, lv: 1, exp: 0, hp: c.base.hp, ko: false, equip: { ...c.equip }, machine: id === 'ren' ? 'hound' : null, joined: id === 'ren' };
   });
   for (const [id, def] of Object.entries(MACHINES)) {
+    const st0 = def.start;
     const mc = {
-      id, owned: !def.hidden, parts: { ...def.parts }, slots: [null, null, null, null, null],
+      id, owned: !!def.owned, parts: { ...def.parts }, slots: [null, null, null, null, null],
       mods: { frame: 0, engine: 0 }, broken: false,
-      loc: def.start.type === 'garage' ? { type: 'garage', town: def.start.town } : { type: 'map', map: def.start.map, x: def.start.x + 0.5, y: def.start.y + 0.5, dir: 0 },
+      loc: st0.type === 'map' ? { type: 'map', map: st0.map, x: st0.x + 0.5, y: st0.y + 0.5, dir: 0 } : { type: st0.type, town: st0.town },
     };
     s.machines[id] = mc;
     def.weapons.forEach((w, i) => { if (w) mc.slots[i] = addWeapon(w.id, w.plus || 0, true); });
@@ -92,22 +93,43 @@ export function machineName(mc) {
 }
 export function sealInfo() { return MACHINES.alpha.seal[G.seal] || MACHINES.alpha.seal[0]; }
 
+// マシンのタイプ（ボディの mtype で決まる）
+export const machineType = (mc) => PARTS[mc.parts.body].mtype || 'balance';
+export const typeInfo = (mc) => MACHINE_TYPES[machineType(mc)];
+// タイプによる武器の重さ（重厚タイプは主砲・ミサイルが軽くなる）
+export function weaponWeight(mc, def) {
+  const t = typeInfo(mc);
+  return t.wtCats?.includes(def.cat) ? Math.round(def.wt * t.wtRate * 10) / 10 : def.wt;
+}
+// タイプによる武器の威力倍率
+export function typeBoost(mc, def) {
+  const b = typeInfo(mc).boost || {};
+  let k = b.all || 1;
+  if (b[def.cat]) k *= b[def.cat];
+  if (def.elem && b[def.elem]) k *= b[def.elem];
+  return k;
+}
+
 export function machineStats(mc) {
   const p = Object.fromEntries(Object.entries(mc.parts).map(([k, v]) => [k, PARTS[v]]));
   const mul = mc.id === 'alpha' ? sealInfo().mul : 1;
+  const t = typeInfo(mc);
   const sum = (k) => ['head', 'body', 'armR', 'armL', 'legs'].reduce((a, s) => a + (p[s]?.[k] || 0), 0);
   const weapons = mc.slots.map((uid) => (uid ? weaponByUid(uid) : null));
-  const wWt = weapons.reduce((a, w) => a + (w ? WEAPONS[w.id].wt : 0), 0);
+  const wWt = weapons.reduce((a, w) => a + (w ? weaponWeight(mc, WEAPONS[w.id]) : 0), 0);
   const capMods = MODS.engine.slice(0, mc.mods.engine).reduce((a, m) => a + m.cap, 0);
   const slots = Math.min(p.body.maxSlots || 5, (p.body.slots || 3) + mc.mods.frame);
   const st = {
     maxArmor: Math.min(9999, Math.round(sum('armor') * mul)),
     def: Math.round(sum('def') * mul),
     hit: (p.head.hit || 0) + Math.round(((p.armR.hit || 0) + (p.armL.hit || 0)) / 2),
-    eva: (p.legs.eva || 0) + Math.round(((p.armR.eva || 0) + (p.armL.eva || 0)) / 2),
+    eva: (p.legs.eva || 0) + Math.round(((p.armR.eva || 0) + (p.armL.eva || 0)) / 2) + (t.eva || 0),
+    spd: (p.legs.spd || 0) + (t.spd || 0),
+    type: machineType(mc),
+    typeName: t.name,
     scan: p.head.scan || 0,
     cap: (p.engine.cap || 40) + capMods,
-    weight: sum('wt') + wWt,
+    weight: Math.round((sum('wt') + wWt) * 10) / 10,
     maxEn: Math.round((p.engine.en || 50) * mul),
     slots,
     mul,
@@ -121,6 +143,7 @@ export function machineStats(mc) {
 
 export function canPilot(m, mc) {
   const def = MACHINES[mc.id];
+  if (mc.id === 'alpha' && (!mc.owned || G.seal < 1)) return false; // 封印中は動かない
   if (def.pilot === 'mechanic') return CHARACTERS[m.id].role === 'mechanic';
   return true;
 }
@@ -148,11 +171,11 @@ export function checkMount(mc, slot, w) {
   if (!w) return null;
   const def = WEAPONS[w.id];
   const info = SLOT_INFO[slot];
-  if (def.mount !== info.mount) return info.mount === 'arm' ? '腕には機銃や特殊兵器（腕用）を付ける' : '背中には主砲やミサイルを付ける';
+  if (def.mount !== info.mount) return info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付ける' : '背中には主砲やミサイルを付ける';
   if (def.alphaOnly && mc.id !== 'alpha') return 'アルファ専用の武器だ';
   if (info.mount === 'arm' && def.wt > HEAVY_ARM_WEAPON && !st.power[info.side]) return '重すぎる。パワーアームが必要だ';
-  const cur = mc.slots[slot] ? WEAPONS[weaponByUid(mc.slots[slot]).id].wt : 0;
-  if (st.weight - cur + def.wt > st.cap) return '重量オーバー（エンジン強化で積める重さが増える）';
+  const cur = mc.slots[slot] ? weaponWeight(mc, WEAPONS[weaponByUid(mc.slots[slot]).id]) : 0;
+  if (st.weight - cur + weaponWeight(mc, def) > st.cap) return '重量オーバー（エンジン強化で積める重さが増える）';
   return null;
 }
 
@@ -167,7 +190,7 @@ export function equipWeapon(mc, slot, uid) {
 
 export function checkPart(mc, slotKey, partId) {
   const def = PARTS[partId];
-  if (def.alphaOnly && mc.id !== 'alpha') return 'アルファ専用のパーツだ';
+  if (def.only && mc.id !== def.only) return `${MACHINES[def.only].name}専用のパーツだ`;
   const before = machineStats(mc);
   const old = mc.parts[slotKey];
   mc.parts[slotKey] = partId;
@@ -181,7 +204,7 @@ export function equipPart(mc, slotKey, partId) {
   const err = checkPart(mc, slotKey, partId);
   if (err) return err;
   const old = mc.parts[slotKey];
-  if (old && !PARTS[old].alphaOnly) G.inv.parts[old] = (G.inv.parts[old] || 0) + 1;
+  if (old && !PARTS[old].only) G.inv.parts[old] = (G.inv.parts[old] || 0) + 1;
   G.inv.parts[partId]--;
   if (G.inv.parts[partId] <= 0) delete G.inv.parts[partId];
   mc.parts[slotKey] = partId;

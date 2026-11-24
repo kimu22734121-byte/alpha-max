@@ -142,23 +142,38 @@ function buildShion(colors) {
   return root;
 }
 
-function buildGald(colors) {
-  const m = makeMats({ primary: 0x4d5a36, secondary: 0x353b2a, accent: 0xb33a2a, hair: 0x22201c, skin: 0xd7a07a, ...colors });
-  const { root, torso, head } = chibiBase(m, { bulk: 1.35, armRole: 'secondary' });
-  // 胸アーマーと肩当て
-  add(torso, Bx(0.5, 0.26, 0.34), m('primary'), 0, 0.2, 0.01);
+// ソルジャー（女性）：がっしりした体格に重いアーマー、姉御肌
+function buildGina(colors) {
+  const m = makeMats({ primary: 0x4a5462, secondary: 0x2e333c, accent: 0xc8402e, hair: 0xa8321e, skin: 0xe2ae86, glow: 0xffffff, ...colors });
+  const { root, torso, head } = chibiBase(m, { bulk: 1.3, armRole: 'secondary' });
+  // 胸アーマー・腹のプレート・大きな肩当て
+  add(torso, Bx(0.46, 0.24, 0.32), m('primary'), 0, 0.21, 0.01);
+  add(torso, Bx(0.3, 0.06, 0.02), m('accent'), 0, 0.25, 0.175);
   for (const s of [-1, 1]) {
-    add(torso, Bx(0.2, 0.12, 0.24), m('primary'), 0.29 * s, 0.33, 0, 0, 0, 0.25 * s);
-    add(torso, Bx(0.12, 0.04, 0.2), m('metal'), 0.31 * s, 0.4, 0, 0, 0, 0.25 * s);
+    add(torso, Bx(0.21, 0.13, 0.26), m('primary'), 0.29 * s, 0.33, 0, 0, 0, 0.3 * s);
+    add(torso, Bx(0.22, 0.04, 0.27), m('accent'), 0.3 * s, 0.4, 0, 0, 0, 0.3 * s);
   }
-  add(torso, Bx(0.5, 0.07, 0.35), m('leather'), 0, 0.03, 0);
-  add(torso, Bx(0.08, 0.1, 0.06), m('metal'), 0.16, 0.0, 0.18);
-  // 短髪とバンダナ、傷
-  const hair = add(head, Sp(0.2, 1), m('hair'), 0, 0.3, -0.04); hair.scale.set(1.0, 0.45, 1.0);
-  add(head, To(0.21, 0.025, 4, 16), m('accent'), 0, 0.27, 0, Math.PI / 2 - 0.1, 0, 0);
-  add(head, Bx(0.012, 0.09, 0.01), m('accent'), -0.08, 0.13, 0.2, 0, 0, 0.4);
-  // 少し大きく
-  root.scale.setScalar(1.12);
+  add(torso, Bx(0.47, 0.07, 0.33), m('leather'), 0, 0.03, 0);
+  add(torso, Bx(0.08, 0.1, 0.06), m('metal'), -0.16, 0.0, 0.17);
+  // 長い髪（前髪＋高い位置のポニーテール）
+  const cap = add(head, Sp(0.212, 1), m('hair'), 0, 0.26, -0.03); cap.scale.set(1.07, 0.78, 1.08);
+  add(head, Bx(0.3, 0.07, 0.06), m('hair'), 0.03, 0.33, 0.17, 0.3, 0, -0.15);
+  const tail = grp(head, 'ponytail', 0, 0.36, -0.19);
+  tail.rotation.x = 0.5;
+  add(tail, Sp(0.07, 0), m('accent'), 0, 0, 0);
+  add(tail, Cy(0.075, 0.03, 0.32, 6), m('hair'), 0, -0.17, -0.02);
+  add(tail, Cy(0.03, 0.012, 0.12, 5), m('hair'), 0, -0.36, -0.03);
+  // 顔の横に垂れる髪
+  for (const s of [-1, 1]) add(head, Bx(0.07, 0.24, 0.1), m('hair'), 0.19 * s, 0.16, 0.06, 0, 0, 0.08 * s);
+  // ヘッドバンド・大きめの目とまつげ・口紅
+  add(head, To(0.214, 0.02, 4, 16), m('accent'), 0, 0.28, 0, Math.PI / 2 - 0.12, 0, 0);
+  for (const s of [-1, 1]) {
+    add(head, Bx(0.055, 0.085, 0.02), m('dark'), 0.075 * s, 0.18, 0.207);
+    add(head, Bx(0.02, 0.025, 0.01), m('glow'), 0.065 * s, 0.2, 0.218);
+    add(head, Bx(0.075, 0.018, 0.02), m('dark'), 0.08 * s, 0.232, 0.205, 0, 0, -0.3 * s);
+  }
+  add(head, Bx(0.05, 0.015, 0.01), m('accent'), 0, 0.1, 0.2);
+  root.scale.setScalar(1.08);
   return root;
 }
 
@@ -402,6 +417,158 @@ function buildWeapon(colors, kind) {
     for (let i = 0; i < 3; i++) add(root, Bx(0.32, 0.03, 0.05), m('accent'), 0, 0.09, 0.5 + i * 0.4);
     socket(root, 'muzzle', 0, 0.02, 1.75);
   }
+  return root;
+}
+
+// =====================================================================
+// シャープ型のパーツ（シャープタイプの通常マシン／伝説の機体アルファ・オメガ）
+// 曲線的で細身。legend=true だと胸のコア・背中のスラスターの翼・金の飾りが付く
+// =====================================================================
+function buildBodySharp(colors, legend = false) {
+  const m = makeMats(colors);
+  const root = grp(null, 'body');
+  root.userData = { kind: 'body', sharp: true, legend };
+  // 細い腰と、上に向かって広がる曲線の胸
+  add(root, Cy(0.24, 0.3, 0.3, 8), m('dark'), 0, 0.15, 0);
+  const chest = add(root, Sp(0.5, 1), m('primary'), 0, 0.52, 0);
+  chest.scale.set(1.0, 0.62, 0.72);
+  add(root, Sp(0.34, 1), m('secondary'), 0, 0.5, 0.18).scale.set(1.15, 0.7, 0.6);
+  // 襟と肩の装甲
+  add(root, Cy(0.3, 0.42, 0.12, 8), m('accent'), 0, 0.8, -0.02);
+  for (const s of [-1, 1]) {
+    add(root, Bx(0.04, 0.05, 0.42), m('glow'), 0.34 * s, 0.56, 0.12, 0, 0.35 * s, 0);
+    add(root, Bx(0.04, 0.3, 0.04), m('glow'), 0.2 * s, 0.38, 0.33, 0.25, 0, 0.2 * s);
+  }
+  if (legend) {
+    // 胸のコア（青白く光る）
+    add(root, Cy(0.15, 0.15, 0.06, 10), m('accent'), 0, 0.52, 0.37, Math.PI / 2, 0, 0);
+    add(root, Sp(0.1, 1), m('glow'), 0, 0.52, 0.39, 0, 0, 0, 'core');
+    // 背中のスラスターの翼（肩の上に大きく広がる）
+    for (const s of [-1, 1]) {
+      const wing = grp(root, s < 0 ? 'wingR' : 'wingL', 0.2 * s, 0.78, -0.36);
+      wing.rotation.set(-0.3, 0, -0.95 * s);
+      add(wing, Cy(0.09, 0.12, 0.22, 8), m('dark'), 0, 0, 0);
+      add(wing, Cy(0.07, 0.07, 0.03, 8), m('glow'), 0, -0.12, 0);
+      add(wing, Bx(0.08, 1.35, 0.3), m('primary'), 0, 0.72, 0);
+      add(wing, Bx(0.1, 1.2, 0.06), m('accent'), 0.0, 0.66, 0.16);
+      add(wing, Bx(0.03, 1.15, 0.05), m('glow'), 0, 0.66, -0.17, 0, 0, 0, 'wingLight');
+      const sub = grp(wing, '', 0.06 * s, 0.3, 0);
+      sub.rotation.z = 0.5 * s;
+      add(sub, Bx(0.06, 0.9, 0.22), m('primary'), 0, 0.45, -0.04);
+      add(sub, Bx(0.03, 0.8, 0.04), m('glow'), 0, 0.45, -0.17);
+      add(sub, Co(0.05, 0.25, 4), m('accent'), 0, 0.98, -0.04);
+      add(wing, Co(0.07, 0.3, 4), m('accent'), 0, 1.5, 0);
+    }
+    // 頭の後ろの金の飾り
+    add(root, Co(0.08, 0.3, 4), m('accent'), 0, 0.9, -0.28, -1.0, 0, 0);
+  } else {
+    add(root, Bx(0.5, 0.25, 0.2), m('secondary'), 0, 0.55, -0.38);
+    for (const s of [-1, 1]) add(root, Cy(0.06, 0.08, 0.22, 8), m('dark'), 0.17 * s, 0.5, -0.5, Math.PI / 2, 0, 0);
+  }
+  // ハッチ
+  const hatch = grp(root, 'hatch', 0, 0.82, -0.12);
+  add(hatch, Bx(0.38, 0.06, 0.36), m('secondary'), 0, 0.02, 0.18);
+  add(hatch, Bx(0.22, 0.03, 0.14), m('visor'), 0, 0.06, 0.2);
+  socket(root, 'socket_head', 0, 0.84, 0.16);
+  socket(root, 'socket_armR', -0.52, 0.6, 0.02);
+  socket(root, 'socket_armL', 0.52, 0.6, 0.02);
+  socket(root, 'socket_back1', 0, 0.86, -0.36);
+  // 伝説の機体は翼をじゃましないように、左右の背中武器を腰に付ける
+  socket(root, 'socket_back2', legend ? -0.46 : -0.36, legend ? 0.28 : 0.84, legend ? -0.15 : -0.3);
+  socket(root, 'socket_back3', legend ? 0.46 : 0.36, legend ? 0.28 : 0.84, legend ? -0.15 : -0.3);
+  return root;
+}
+
+function buildHeadSharp(colors, legend = false) {
+  const m = makeMats(colors);
+  const root = grp(null, 'head');
+  root.userData = { kind: 'head' };
+  add(root, Sp(0.19, 1), m('primary'), 0, 0.13, 0.02).scale.set(0.9, 0.78, 1.15);
+  add(root, Bx(0.26, 0.05, 0.06), m('glow'), 0, 0.12, 0.2, 0, 0, 0, 'eye');
+  add(root, Co(0.1, 0.12, 4), m('secondary'), 0, 0.02, 0.18, Math.PI / 2 + 0.3, 0, 0);
+  if (legend) {
+    // V字のアンテナ（金）
+    for (const s of [-1, 1]) add(root, Co(0.035, 0.38, 4), m('accent'), 0.1 * s, 0.33, 0.12, 0.2, 0, -0.75 * s);
+    add(root, Sp(0.045, 0), m('glow'), 0, 0.24, 0.17);
+    add(root, Co(0.05, 0.22, 4), m('accent'), 0, 0.3, -0.12, -0.6, 0, 0);
+  } else {
+    add(root, Co(0.04, 0.3, 4), m('accent'), 0, 0.3, -0.05, -0.4, 0, 0);
+  }
+  return root;
+}
+
+function buildArmSharp(colors) {
+  const m = makeMats(colors);
+  const root = grp(null, 'arm');
+  root.userData = { kind: 'arm' };
+  add(root, Sp(0.2, 1), m('primary'), -0.1, 0.06, 0).scale.set(1, 0.85, 1.1);
+  add(root, Co(0.14, 0.3, 4), m('accent'), -0.14, 0.22, 0, 0, 0, 0.3);
+  const upper = grp(root, 'upper', -0.12, -0.08, 0);
+  add(upper, Sp(0.07, 1), m('glow'), 0, 0, 0);
+  add(upper, Cy(0.07, 0.06, 0.34, 6), m('dark'), 0, -0.2, 0);
+  const fore = grp(upper, 'fore', 0, -0.38, 0);
+  add(fore, Sp(0.065, 1), m('glow'), 0, 0, 0);
+  add(fore, Cy(0.08, 0.11, 0.46, 6), m('primary'), 0, 0, 0.16, Math.PI / 2, 0, 0);
+  add(fore, Bx(0.03, 0.04, 0.36), m('accent'), 0.1, 0.04, 0.16);
+  socket(fore, 'socket_hand', 0, -0.03, 0.4);
+  return root;
+}
+
+function buildLegsSharp(colors) {
+  const m = makeMats(colors);
+  const root = grp(null, 'legs');
+  root.userData = { kind: 'legs', legType: 'biped' };
+  add(root, Sp(0.3, 1), m('secondary'), 0, 1.05, 0).scale.set(1.3, 0.55, 0.9);
+  for (const s of [-1, 1]) {
+    const leg = grp(root, s < 0 ? 'legR' : 'legL', 0.3 * s, 1.0, 0);
+    add(leg, Sp(0.1, 1), m('glow'), 0, 0, 0);
+    const thigh = grp(leg, '', 0.03 * s, 0, 0);
+    thigh.rotation.x = -0.5;
+    add(thigh, Cy(0.13, 0.09, 0.55, 6), m('primary'), 0, -0.28, 0);
+    add(thigh, Bx(0.04, 0.4, 0.04), m('accent'), 0, -0.28, 0.12);
+    const shin = grp(thigh, '', 0, -0.55, 0);
+    shin.rotation.x = 1.05;
+    add(shin, Sp(0.09, 1), m('glow'), 0, 0, 0);
+    add(shin, Cy(0.08, 0.12, 0.55, 6), m('primary'), 0, -0.28, -0.03);
+    add(shin, Co(0.08, 0.3, 4), m('accent'), 0, -0.1, 0.1, 0.4, 0, 0);
+    const foot = grp(shin, '', 0, -0.55, 0);
+    foot.rotation.x = -0.55;
+    add(foot, Co(0.13, 0.55, 4), m('secondary'), 0, -0.04, 0.12, Math.PI / 2, Math.PI / 4, 0);
+  }
+  socket(root, 'socket_body', 0, 1.12, 0);
+  return root;
+}
+
+// タイヤ（バイク型）：前後に大きな車輪
+function buildLegsWheel(colors) {
+  const m = makeMats(colors);
+  const root = grp(null, 'legs');
+  root.userData = { kind: 'legs', legType: 'wheel' };
+  add(root, Bx(0.42, 0.32, 1.5), m('secondary'), 0, 0.62, 0);
+  add(root, Bx(0.5, 0.12, 1.0), m('primary'), 0, 0.82, -0.05);
+  add(root, Cy(0.06, 0.08, 0.5, 6), m('dark'), 0.22, 0.5, -0.65, Math.PI / 2 - 0.3, 0, 0);
+  for (const [z, name] of [[0.78, 'wheelF'], [-0.78, 'wheelB']]) {
+    for (const s of [-1, 1]) add(root, Bx(0.05, 0.5, 0.1), m('metal'), 0.2 * s, 0.55, z * 0.92, z > 0 ? -0.35 : 0.35, 0, 0);
+    const w = grp(root, name, 0, 0.42, z);
+    add(w, Cy(0.42, 0.42, 0.28, 12), m('dark'), 0, 0, 0, 0, 0, Math.PI / 2);
+    add(w, Cy(0.22, 0.22, 0.3, 6), m('metal'), 0, 0, 0, 0, 0, Math.PI / 2);
+    add(w, Bx(0.31, 0.06, 0.7), m('secondary'), 0, 0, 0);
+  }
+  add(root, Bx(0.46, 0.05, 0.4), m('glow'), 0, 0.46, 0);
+  socket(root, 'socket_body', 0, 0.88, -0.1);
+  return root;
+}
+
+function buildBlade(colors) {
+  const m = makeMats({ primary: 0x4a4e56, ...colors });
+  const root = grp(null, 'weapon');
+  root.userData = { kind: 'weapon', weaponKind: 'blade' };
+  add(root, Bx(0.16, 0.16, 0.3), m('primary'), 0, 0, 0);
+  add(root, Bx(0.3, 0.05, 0.08), m('accent'), 0, 0, 0.17);
+  add(root, Bx(0.05, 0.18, 1.1), m('metal'), 0, 0, 0.75);
+  add(root, Bx(0.02, 0.2, 1.05), m('glow'), 0, 0.02, 0.75);
+  add(root, Co(0.09, 0.25, 4), m('metal'), 0, 0, 1.4, Math.PI / 2, Math.PI / 4, 0);
+  socket(root, 'muzzle', 0, 0, 1.4);
   return root;
 }
 
@@ -658,7 +825,7 @@ export const MODEL_BUILDERS = {
   // キャラ
   ren: buildRen,
   shion: buildShion,
-  gald: buildGald,
+  gina: buildGina,
   npc_a: (c) => buildNpc('a', c),
   npc_b: (c) => buildNpc('b', c),
   npc_pirate: (c) => buildNpc('pirate', c),
@@ -677,7 +844,15 @@ export const MODEL_BUILDERS = {
   arm_heavy: (c) => buildArm(c, 'heavy'),
   arm_light: (c) => buildArm(c, 'light'),
   arm_power: (c) => buildArm(c, 'power'),
+  body_sharp: (c) => buildBodySharp(c, false),
+  body_legend: (c) => buildBodySharp(c, true),
+  head_sharp: (c) => buildHeadSharp(c, false),
+  head_legend: (c) => buildHeadSharp(c, true),
+  arm_sharp: buildArmSharp,
+  legs_sharp: buildLegsSharp,
+  legs_wheel: buildLegsWheel,
   // 武器
+  wpn_blade: buildBlade,
   wpn_cannon: (c) => buildWeapon(c, 'cannon'),
   wpn_gatling: (c) => buildWeapon(c, 'gatling'),
   wpn_missile: (c) => buildWeapon(c, 'missile'),
