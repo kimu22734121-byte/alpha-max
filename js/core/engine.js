@@ -1,6 +1,6 @@
 // 描画とメインループ。シーンは { scene, camera, update(dt), enter(), exit() } の形
 import * as THREE from 'three';
-import { updateTweens } from './tween.js';
+import { updateTweens, timeScale } from './tween.js';
 
 export const engine = {
   renderer: null,
@@ -44,7 +44,7 @@ export const engine = {
 
   loop() {
     requestAnimationFrame(this.loop);
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const dt = Math.min(this.clock.getDelta(), 0.05) * timeScale.k;
     this.time += dt;
     updateTweens(dt);
     for (const fn of this.listeners) fn(dt);

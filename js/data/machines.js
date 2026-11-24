@@ -43,7 +43,7 @@ export const MACHINES = {
     secret: true, // 初心者救済用のシークレットマシン（制限なしで誰でも乗れる）
     colors: { primary: 0x15161b, secondary: 0x2a2c33, accent: 0xc4cad4, glow: 0xff2a3a, dark: 0x0c0c10 },
     parts: { head: 'head_omega', body: 'body_omega', armR: 'arm_omega', armL: 'arm_omega', legs: 'legs_omega', engine: 'eng_omega' },
-    weapons: [{ id: 'lm1' }, { id: 'lzblade' }, { id: 'rg1' }, { id: 'hm2' }, { id: 'cm1' }],
+    weapons: [{ id: 'omega_storm' }, { id: 'lzblade' }, { id: 'omega_buster' }, { id: 'omega_nova' }, { id: 'hm2' }],
     start: { type: 'map', map: 'basement', x: 11, y: 4 },
     particle: 0xff3a4a,
   },

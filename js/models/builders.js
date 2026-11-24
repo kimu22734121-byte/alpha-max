@@ -766,6 +766,38 @@ const FURNITURE = {
   f_gears: (c) => furniture('gears', c, (r, m) => {
     for (let i = 0; i < 4; i++) add(r, Cy(0.3 - i * 0.05, 0.3 - i * 0.05, 0.1, 8), m('metal'), (i % 2) * 0.2 - 0.1, 0.05 + i * 0.11, (i % 2) * 0.1);
   }),
+  // 道具屋：薬のびん棚と食料の箱
+  f_potions: (c) => furniture('potions', c, (r, m) => {
+    add(r, Bx(1.8, 1.7, 0.4), m('secondary'), 0, 0.85, 0);
+    const cols = [0xff4a5a, 0x4aff8a, 0x5a9aff, 0xffd24a, 0xd07aff];
+    for (let i = 0; i < 3; i++) {
+      add(r, Bx(1.7, 0.05, 0.38), m('primary'), 0, 0.4 + i * 0.5, 0.02);
+      for (let k = 0; k < 6; k++) {
+        const b = add(r, Cy(0.07, 0.09, 0.26, 6), new THREE.MeshStandardMaterial({ name: 'glass', color: cols[(i * 2 + k) % 5], emissive: cols[(i * 2 + k) % 5], emissiveIntensity: 0.35, transparent: true, opacity: 0.85 }), -0.68 + k * 0.27, 0.56 + i * 0.5, 0.05);
+        void b;
+      }
+    }
+  }),
+  f_food: (c) => furniture('food', c, (r, m) => {
+    add(r, Bx(0.9, 0.45, 0.6), m('primary'), 0, 0.22, 0);
+    for (let k = 0; k < 4; k++) add(r, Cy(0.1, 0.1, 0.18, 8), m('metal'), -0.3 + k * 0.2, 0.54, -0.1);
+    add(r, Sp(0.14, 0), m('accent'), 0.2, 0.55, 0.12).scale.set(1.4, 0.7, 1);
+    add(r, Sp(0.12, 0), m('accent'), -0.15, 0.53, 0.14).scale.set(1.3, 0.7, 1);
+  }, { accent: 0xd8a050 }),
+  // 酒場：カウンターの上のびん
+  f_bottles: (c) => furniture('bottles', c, (r, m) => {
+    for (let k = 0; k < 7; k++) {
+      const col = [0x4a8a3a, 0x8a4a2a, 0xc8b060, 0x3a5a8a][k % 4];
+      add(r, Cy(0.05, 0.07, 0.3, 6), new THREE.MeshStandardMaterial({ name: 'glass', color: col, transparent: true, opacity: 0.8, roughness: 0.2 }), -0.9 + k * 0.3, 0.15, 0);
+      add(r, Cy(0.02, 0.03, 0.1, 5), new THREE.MeshStandardMaterial({ name: 'glass', color: col }), -0.9 + k * 0.3, 0.35, 0);
+    }
+  }),
+  // ガレージ：整備用のリフト台
+  f_lift: (c) => furniture('lift', c, (r, m) => {
+    add(r, Bx(2.4, 0.12, 2.0), m('metal'), 0, 0.06, 0);
+    for (const s2 of [-1, 1]) { add(r, Bx(0.12, 1.2, 0.12), m('accent'), 1.1 * s2, 0.6, -0.9); add(r, Bx(0.16, 0.04, 1.8), m('accent'), 1.0 * s2, 0.14, 0); }
+    for (let i = 0; i < 6; i++) add(r, Bx(0.3, 0.02, 0.06), m('dark'), -0.9 + i * 0.36, 0.13, 0.95, 0, 0, 0.6);
+  }, { accent: 0xe8b030 }),
   chest: (c) => furniture('chest', { primary: 0x6a4a2a, accent: 0xd8b040, ...c }, (r, m) => {
     add(r, Bx(0.75, 0.42, 0.5), m('primary'), 0, 0.21, 0);
     for (const x of [-0.3, 0.3]) add(r, Bx(0.06, 0.44, 0.52), m('accent'), x, 0.21, 0);

@@ -1,6 +1,8 @@
 // 簡単なトゥイーンとタイマー。メインループの update(dt) で進む。
 // await を使って演出を順番に書けるようにする。
 const tweens = new Set();
+// 時間の流れの速さ（必殺技のスローモーションで使う）
+export const timeScale = { k: 1 };
 
 export const Ease = {
   linear: (t) => t,

@@ -7,7 +7,7 @@ import { hud } from '../core/hud.js';
 import { audio } from '../core/audio.js';
 import { tween, Ease, wait, randInt } from '../core/tween.js';
 import { getModel, disposeObject } from '../core/assets.js';
-import { createMapView } from '../core/map-renderer.js';
+import { createMapView, heightAt } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { MAPS } from '../data/maps.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
@@ -19,9 +19,14 @@ import {
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop } from './menus.js';
-import { addBuildings, updateBuildings, addProps, addChests, makeSparkle } from './world-objects.js';
+import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
+// 遭遇の確率（3歩ごとに判定）。道（road）は0＝町と町をつなぐ安全な道
+const ENC_RATE = { sand: 0.2, rock: 0.27, metal: 0.25, road: 0, ship: 0.24 };
+const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が出ない歩数
+// 転送・ワープユニットで着く場所（町の入口の少し内側）
+const TOWN_GATE = { town1: [15, 18], town2: [14, 18], town3: [14, 18] };
 const CHAR_SCALE = 0.9;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -125,9 +130,17 @@ export class WorldScene {
     } else this.lamp = null;
     if (indoor) {
       sun.intensity = 1.0;
-      const room = new THREE.PointLight(0xffd8a0, 25, 14, 1.4);
+      // 町ごと・お店ごとの照明の色（宿屋は暖かく、パーツ屋は白っぽく、酒場は紫がかって……）
+      const th = map.theme || {};
+      const col = th.light ?? 0xffd8a0, k = th.lightK ?? 1;
+      hemi.color.setHex(col).lerp(new THREE.Color(0xffffff), 0.35);
+      const room = new THREE.PointLight(col, 25 * k, 14, 1.4);
       room.position.set(map.width / 2, 3.2, map.height / 2);
       this.scene.add(room);
+      // 奥の壁ぎわにもう1つ（部屋の奥を明るく）
+      const back = new THREE.PointLight(col, 10 * k, 9, 1.6);
+      back.position.set(map.width / 2, 2.4, 1.6);
+      this.scene.add(back);
     }
 
     this.mapView = createMapView(map, settings.mapMode, engine.renderer);
@@ -144,6 +157,9 @@ export class WorldScene {
     }
     const op = (G.flags.opened ||= {});
     this.chests = addChests(this.scene, map, (c) => !!op[`${map.id}:${c.id}`]);
+    for (const c of this.chests) c.obj.position.y = heightAt(map, c.x, c.z);
+    // フィールドの建造物（町の外観・ダンジョンの入口・遺跡）
+    this.structures = addStructures(this.scene, map, heightAt);
     this.extras = [];
     // 修理屋の中の、修理中のアルファ
     if (map.alphaAt && alphaInShop()) {
@@ -170,13 +186,14 @@ export class WorldScene {
     // 調べられる物の上の光の目印
     this.sparkles = [];
     for (const pr of this.props) if (pr.data.search?.loot && !pr.taken) this.addSparkle(pr, pr.x, pr.z, 1.3);
-    for (const c of this.chests) if (!c.opened) this.addSparkle(c, c.x, c.z, c.data.big ? 1.3 : 1.0);
+    for (const c of this.chests) if (!c.opened) this.addSparkle(c, c.x, c.z, (c.data.big ? 1.3 : 1.0) + c.obj.position.y);
+    this.markExplored();
 
     // NPC
     this.npcs = (map.npcs || []).filter((n) => !(n.hideIfJoined && G.members[n.hideIfJoined]?.joined)).map((n) => {
       const obj = getModel(n.model, n.colors || {});
-      obj.scale.setScalar(CHAR_SCALE);
-      obj.position.set(n.x + 0.5, 0, n.y + 0.5);
+      obj.scale.setScalar(CHAR_SCALE * (n.scale || 1));
+      obj.position.set(n.x + 0.5, heightAt(map, n.x + 0.5, n.y + 0.5), n.y + 0.5);
       obj.rotation.y = 0;
       obj.userData.entity = { kind: 'npc', data: n };
       this.scene.add(obj);
@@ -188,13 +205,13 @@ export class WorldScene {
       const def = ENEMIES[s.enemies[0][0]];
       const obj = getModel(s.model, def.colors || {});
       obj.scale.setScalar(s.scale || 0.5);
-      obj.position.set(s.x + 0.5, 0, s.y + 0.5);
+      obj.position.set(s.x + 0.5, heightAt(map, s.x + 0.5, s.y + 0.5), s.y + 0.5);
       obj.rotation.y = Math.PI * 0.15;
       obj.userData.entity = { kind: 'symbol', data: s };
       this.scene.add(obj);
       // 足元の赤いマーカー
       const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.1, 24), new THREE.MeshBasicMaterial({ color: 0xff3a2a, transparent: true, opacity: 0.6 }));
-      ring.rotation.x = -Math.PI / 2; ring.position.set(s.x + 0.5, 0.02, s.y + 0.5);
+      ring.rotation.x = -Math.PI / 2; ring.position.set(s.x + 0.5, obj.position.y + 0.03, s.y + 0.5);
       this.scene.add(ring);
       return { data: s, obj, ring, x: s.x + 0.5, z: s.y + 0.5 };
     });
@@ -262,7 +279,7 @@ export class WorldScene {
   addParked(mc) {
     const obj = buildMachineModel(machineSpec(mc));
     obj.scale.setScalar(MACHINE_SCALE);
-    obj.position.set(mc.loc.x, 0, mc.loc.y);
+    obj.position.set(mc.loc.x, heightAt(this.map, mc.loc.x, mc.loc.y), mc.loc.y);
     obj.rotation.y = mc.loc.dir || 0;
     obj.userData.entity = { kind: mc.owned ? 'parked' : 'hiddenMachine', mc };
     this.scene.add(obj);
@@ -303,6 +320,8 @@ export class WorldScene {
     // 先頭の見た目
     const p = G.pos;
     lead.obj.position.x = p.x; lead.obj.position.z = p.y;
+    const gy = heightAt(this.map, p.x, p.y);
+    lead.obj.position.y = gy;
     lead.obj.rotation.y = turnTo(lead.obj.rotation.y, p.dir || 0, dt * 12);
     this.animAvatar(lead, t, moving);
     this.updateFollowers(dt, false, moving);
@@ -312,13 +331,21 @@ export class WorldScene {
     for (const s of this.symbols) {
       animateEnemy(s.obj, t);
       const fly = s.obj.userData.flying;
-      s.obj.position.y = fly ? 0.6 + Math.sin(t * 2) * 0.15 : 0;
+      s.obj.position.y = heightAt(this.map, s.x, s.z) + (fly ? 0.6 + Math.sin(t * 2) * 0.15 : 0);
       s.obj.rotation.y = Math.PI * 0.15 + Math.sin(t * 0.6) * 0.4;
       s.ring.material.opacity = 0.35 + Math.sin(t * 4) * 0.25;
     }
     for (const pk of this.parked) animateMachine(pk.obj, t, 0);
     for (const o of this.extras) animateMachine(o, t, 0);
     updateBuildings(this.buildings, p.x, p.y, t);
+    updateStructures(this.structures, t, dt, this.scene, getGlowTex());
+    // 隠し通路の壁は近づくと透ける
+    for (const h of this.mapView.hidden || []) {
+      const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
+      h.mesh.material.opacity += ((near ? 0.3 : 1) - h.mesh.material.opacity) * Math.min(1, dt * 6);
+    }
+    // ガレージで整備中のマシンから火花
+    if (this.map.maintenance && this.extras[0] && Math.random() < dt * 6) this.spark(this.extras[0].position, 0xffc060);
     for (const s of this.sparkles) {
       const gone = s.ref.opened || s.ref.taken;
       const d = Math.hypot(s.ref.x - p.x, s.ref.z - p.y);
@@ -335,6 +362,14 @@ export class WorldScene {
         if (Math.hypot(s.x - p.x, s.z - p.y) < 1.1) { this.challengeSymbol(s); break; }
       }
     }
+  }
+
+  spark(at, color) {
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: getGlowTex(), color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+    sp.position.set(at.x + (Math.random() - 0.5) * 0.8, at.y + 0.8 + Math.random() * 0.8, at.z + 0.6);
+    sp.scale.setScalar(0.15);
+    this.scene.add(sp);
+    (this.particles ||= []).push({ sp, t: 0, life: 0.4, vy: -1.5 });
   }
 
   updateParticles(dt, moving) {
@@ -375,11 +410,12 @@ export class WorldScene {
       dist += (a.kind === 'machine' || prevKind === 'machine') ? 1.5 : 1.0;
       const pt = this.trailAt(dist);
       const o = a.obj;
-      if (snap) { o.position.set(pt.x, 0, pt.z); continue; }
+      if (snap) { o.position.set(pt.x, heightAt(this.map, pt.x, pt.z), pt.z); continue; }
       const dx = pt.x - o.position.x, dz = pt.z - o.position.z;
       const d = Math.hypot(dx, dz);
       o.position.x += dx * Math.min(1, dt * 10);
       o.position.z += dz * Math.min(1, dt * 10);
+      o.position.y = heightAt(this.map, o.position.x, o.position.z);
       if (d > 0.01) o.rotation.y = turnTo(o.rotation.y, Math.atan2(dx, dz), dt * 10);
       this.animAvatar(a, this.t + i * 0.3, moving && d > 0.02 ? moving : 0);
     }
@@ -401,7 +437,16 @@ export class WorldScene {
     const town = this.map.type === 'town';
     const indoor = this.map.type === 'interior';
     const off = indoor ? V(0, 8, 6.4) : town ? V(0, 11, 8.2) : V(0, 13, 9.6);
-    let target = V(p.x, 0, p.y - 0.6);
+    // フィールドで町の門に近づくと、カメラが少し寄る
+    let zoom = 1;
+    for (const st of this.structures || []) {
+      if (st.data.kind !== 'town') continue;
+      const d = Math.hypot(st.x - p.x, st.z - p.y);
+      if (d < 7) zoom = Math.min(zoom, 0.66 + 0.34 * (d / 7));
+    }
+    this.camZoom = (this.camZoom ?? zoom) + (zoom - (this.camZoom ?? zoom)) * Math.min(1, dt * 3);
+    off.multiplyScalar(this.camZoom);
+    let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
     // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
     if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
     const want = target.clone().add(off);
@@ -409,7 +454,7 @@ export class WorldScene {
     this.camera.position.lerp(want, k);
     this.camLook = this.camLook ? this.camLook.lerp(target, k) : target;
     this.camera.lookAt(this.camLook);
-    this.sun.position.set(p.x - 8, 18, p.y + 6);
+    this.sun.position.set(p.x - 9, 20, p.y + 7);
     this.sun.target.position.set(p.x, 0, p.y);
     if (this.lamp) this.lamp.position.set(p.x, 2.5, p.y + 0.5);
   }
@@ -468,20 +513,42 @@ export class WorldScene {
       const w = (map.warps || []).find((ww) => ww.x === tx && ww.y === ty);
       if (w) { this.warp(w); return; }
     }
-    // エンカウント
+    this.markExplored();
+    // エンカウント：3歩ごとに確率で判定。道の上は出ない。戦闘の直後とマップに入った直後の数歩も出ない
     if (map.encounter && info?.enc) {
       const enc = map.encounter;
       G.steps++;
-      G.encounterIn -= info.enc === 'road' ? (enc.roadRate ?? 0.5) : 1;
-      if (G.encounterIn <= 0) {
-        G.encounterIn = randInt(enc.steps[0], enc.steps[1]);
+      if ((G.encGrace || 0) > 0) { G.encGrace--; return; }
+      G.encStep = (G.encStep || 0) + 1;
+      if (G.encStep < (enc.every || 3)) return;
+      G.encStep = 0;
+      const rate = (enc.rate || ENC_RATE)[info.enc] ?? 0.25;
+      if (Math.random() < rate) {
         const zone = (enc.zones || []).find((z) => tx >= z.x0 && tx < z.x1 && ty >= z.y0 && ty < z.y1);
         const tables = zone ? zone.tables : enc.tables;
         const table = tables[info.enc] || tables[Object.keys(tables)[0]];
+        if (!table) return;
         const group = pickWeighted(table);
+        G.encGrace = GRACE_STEPS;
         this.startBattle({ enemies: group.enemies, terrain: info.enc });
       }
     }
+  }
+
+  // ダンジョンの地図用に、歩いた場所（まわり3マス）を記録する
+  markExplored() {
+    const map = this.map;
+    if (map.type === 'town' || map.type === 'interior') return;
+    const ex = (G.explored ||= {});
+    let row = ex[map.id];
+    if (!row || row.length !== map.width * map.height) row = '0'.repeat(map.width * map.height);
+    const arr = row.split('');
+    const px = Math.floor(G.pos.x), py = Math.floor(G.pos.y);
+    for (let y = py - 3; y <= py + 3; y++) for (let x = px - 3; x <= px + 3; x++) {
+      if (x < 0 || y < 0 || x >= map.width || y >= map.height) continue;
+      if ((x - px) ** 2 + (y - py) ** 2 <= 12) arr[y * map.width + x] = '1';
+    }
+    ex[map.id] = arr.join('');
   }
 
   async warp(w) {
@@ -512,8 +579,8 @@ export class WorldScene {
       });
     }
     G.pos = { map: w.to, x: w.tx + 0.5, y: w.ty + 0.5, dir: w.dir === 'up' ? Math.PI : 0 };
-    G.encounterIn = Math.max(G.encounterIn, 6);
-    if (toMap.type === 'town') G.lastTown = toMap.id;
+    if (toMap.encounter) { G.encGrace = Math.max(G.encGrace || 0, GRACE_STEPS); G.encStep = 0; }
+    if (toMap.type === 'town') { G.lastTown = toMap.id; (G.flags.visited ||= {})[toMap.id] = true; }
     autosave();
     this.build();
     audio.playSong(toMap.bgm);
@@ -521,6 +588,34 @@ export class WorldScene {
     if (toMap.type === 'interior') ui.toast(esc(toMap.name));
     else if (fromMap.type !== 'interior') ui.banner(esc(toMap.name), esc(toMap.subtitle || ''));
     if (note) ui.toast(note);
+    hud.update(true);
+    this.lock(false);
+  }
+
+  // ---------------------------------------------------------------- 転送（ガレージの転送装置・ワープユニット）
+  async teleport(to, { garage = false, from = null } = {}) {
+    this.lock(true);
+    audio.sfx('warp');
+    await ui.fade(true, 0.45, '#cfe8ff');
+    // 乗っているマシンと、転送装置を使ったガレージのマシンは行き先のガレージへ
+    for (const mc of Object.values(G.machines)) {
+      if (!mc.owned) continue;
+      if (mc.loc.type === 'party' || (garage && mc.loc.type === 'garage' && mc.loc.town === from)) mc.loc = { type: 'garage', town: to };
+    }
+    const gid = `${to}_garage`;
+    if (garage && MAPS[gid]) {
+      const [x, y] = MAPS[gid].arrive;
+      G.pos = { map: gid, x: x + 0.5, y: y - 0.5, dir: Math.PI };
+    } else {
+      const [x, y] = TOWN_GATE[to];
+      G.pos = { map: to, x: x + 0.5, y: y + 0.5, dir: Math.PI };
+    }
+    G.lastTown = to; (G.flags.visited ||= {})[to] = true;
+    autosave();
+    this.build();
+    audio.playSong(MAPS[G.pos.map].bgm);
+    await ui.fade(false, 0.5);
+    ui.banner(esc(MAPS[to].name), '転送完了');
     hud.update(true);
     this.lock(false);
   }

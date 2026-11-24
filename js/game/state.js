@@ -22,11 +22,11 @@ export function newGame(names) {
     uid: 1,
     pos: { map: 'town1_shop', x: 6.5, y: 7.3, dir: Math.PI }, // レンの修理屋の中、アルファのそばから始まる
     lastTown: 'town1',
-    flags: {},
+    flags: { visited: { town1: true } }, // visited：一度行った町（転送装置・ワープユニットで行ける）
     bounties: {},
     seal: 0,
     steps: 0,
-    encounterIn: 14,
+    encGrace: 10, // 最初の数歩は敵が出ない
   };
   G = s;
   // 最初はレン1人。シオン（町2）とジーナ（町3）は加入イベントで仲間になる
@@ -172,7 +172,7 @@ export function checkMount(mc, slot, w) {
   const def = WEAPONS[w.id];
   const info = SLOT_INFO[slot];
   if (def.mount !== info.mount) return info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付ける' : '背中には主砲やミサイルを付ける';
-  if (def.alphaOnly && mc.id !== 'alpha') return 'アルファ専用の武器だ';
+  if (def.only && mc.id !== def.only) return `${MACHINES[def.only].name}専用の武器だ`;
   if (info.mount === 'arm' && def.wt > HEAVY_ARM_WEAPON && !st.power[info.side]) return '重すぎる。パワーアームが必要だ';
   const cur = mc.slots[slot] ? weaponWeight(mc, WEAPONS[weaponByUid(mc.slots[slot]).id]) : 0;
   if (st.weight - cur + weaponWeight(mc, def) > st.cap) return '重量オーバー（エンジン強化で積める重さが増える）';

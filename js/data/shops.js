@@ -16,7 +16,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のおばちゃん',
       greet: 'ケガも故障も、そなえあればうれいなしだよ。',
-      items: ['kitS', 'repS', 'batS', 'kitM', 'revive'],
+      items: ['kitS', 'repS', 'batS', 'kitM', 'revive', 'warpunit'],
     },
     inn: { pricePerMember: 20, keeper: '宿屋のハル' },
     garage: { keeper: 'ガレージ長のトト', repairPerArmor: 1, repairPerEn: 1, towFee: 200 },
@@ -37,7 +37,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のピコ',
       greet: '坑道に入るなら、修理キットは多めにね。',
-      items: ['kitS', 'kitM', 'repS', 'repM', 'batS', 'batM', 'maint', 'revive'],
+      items: ['kitS', 'kitM', 'repS', 'repM', 'batS', 'batM', 'maint', 'revive', 'warpunit'],
     },
     inn: { pricePerMember: 30, keeper: '宿屋のおかみ' },
     garage: { keeper: '整備士のロック', repairPerArmor: 1, repairPerEn: 1, towFee: 250 },
@@ -58,7 +58,7 @@ export const SHOPS = {
     item: {
       keeper: '補給係のモモ',
       greet: '上位の救急キットも修理キットもあるよ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
     },
     inn: { pricePerMember: 40, keeper: '宿の主人' },
     garage: { keeper: '整備長カイ', repairPerArmor: 1, repairPerEn: 1, towFee: 300 },

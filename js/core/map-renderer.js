@@ -98,18 +98,33 @@ DRAW[19] = DRAW[0];
 const crack = (base) => (g, px, py, x, y) => { base(g, px, py, x, y); g.strokeStyle = 'rgba(255,240,200,0.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(px + 12, py + 6); g.lineTo(px + 17, py + 14); g.lineTo(px + 13, py + 24); g.stroke(); };
 DRAW[20] = DRAW[0];
 DRAW[22] = DRAW[0];
+DRAW[34] = DRAW[0];
 DRAW[23] = DRAW[1];
 // 建物の中：木の床と壁
+// 建物の中の床と壁。町ごと・施設ごとの雰囲気（map.theme）で素材と色を変える
+let THEME = null;
+const shade = (hex, k) => { const c = parseInt(hex.slice(1), 16); const f = (v) => Math.max(0, Math.min(255, Math.round(v * k))); return `rgb(${f(c >> 16)},${f((c >> 8) & 255)},${f(c & 255)})`; };
 DRAW[28] = (g, px, py, x, y) => {
-  g.fillStyle = '#8a6440'; g.fillRect(px, py, TS, TS);
-  g.fillStyle = '#7a5636'; for (let i = 0; i < 4; i++) g.fillRect(px, py + i * 8 + 7, TS, 1);
-  g.fillStyle = '#9a7450'; g.fillRect(px + ((x * 11 + y * 7) % 24), py + 2, 6, 3);
-  g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(px + (y % 2 ? 0 : 16), py, 1, TS);
+  const t = THEME || { floor: 'wood', floorColor: '#8a6440' };
+  const base = t.floorColor;
+  g.fillStyle = base; g.fillRect(px, py, TS, TS);
+  if (t.floor === 'stone') {
+    g.strokeStyle = shade(base, 0.75); g.lineWidth = 2; g.strokeRect(px + 1, py + 1, TS - 2, TS - 2);
+    g.fillStyle = shade(base, 1.12); g.fillRect(px + 4 + rng(x, y) * 10, py + 6, 8, 5);
+  } else if (t.floor === 'metal') {
+    g.fillStyle = shade(base, 0.8); g.fillRect(px, py + TS - 2, TS, 2); g.fillRect(px + TS - 2, py, 2, TS);
+    g.fillStyle = shade(base, 1.25); for (const [a, b] of [[4, 4], [TS - 6, 4], [4, TS - 6], [TS - 6, TS - 6]]) g.fillRect(px + a, py + b, 2, 2);
+  } else {
+    g.fillStyle = shade(base, 0.85); for (let i = 0; i < 4; i++) g.fillRect(px, py + i * 8 + 7, TS, 1);
+    g.fillStyle = shade(base, 1.12); g.fillRect(px + ((x * 11 + y * 7) % 24), py + 2, 6, 3);
+  }
+  if (t.rug && x >= t.rug[0] && x < t.rug[2] && y >= t.rug[1] && y < t.rug[3]) { g.fillStyle = t.rugColor; g.globalAlpha = 0.75; g.fillRect(px, py, TS, TS); g.globalAlpha = 1; g.fillStyle = shade(t.rugColor, 1.3); g.fillRect(px, py + 14, TS, 3); }
 };
 DRAW[29] = (g, px, py) => {
-  g.fillStyle = '#5a4a3e'; g.fillRect(px, py, TS, TS);
-  g.fillStyle = '#6e5c4c'; g.fillRect(px + 1, py + 1, TS - 2, TS / 2 - 2);
-  g.fillStyle = '#463a30'; g.fillRect(px, py + TS - 5, TS, 5);
+  const base = THEME?.wallColor || '#5a4a3e';
+  g.fillStyle = base; g.fillRect(px, py, TS, TS);
+  g.fillStyle = shade(base, 1.2); g.fillRect(px + 1, py + 1, TS - 2, TS / 2 - 2);
+  g.fillStyle = shade(base, 0.75); g.fillRect(px, py + TS - 5, TS, 5);
 };
 // 地下への階段
 DRAW[33] = (g, px, py) => {
@@ -221,6 +236,7 @@ function drawIcon(g, cx, cy, kind) {
 }
 
 export function drawMapCanvas(map) {
+  THEME = map.theme || null;
   const cv = document.createElement('canvas');
   cv.width = map.width * TS; cv.height = map.height * TS;
   const g = cv.getContext('2d');
@@ -229,7 +245,8 @@ export function drawMapCanvas(map) {
     (DRAW[t] || DRAW[0])(g, x * TS, y * TS, x, y);
   }
   for (const b of map.buildings || []) (map.buildings3d ? drawFoundation : drawBuilding)(g, b);
-  for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
+  // 3Dの建造物があるマップ（フィールド）では2Dのアイコンは描かない
+  if (!map.structures) for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
     const t = map.grid[y][x];
     if (t === 19) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'town');
     if (t === 20) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'factory');
@@ -250,7 +267,75 @@ export function drawMapCanvas(map) {
   return cv;
 }
 
-export function createMapView(map, mode = '2d', renderer) {
+// ---------------------------------------------------------------- 地面の高さ（丘・崖・坂）
+// フィールドだけ高低差をつける。山のタイルは高く盛り上がって崖になり、歩ける場所はなだらかな丘と坂になる
+// 角（タイルの四隅）の高さを持っておき、heightAt() で好きな場所の高さを補間して返す
+const BLOCK_TALL = new Set([3]);
+export function heightField(map) {
+  if (map._hf) return map._hf;
+  const W = map.width, H = map.height;
+  const hills = map.type === 'field';
+  const th = new Float32Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const t = map.grid[y][x];
+    let h = 0;
+    if (hills) {
+      const base = (Math.sin(x * 0.11 + 1.3) + Math.sin(y * 0.13 + 2.1) + Math.sin((x + y) * 0.06) + Math.sin((x - y) * 0.08 + 0.7)) * 0.2 + 0.25;
+      h = Math.max(0, base) * 1.1;
+      if (t === 5 || t === 11 || t === 19 || t === 20 || t === 22 || t === 23 || t === 34) h *= 0.35; // 道と入口は平らに近く
+      if (t === 8) h = -0.12;
+      if (BLOCK_TALL.has(t)) h = 1.7 + rng(x, y, 7) * 1.1;
+    }
+    th[y * W + x] = h;
+  }
+  const c = new Float32Array((W + 1) * (H + 1));
+  for (let y = 0; y <= H; y++) for (let x = 0; x <= W; x++) {
+    let sw = 0, nw = 0, sa = 0, na = 0;
+    for (const [dx, dy] of [[-1, -1], [0, -1], [-1, 0], [0, 0]]) {
+      const tx = x + dx, ty = y + dy;
+      if (tx < 0 || ty < 0 || tx >= W || ty >= H) continue;
+      const v = th[ty * W + tx];
+      sa += v; na++;
+      if (!BLOCK_TALL.has(map.grid[ty][tx])) { sw += v; nw++; }
+    }
+    // 歩ける場所に接している角は低い方（歩ける場所の高さ）にそろえる → 山の境目が崖になる
+    c[y * (W + 1) + x] = nw ? sw / nw : na ? sa / na : 0;
+  }
+  map._hf = { W, H, c };
+  return map._hf;
+}
+export function heightAt(map, x, z) {
+  const hf = heightField(map);
+  const W = hf.W, H = hf.H;
+  x = Math.max(0, Math.min(W - 0.001, x)); z = Math.max(0, Math.min(H - 0.001, z));
+  const ix = Math.floor(x), iz = Math.floor(z), fx = x - ix, fz = z - iz;
+  const C = (i, j) => hf.c[j * (W + 1) + i];
+  return (C(ix, iz) * (1 - fx) + C(ix + 1, iz) * fx) * (1 - fz) + (C(ix, iz + 1) * (1 - fx) + C(ix + 1, iz + 1) * fx) * fz;
+}
+
+function groundGeometry(map) {
+  const hf = heightField(map);
+  const W = hf.W, H = hf.H;
+  const pos = new Float32Array((W + 1) * (H + 1) * 3), uv = new Float32Array((W + 1) * (H + 1) * 2);
+  for (let j = 0; j <= H; j++) for (let i = 0; i <= W; i++) {
+    const k = j * (W + 1) + i;
+    pos[k * 3] = i; pos[k * 3 + 1] = hf.c[k]; pos[k * 3 + 2] = j;
+    uv[k * 2] = i / W; uv[k * 2 + 1] = 1 - j / H;
+  }
+  const idx = [];
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const a = j * (W + 1) + i, b = a + 1, c = a + W + 1, d = c + 1;
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
+export function createMapView(map, mode = '3d', renderer) {
   const group = new THREE.Group();
   const cv = drawMapCanvas(map);
   const tex = new THREE.CanvasTexture(cv);
@@ -258,52 +343,111 @@ export function createMapView(map, mode = '2d', renderer) {
   tex.anisotropy = renderer ? renderer.capabilities.getMaxAnisotropy() : 4;
   tex.generateMipmaps = true;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
-  const ground = new THREE.Mesh(
-    new THREE.PlaneGeometry(map.width, map.height),
-    new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 }),
-  );
-  ground.rotation.x = -Math.PI / 2;
-  ground.position.set(map.width / 2, 0, map.height / 2);
+  const ground = new THREE.Mesh(groundGeometry(map), new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 }));
   ground.receiveShadow = true;
   group.add(ground);
   // 周りの外側（マップの外が真っ黒にならないように）
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshStandardMaterial({ color: map.ground || '#555', roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: map.ground || '#555', roughness: 1 }));
   outer.rotation.x = -Math.PI / 2;
-  outer.position.set(map.width / 2, -0.02, map.height / 2);
+  outer.position.set(map.width / 2, -0.05, map.height / 2);
   outer.receiveShadow = true;
   group.add(outer);
-
   const disposables = [tex, ground.geometry, ground.material, outer.geometry, outer.material];
-  if (mode === '3d') add3D(map, group, disposables);
-  return { group, dispose() { for (const d of disposables) d.dispose(); } };
+  const view = { group, hidden: null, dispose() { for (const d of disposables) d.dispose(); } };
+  if (mode !== '2d') add3D(map, group, disposables, view);
+  return view;
 }
 
-// 試験版の3Dマップ：歩けないタイルを立体にする
-function add3D(map, group, disposables) {
+// 立体の山・岩・枯れ木・瓦礫・ダンジョンの壁（固定カメラから奥行きが出るように）
+function add3D(map, group, disposables, view) {
+  const S = (c, extra = {}) => new THREE.MeshStandardMaterial({ color: c, flatShading: true, roughness: 0.95, ...extra });
+  const field = map.type === 'field';
   const kinds = {
-    3: { geo: new THREE.ConeGeometry(0.62, 1.3, 5), mat: new THREE.MeshStandardMaterial({ color: 0x7a5a3a, flatShading: true }), y: 0.65 },
-    21: { geo: new THREE.ConeGeometry(0.6, 1.1, 5), mat: new THREE.MeshStandardMaterial({ color: 0x9a7a52, flatShading: true }), y: 0.55, walkThrough: true },
-    4: { geo: new THREE.BoxGeometry(1, 1.4, 1), mat: new THREE.MeshStandardMaterial({ color: 0x3c4148 }), y: 0.7 },
-    10: { geo: new THREE.BoxGeometry(1, 1.8, 1), mat: new THREE.MeshStandardMaterial({ color: 0x43566a }), y: 0.9 },
-    24: { geo: new THREE.BoxGeometry(1, 1.5, 1), mat: new THREE.MeshStandardMaterial({ color: 0x3a3028, flatShading: true }), y: 0.75 },
-    27: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: new THREE.MeshStandardMaterial({ color: 0x2a2e3c }), y: 0.8 },
-    15: { geo: new THREE.BoxGeometry(0.9, 0.9, 0.9), mat: new THREE.MeshStandardMaterial({ color: 0x5a5f66, flatShading: true }), y: 0.45 },
-    6: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: new THREE.MeshStandardMaterial({ color: 0x7a6f62 }), y: 0.8 },
+    3: field
+      ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(0x8a6442), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
+      : { geo: new THREE.ConeGeometry(0.7, 1.5, 6), mat: S(0x7a5a3a), y: 0.75, h: [0.9, 1.4], w: [1, 1.3] },
+    21: { geo: new THREE.ConeGeometry(0.7, 1.0, 6), mat: S(0x9a7652), y: 0.5, h: [0.8, 1.0], w: [0.9, 1.0], onTerrain: true },
+    4: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: S(0x4a4f57), y: 0.8, h: [1, 1], w: [1, 1] },
+    10: { geo: new THREE.BoxGeometry(1, 1.4, 1), mat: S(0x4a6078, { metalness: 0.4 }), y: 0.7, h: [1, 1], w: [1, 1] },
+    24: { geo: new THREE.DodecahedronGeometry(0.75, 0), mat: S(0x4a3a2c), y: 0.7, h: [1.1, 1.7], w: [1.1, 1.3] },
+    27: { geo: new THREE.BoxGeometry(1, 1.7, 1), mat: S(0x2a2e3e, { metalness: 0.5 }), y: 0.85, h: [1, 1], w: [1, 1] },
+    15: { geo: new THREE.BoxGeometry(0.9, 1.1, 0.9), mat: S(0x5a5f66, { metalness: 0.4 }), y: 0.55, h: [0.9, 1.3], w: [1, 1] },
+    16: { geo: new THREE.CylinderGeometry(0.22, 0.22, 1, 8), mat: S(0x8a7a5a, { metalness: 0.5 }), y: 0.5, h: [1, 1], w: [1, 1], rotZ: true },
+    13: { geo: new THREE.BoxGeometry(0.6, 0.5, 0.6), mat: S(0x5a5a5a, { metalness: 0.4 }), y: 0.25, h: [0.8, 1.5], w: [0.8, 1.4], onTerrain: true },
+    18: { geo: new THREE.BoxGeometry(0.7, 0.45, 0.7), mat: S(0x6a5a48), y: 0.22, h: [0.8, 1.4], w: [0.8, 1.3] },
+  };
+  // 隠し通路は見た目は壁（近づくと透ける）
+  const hiddenLook = { 30: 24, 31: 27, 32: 4 };
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  const place = (inst, i, x, y, k, kx, ky) => {
+    const hs = k.h[0] + rng(x, y, 3) * (k.h[1] - k.h[0]);
+    const ws = k.w[0] + rng(x, y, 4) * (k.w[1] - k.w[0]);
+    const gy = k.onTerrain ? heightAt(map, x + 0.5, y + 0.5) : 0;
+    e.set(0, k.rotZ ? 0 : rng(x, y, 1) * 6.28, k.rotZ ? Math.PI / 2 : 0);
+    q.setFromEuler(e);
+    v.set(x + 0.5 + (kx || 0), gy + k.y * hs, y + 0.5 + (ky || 0));
+    sc.set(ws, hs, ws);
+    m4.compose(v, q, sc);
+    inst.setMatrixAt(i, m4);
+  };
+  const cellsOf = (ids) => {
+    const out = [];
+    for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (ids.includes(map.grid[y][x])) out.push([x, y]);
+    return out;
   };
   for (const [id, k] of Object.entries(kinds)) {
-    const cells = [];
-    for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (map.grid[y][x] === Number(id)) cells.push([x, y]);
+    const cells = cellsOf([Number(id)]);
     if (!cells.length) continue;
     const inst = new THREE.InstancedMesh(k.geo, k.mat, cells.length);
-    const m4 = new THREE.Matrix4();
-    cells.forEach(([x, y], i) => {
-      const s = 0.85 + rng(x, y) * 0.3;
-      m4.compose(new THREE.Vector3(x + 0.5, k.y * s, y + 0.5), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, rng(x, y, 1) * 6, 0)), new THREE.Vector3(1, s, 1));
-      inst.setMatrixAt(i, m4);
-    });
+    cells.forEach(([x, y], i) => place(inst, i, x, y, k));
     inst.castShadow = true; inst.receiveShadow = true;
     group.add(inst);
     disposables.push(k.geo, k.mat);
   }
-  void TILES;
+  for (const [hid, look] of Object.entries(hiddenLook)) {
+    const cells = cellsOf([Number(hid)]);
+    if (!cells.length) continue;
+    const k = kinds[look];
+    const mat = k.mat.clone(); mat.transparent = true;
+    const inst = new THREE.InstancedMesh(k.geo, mat, cells.length);
+    cells.forEach(([x, y], i) => place(inst, i, x, y, k));
+    inst.castShadow = true;
+    group.add(inst);
+    disposables.push(mat);
+    (view.hidden ||= []).push({ mesh: inst, cells });
+  }
+  if (!field) return;
+  // フィールドの飾り：岩場の岩・枯れ草の枯れ木・山のふもとの岩
+  const deco = (ids, rate, geo, mat, yk, hRange, wRange, seed) => {
+    const cells = cellsOf(ids).filter(([x, y]) => rng(x, y, seed) < rate);
+    if (!cells.length) return;
+    const inst = new THREE.InstancedMesh(geo, mat, cells.length);
+    const k = { y: yk, h: hRange, w: wRange, onTerrain: true };
+    cells.forEach(([x, y], i) => place(inst, i, x, y, k, (rng(x, y, seed + 1) - 0.5) * 0.5, (rng(x, y, seed + 2) - 0.5) * 0.5));
+    inst.castShadow = true; inst.receiveShadow = true;
+    group.add(inst);
+    disposables.push(geo, mat);
+  };
+  deco([1], 0.16, new THREE.DodecahedronGeometry(0.32, 0), S(0x8a7c6a), 0.25, [0.6, 1.4], [0.7, 1.5], 31);
+  deco([0], 0.025, new THREE.DodecahedronGeometry(0.25, 0), S(0xa08a6a), 0.18, [0.5, 1.2], [0.6, 1.4], 41);
+  // 枯れ木（幹と枝）
+  const trees = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.09);
+  if (trees.length) {
+    const trunkG = new THREE.CylinderGeometry(0.05, 0.1, 1.2, 5), trunkM = S(0x5a4430);
+    const branchG = new THREE.CylinderGeometry(0.03, 0.05, 0.6, 4);
+    const trunk = new THREE.InstancedMesh(trunkG, trunkM, trees.length);
+    const br = new THREE.InstancedMesh(branchG, trunkM, trees.length * 2);
+    trees.forEach(([x, y], i) => {
+      const gy = heightAt(map, x + 0.5, y + 0.5), hs = 0.8 + rng(x, y, 52) * 0.7;
+      m4.compose(v.set(x + 0.5, gy + 0.6 * hs, y + 0.5), q.setFromEuler(e.set(0, 0, (rng(x, y, 53) - 0.5) * 0.3)), sc.set(1, hs, 1));
+      trunk.setMatrixAt(i, m4);
+      for (let b = 0; b < 2; b++) {
+        const s2 = b ? 1 : -1;
+        m4.compose(v.set(x + 0.5 + s2 * 0.18, gy + (0.75 + b * 0.25) * hs, y + 0.5), q.setFromEuler(e.set(0, rng(x, y, 54 + b) * 6, s2 * 0.9)), sc.set(1, 1, 1));
+        br.setMatrixAt(i * 2 + b, m4);
+      }
+    });
+    for (const im of [trunk, br]) { im.castShadow = true; group.add(im); }
+    disposables.push(trunkG, branchG, trunkM);
+  }
 }

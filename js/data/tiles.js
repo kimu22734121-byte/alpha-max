@@ -6,7 +6,7 @@ export const TILES = {
   2: { name: '金属の床', walk: true, enc: 'metal' },
   3: { name: '山', walk: false },
   4: { name: '壁', walk: false },
-  5: { name: '道', walk: true, enc: 'road' },
+  5: { name: '道', walk: true, enc: 'road' }, // 町と町をつなぐ安全な道（敵が出ない）
   6: { name: '建物', walk: false },
   7: { name: 'ドア', walk: true, step: 'door' },
   8: { name: '酸の池', walk: false },
@@ -35,6 +35,7 @@ export const TILES = {
   31: { name: '船の壁？', walk: true, enc: 'ship', hidden: true }, // v（見た目は船の壁。隠し通路）
   32: { name: '壁？', walk: true, enc: 'metal', hidden: true }, // w（見た目は工場の壁。隠し通路）
   33: { name: '地下への階段', walk: true, step: 'warp' }, // x
+  34: { name: '建造物', walk: false }, // y（フィールドの町・ダンジョン入口の3D建造物の下。見た目は地面）
 };
 
 export function tileAt(map, x, y) {

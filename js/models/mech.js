@@ -61,7 +61,7 @@ export function buildMachineModel(spec) {
     const def = WEAPONS[w.id];
     if (!def) return;
     const info = SLOT_INFO[i];
-    const obj = getModel(def.model, { primary: def.color, secondary: new THREE.Color(def.color).multiplyScalar(0.6).getHex() });
+    const obj = getModel(def.model, { primary: def.color, secondary: new THREE.Color(def.color).multiplyScalar(0.6).getHex(), ...(def.glow ? { glow: def.glow, accent: def.glow } : {}) });
     obj.scale.setScalar(def.size || 1);
     enhanceWeapon(obj, w.plus || 0, def.color);
     let mount;

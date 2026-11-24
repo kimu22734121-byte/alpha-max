@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { ui, esc } from '../core/ui.js';
 import { audio } from '../core/audio.js';
-import { tween, tweenTo, wait, Ease, rand, clamp, pick } from '../core/tween.js';
+import { tween, tweenTo, wait, Ease, rand, clamp, pick, timeScale } from '../core/tween.js';
+import { input } from '../core/input.js';
 import { getModel, flashModel, resetFlash, setGlow, setOpacity, disposeObject } from '../core/assets.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { BattleFX } from './battle-fx.js';
@@ -16,7 +17,7 @@ import {
   G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost,
 } from '../game/state.js';
 import { inMachine, machineSpec } from './world.js';
-import { itemMenu, applyItem } from './menus.js';
+import { itemMenu, applyItem, rangeBadge } from './menus.js';
 import { flow } from '../game/flow.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -29,6 +30,8 @@ export class BattleScene {
     this.camera = new THREE.PerspectiveCamera(46, 1, 0.1, 400);
     this.look = V(0, 1, 0);
     this.t = 0;
+    // 画面の敵や味方を直接タップして選ぶ
+    input.on('tap', (p) => { if (this.selecting && !this.over) this.onTap(p); });
   }
 
   // ---------------------------------------------------------------- 準備
@@ -54,6 +57,9 @@ export class BattleScene {
   }
 
   async exit() {
+    this.selecting = null;
+    timeScale.k = 1;
+    clearTimeout(this.msgTimer);
     this.hudEl?.remove();
     this.fx?.dispose();
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
@@ -183,6 +189,16 @@ export class BattleScene {
       const box = new THREE.Box3().setFromObject(obj);
       return { side: 'enemy', key: id, def, hp: def.hp, maxHp: def.hp, obj, home, name: def.name + letter, alive: true, fled: false, height: box.max.y - box.min.y, top: box.max.y };
     });
+    // 選べる相手の足元に出す光の輪
+    for (const u of [...this.party, ...this.enemies]) {
+      const r = u.side === 'enemy' ? (u.def.boss ? 2.2 : 1.1) * (u.def.scale || 1) : u.mc ? 1.3 : 0.8;
+      const ring = new THREE.Mesh(new THREE.RingGeometry(r * 0.78, r, 40), new THREE.MeshBasicMaterial({ color: 0x6ad8ff, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      ring.rotation.x = -Math.PI / 2;
+      ring.visible = false;
+      ring.renderOrder = 2;
+      this.scene.add(ring);
+      u.ring = ring;
+    }
     this.marker = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.5, 4), new THREE.MeshBasicMaterial({ color: 0xffe040 }));
     this.marker.rotation.x = Math.PI;
     this.marker.visible = false;
@@ -193,35 +209,42 @@ export class BattleScene {
   buildHud() {
     const el = document.createElement('div');
     el.className = 'battle-hud';
-    el.innerHTML = '<div class="b-log"></div><div class="b-party"></div>';
+    el.innerHTML = '<div class="b-msg"></div><div class="b-history"></div><div class="b-party"></div>';
     document.body.appendChild(el);
     this.hudEl = el;
-    this.logEl = el.querySelector('.b-log');
+    this.msgEl = el.querySelector('.b-msg');
+    this.histEl = el.querySelector('.b-history');
     this.partyEl = el.querySelector('.b-party');
     this.updateHud();
   }
 
   updateHud(active) {
+    // 下のステータス：名前の行＋ゲージを2列で（体力・装甲・EN）
     this.partyEl.innerHTML = this.party.map((u) => {
       const st = memberStats(u.m);
-      let mc = '';
+      const row = (label, cls, v, mx) => `<div class="b-row"><span>${label}</span><div class="bar ${cls}"><i style="width:${(100 * v) / mx}%"></i></div><b>${v}</b></div>`;
+      let rows = row('体力', 'hp', u.m.hp, st.maxHp);
       if (u.mc) {
         const ms = machineStats(u.mc);
-        mc = `<div class="b-mc">${esc(machineName(u.mc))}</div>
-          <div class="b-row"><span>装甲</span><div class="bar armor"><i style="width:${(100 * u.mc.armor) / ms.maxArmor}%"></i></div><b>${u.mc.armor}</b></div>
-          <div class="b-row"><span>EN</span><div class="bar en"><i style="width:${(100 * u.mc.en) / ms.maxEn}%"></i></div><b>${u.mc.en}</b></div>`;
+        rows += row('装甲', 'armor', u.mc.armor, ms.maxArmor) + row('EN', 'en', u.mc.en, ms.maxEn);
       }
-      return `<div class="b-card${u === active ? ' active' : ''}${u.m.ko ? ' ko' : ''}"><div class="b-name">${esc(u.m.name)}<small>Lv${u.m.lv}</small></div>
-        <div class="b-row"><span>体力</span><div class="bar hp"><i style="width:${(100 * u.m.hp) / st.maxHp}%"></i></div><b>${u.m.hp}</b></div>${mc}</div>`;
+      return `<div class="b-card${u === active ? ' active' : ''}${u.m.ko ? ' ko' : ''}"><div class="b-name">${esc(u.m.name)}<small>Lv${u.m.lv}${u.mc ? `<em class="b-mc">${esc(machineName(u.mc))}</em>` : ''}</small></div>
+        <div class="b-bars">${rows}</div></div>`;
     }).join('');
   }
 
+  // 上のメッセージウィンドウに出す（しばらく何も出なければ消える）。過去のログは端に小さく残す
   log(text) {
+    this.msgEl.textContent = text;
+    this.msgEl.classList.add('on');
+    clearTimeout(this.msgTimer);
+    this.msgTimer = setTimeout(() => this.msgEl?.classList.remove('on'), 2200);
     const line = document.createElement('div');
     line.textContent = text;
-    this.logEl.appendChild(line);
-    while (this.logEl.children.length > 3) this.logEl.firstChild.remove();
+    this.histEl.appendChild(line);
+    while (this.histEl.children.length > 7) this.histEl.firstChild.remove();
   }
+  hideMsg() { clearTimeout(this.msgTimer); this.msgEl?.classList.remove('on'); }
 
   // ---------------------------------------------------------------- カメラ
   async camTo(pos, look, dur = 0.6, ease = Ease.inOut) {
@@ -233,8 +256,32 @@ export class BattleScene {
   // ---------------------------------------------------------------- 毎フレーム
   update(dt) {
     this.t += dt;
-    for (const u of this.party) {
+    this.party.forEach((u, i) => {
       if (u.mc) animateMachine(u.obj, this.t, 0); else if (!u.m.ko) animateChar(u.obj, this.t, 0);
+      // 待機中もゆらゆら（ホバーは大きく浮き沈み）
+      if (!u.busy && !u.m.ko) {
+        const hover = u.obj.userData.legType === 'hover';
+        const ph = this.t * (hover ? 2.2 : 1.6) + i * 1.7;
+        u.obj.position.y = u.home.y + (u.mc ? (hover ? 0.25 + Math.sin(ph) * 0.14 : Math.abs(Math.sin(ph)) * 0.04) : 0);
+        u.obj.rotation.z = Math.sin(ph * 0.7) * (u.mc ? 0.025 : 0.015);
+      }
+    });
+    // 選べる相手の光の輪
+    for (const u of [...this.party, ...this.enemies]) {
+      const r = u.ring;
+      if (!r) continue;
+      const sel = this.selecting;
+      const on = !!sel && sel.units.includes(u) && (u.side === 'party' || u.alive);
+      r.visible = on;
+      if (!on) { if (u.lit) { resetFlash(u.obj); u.lit = false; } continue; }
+      const f = sel.focus.has(u);
+      r.position.set(u.obj.position.x, (u.side === 'enemy' ? u.home.y * 0 : 0) + 0.06, u.obj.position.z);
+      r.material.color.setHex(f ? 0xffe040 : sel.ally ? 0x7aff9a : 0x6ad8ff);
+      r.material.opacity = f ? 0.75 + Math.sin(this.t * 8) * 0.25 : 0.45;
+      r.scale.setScalar(f ? 1.08 + Math.sin(this.t * 8) * 0.06 : 1);
+      if (u.side === 'enemy') {
+        if (f) { flashModel(u.obj, 0xffd040, 0.25 + Math.sin(this.t * 8) * 0.15); u.lit = true; } else if (u.lit) { resetFlash(u.obj); u.lit = false; }
+      }
     }
     for (const e of this.enemies) {
       if (!e.alive) continue;
@@ -272,6 +319,7 @@ export class BattleScene {
   }
 
   aliveEnemies() { return this.enemies.filter((e) => e.alive); }
+  clearSelectGlow() { for (const e of this.enemies) if (e.lit) { resetFlash(e.obj); e.lit = false; } }
   aliveParty() { return this.party.filter((u) => !u.m.ko); }
 
   async commandPhase() {
@@ -289,6 +337,7 @@ export class BattleScene {
     }
     this.updateHud();
     this.showMarker(null);
+    this.clearSelectGlow();
     return cmds;
   }
 
@@ -304,14 +353,22 @@ export class BattleScene {
       if (v === 'escape') return { type: 'escape' };
       if (v === 'allfire') { if (u.mc.slots.some(Boolean)) return { type: 'allfire' }; continue; }
       if (v === 'item') {
+        // 味方を直接タップしても選べる
+        const party = this.aliveParty().length ? this.party : [];
+        ui.pickHook = { focus: (val) => { if (this.selecting) this.selecting.focus = new Set(party.filter((p) => val && (val.member === p.m || (val.mc && val.mc === p.mc)))); } };
+        this.selecting = { units: party, focus: new Set(), ally: true, onTap: (p, top) => top.pickBy((val) => val && (val.member === p.m || (val.mc && val.mc === p.mc))) };
         const r = await itemMenu(true);
+        ui.pickHook = null;
+        this.selecting = null;
         if (r) return { type: 'item', ...r };
         continue;
       }
       if (v === 'skill' && c.skill.id === 'repair') {
         const mcs = this.party.filter((p) => p.mc);
         if (!mcs.length) { await ui.say('修理できるマシンがいない。'); continue; }
-        const t = await ui.menu({ title: 'どのマシンを修理する？', className: 'battle-cmd', items: mcs.map((p) => ({ label: esc(machineName(p.mc)), right: `${p.mc.armor}/${machineStats(p.mc).maxArmor}`, value: p })) });
+        this.selecting = { units: mcs, focus: new Set(), ally: true, onTap: (p, top) => top.pickBy((val) => val === p) };
+        const t = await ui.menu({ title: 'どのマシンを修理する？（マシンをタップでも選べる）', className: 'battle-cmd', passThrough: true, onFocus: (it) => { if (this.selecting) this.selecting.focus = new Set([it.value]); }, items: mcs.map((p) => ({ label: esc(machineName(p.mc)), right: `${p.mc.armor}/${machineStats(p.mc).maxArmor}`, value: p })) });
+        this.selecting = null;
         if (!t) continue;
         return { type: 'repair', target: t };
       }
@@ -335,27 +392,61 @@ export class BattleScene {
     const items = u.mc.slots.map((uid, i) => {
       if (!uid) return null;
       const w = weaponByUid(uid), def = WEAPONS[w.id];
-      const tgt = { one: '単体', group: 'グループ', all: '全体' }[def.target];
-      return { label: `${WEAPON_CATS[def.cat].icon} ${esc(weaponLabel(w))}`, right: `${tgt}${def.en ? ` EN${def.en}` : ''}`, value: i, disabled: (def.en || 0) > u.mc.en };
+      return { label: `${WEAPON_CATS[def.cat].icon} ${esc(weaponLabel(w))} ${rangeBadge(def)}`, right: def.en ? `EN${def.en}` : '', value: i, disabled: (def.en || 0) > u.mc.en };
     }).filter(Boolean);
     if (!items.length) { await ui.say('武器を積んでいない！'); return null; }
     return ui.menu({ title: '武器', className: 'battle-cmd wide', items });
   }
 
+  // 攻撃の相手を選ぶ：画面の敵を直接タップ（リストからも選べる）
+  //  単体＝タップした敵に決定／グループ＝タップした敵と同じ種類がまとめて光り、もう一度タップで決定／全体＝選ばずに決定だけ
   async chooseTarget(kind) {
     const alive = this.aliveEnemies();
-    if (kind === 'all') return { all: true };
+    const pass = { className: 'battle-cmd', passThrough: true };
+    let v;
+    if (kind === 'all') {
+      this.selecting = { units: alive, focus: new Set(alive), onTap: (e, top) => top.pickBy(() => true) };
+      v = await ui.menu({ ...pass, title: '全体攻撃：敵すべてをねらう', items: [{ label: '決定（敵をタップでも決定）', value: 'all' }] });
+      this.selecting = null;
+      return v == null ? undefined : { all: true };
+    }
     if (kind === 'group') {
       const keys = [...new Set(alive.map((e) => e.key))];
-      if (keys.length === 1) return { group: keys[0] };
-      const v = await ui.menu({ title: 'どのグループ？', className: 'battle-cmd', items: keys.map((k) => ({ label: `${esc(ENEMIES[k].name)} ×${alive.filter((e) => e.key === k).length}`, value: k })), onFocus: (it) => this.showMarker(alive.find((e) => e.key === it.value)) });
-      this.showMarker(null);
+      const focusKey = (k) => { if (this.selecting) this.selecting.focus = new Set(alive.filter((e) => e.key === k)); };
+      this.selecting = {
+        units: alive, focus: new Set(),
+        onTap: (e, top) => { if (top.focused()?.value === e.key) top.pickBy((k) => k === e.key); else top.focusBy((k) => k === e.key); },
+      };
+      v = await ui.menu({ ...pass, title: 'どのグループ？（敵をタップ→もう一度タップで決定）', items: keys.map((k) => ({ label: `${esc(ENEMIES[k].name)} ×${alive.filter((e) => e.key === k).length}`, value: k })), onFocus: (it) => focusKey(it.value) });
+      this.selecting = null;
       return v == null ? undefined : { group: v };
     }
     if (alive.length === 1) return { unit: alive[0] };
-    const v = await ui.menu({ title: 'どれをねらう？', className: 'battle-cmd', items: alive.map((e) => ({ label: esc(e.name), value: e })), onFocus: (it) => this.showMarker(it.value) });
-    this.showMarker(null);
+    this.selecting = { units: alive, focus: new Set(), onTap: (e, top) => top.pickBy((x) => x === e) };
+    v = await ui.menu({ ...pass, title: 'どれをねらう？（敵をタップでも選べる）', items: alive.map((e) => ({ label: esc(e.name), value: e })), onFocus: (it) => { if (this.selecting) this.selecting.focus = new Set([it.value]); } });
+    this.selecting = null;
     return v == null ? undefined : { unit: v };
+  }
+
+  // タップした場所にいちばん近い相手（画面上の距離）を探す
+  onTap(p) {
+    const sel = this.selecting;
+    const top = ui.topMenu();
+    if (!sel || !top) return;
+    const w = window.innerWidth, h = window.innerHeight;
+    let best = null, bestD = Infinity;
+    for (const u of sel.units) {
+      if (u.side === 'enemy' && !u.alive) continue;
+      const hgt = u.side === 'enemy' ? u.height : u.mc ? 2.4 : 1.4;
+      const c = u.obj.position.clone().add(V(0, hgt * 0.5, 0)).project(this.camera);
+      const sx = (c.x * 0.5 + 0.5) * w, sy = (-c.y * 0.5 + 0.5) * h;
+      // 体の大きさぶん、当たりを広くする
+      const top3 = u.obj.position.clone().add(V(0, hgt, 0)).project(this.camera);
+      const rad = Math.max(48, Math.abs((-top3.y * 0.5 + 0.5) * h - sy) * 1.3);
+      const d = Math.hypot(p.x - sx, p.y - sy);
+      if (d < rad && d < bestD) { best = u; bestD = d; }
+    }
+    if (best) sel.onTap(best, top);
   }
 
   resolveTargets(t) {
@@ -415,6 +506,11 @@ export class BattleScene {
   }
 
   async doParty(u, cmd) {
+    u.busy = true;
+    try { await this.doPartyInner(u, cmd); } finally { u.busy = false; }
+  }
+
+  async doPartyInner(u, cmd) {
     const name = u.m.name;
     if (cmd.type === 'guard') { u.guard = true; this.log(`${name}は身を守っている。`); return; }
     if (cmd.type === 'item') {
@@ -531,7 +627,7 @@ export class BattleScene {
       u.obj.rotation.y = r0 + (Math.PI - r0) * k;
     }, Ease.inOut);
     u.obj.position.copy(u.home);
-    u.obj.rotation.y = Math.PI;
+    u.obj.rotation.set(0, Math.PI, 0);
   }
 
   async footAttack(u, targets, ctx) {
@@ -598,13 +694,21 @@ export class BattleScene {
       }
     } else if (def.cat === 'cannon') {
       // 主砲：敵の周りを回り込んでから撃つ（回り込み／ジャンプ撃ちのどちらか）
-      const move = fast ? 'none' : Math.random() < 0.7 ? 'flank' : 'jump';
+      const r0 = Math.random();
+      const move = fast ? 'none' : r0 < 0.45 ? 'flank' : r0 < 0.75 ? 'jump' : 'slide';
+      if (move === 'slide') {
+        // 横に滑りながら構え、止まった瞬間に撃つ
+        await this.strafe(u, c, 2.2, 0.55, side, () => {});
+        await tween(0.12, (k) => { u.obj.rotation.x = -0.15 * Math.sin(k * Math.PI); });
+      }
       if (move === 'flank') await this.orbit(u, c, side * 0.6, 0.9, 0.6, side);
       if (move === 'jump') {
         await this.orbit(u, c, side * 0.25, 0.95, 0.35, side);
         await tween(0.3, (k) => { u.obj.position.y = Math.sin(k * Math.PI * 0.5) * 1.6; this.camFollow(u, c, side, 0.2); }, Ease.out);
       }
       for (const e of targets) {
+        // 撃った反動でのけぞる
+        tween(0.22, (k) => { u.obj.rotation.x = -0.22 * Math.sin(k * Math.PI); });
         audio.sfx(def.elem === 'elec' || def.model === 'wpn_alpha_buster' || def.name.includes('プラズマ') ? 'beam' : 'cannon');
         if (def.elem === 'elec' || def.name.includes('レール')) await this.fx.beam(from(), this.hitPoint(e), 0x7ad8ff, big ? 0.35 : 0.12);
         else if (def.name.includes('プラズマ')) await this.fx.beam(from(), this.hitPoint(e), 0xd070ff, 0.22);
@@ -701,7 +805,10 @@ export class BattleScene {
     flashModel(e.obj, 0xffffff, 1.2);
     setTimeout(() => resetFlash(e.obj), 90);
     const kb = e.obj.position.clone();
-    tween(0.18, (k) => { e.obj.position.z = kb.z - Math.sin(k * Math.PI) * 0.25; });
+    const heavy = crit || dmg >= e.maxHp * 0.3;
+    tween(heavy ? 0.32 : 0.18, (k) => { e.obj.position.z = kb.z - Math.sin(k * Math.PI) * (heavy ? 0.7 : 0.25); e.obj.rotation.x = -Math.sin(k * Math.PI) * (heavy ? 0.25 : 0.08); });
+    if (e.def.type !== 'bio') this.fx.sparks(this.hitPoint(e), 0xffc060, heavy ? 14 : 6);
+    if (heavy) this.fx.shake = Math.max(this.fx.shake, 0.5);
     this.fx.number(p, `${dmg}`, crit ? 'crit' : weak ? 'weak' : '');
     this.log(`${crit ? '会心の一撃！ ' : ''}${weak ? '弱点をついた！ ' : ''}${e.name}に${dmg}のダメージ！`);
     if (e.hp <= 0) await this.killEnemy(e);
@@ -738,9 +845,13 @@ export class BattleScene {
       setGlow(u.obj, base + k * 4);
       if (Math.random() < 0.3) this.fx.sparks(c.clone().add(V(rand(-1, 1), rand(-0.5, 1), rand(-1, 1))), 0x8affff, 2);
     });
-    // 光が弾ける
+    // 光が弾ける瞬間はスローモーション＋カメラがぐっと寄ってから引く
     audio.sfx('beam');
+    timeScale.k = 0.3;
+    const cp0 = this.camera.position.clone();
     this.fx.flash(c, 0xbff4ff, 5, 0.5);
+    await tween(0.3, (k) => { this.camera.position.lerpVectors(cp0, c.clone().add(V(1.6, 0.6, 2.2)), Math.sin(k * Math.PI * 0.5)); this.look.copy(c); });
+    timeScale.k = 1;
     this.fx.ring(u.home.clone().add(V(0, 0.2, 0)), 0x9fe8ff, 5, 0.7);
     this.fx.ring(u.home.clone().add(V(0, 1.2, 0)), 0xffe08a, 4, 0.6);
     // 撃っている間もカメラは回り続ける
@@ -771,6 +882,8 @@ export class BattleScene {
       this.camFollow = saved;
     }
     spin = false;
+    // 最後の一撃はスローモーションで見せる
+    if (!this.aliveEnemies().length) { timeScale.k = 0.35; await wait(0.25); timeScale.k = 1; }
     setGlow(u.obj, base);
     await this.returnHome(u);
     this.fx.shake = 1;
@@ -831,6 +944,32 @@ export class BattleScene {
     }
   }
 
+  // 被弾：のけぞる（大きなダメージは後ろへ吹き飛んで戻る）
+  async knockback(t, big) {
+    if (t.busy) return;
+    t.busy = true;
+    const o = t.obj, h = t.home;
+    try {
+      if (big) {
+        await tween(0.28, (k) => { o.position.z = h.z + k * 1.6; o.position.y = h.y + Math.sin(k * Math.PI) * 0.7; o.rotation.x = k * 0.5; }, Ease.out);
+        this.fx.smoke(o.position.clone().add(V(0, 0.2, 0)), 1.2, 0.8, 0x9a8a70);
+        await tween(0.4, (k) => { o.position.z = h.z + 1.6 * (1 - k); o.position.y = h.y; o.rotation.x = 0.5 * (1 - k); }, Ease.inOut);
+      } else {
+        await tween(0.22, (k) => { o.position.z = h.z + Math.sin(k * Math.PI) * 0.4; o.rotation.x = Math.sin(k * Math.PI) * 0.28; });
+      }
+    } finally { if (!t.m.ko) { o.position.x = h.x; o.position.z = h.z; o.rotation.x = 0; } t.busy = false; }
+  }
+  // 回避：横にスライドしてかわす
+  async evade(t) {
+    if (t.busy) return;
+    t.busy = true;
+    const o = t.obj, h = t.home, sd = Math.random() < 0.5 ? -1 : 1;
+    try {
+      await tween(0.16, (k) => { o.position.x = h.x + sd * 1.3 * k; o.rotation.z = -sd * 0.2 * k; }, Ease.out);
+      await tween(0.3, (k) => { o.position.x = h.x + sd * 1.3 * (1 - k); o.rotation.z = -sd * 0.2 * (1 - k); }, Ease.inOut);
+    } finally { o.position.x = h.x; o.rotation.z = 0; t.busy = false; }
+  }
+
   async damageParty(e, targets, skill) {
     const def = e.def;
     const mul = skill?.mul || 1;
@@ -841,11 +980,13 @@ export class BattleScene {
       const p = this.partyPoint(t).add(V(0, 0.6, 0));
       if (Math.random() * 100 > clamp(def.hit + 5 - evaT, 20, 97)) {
         audio.sfx('miss'); this.fx.number(p, 'MISS', 'miss'); this.log(`${t.m.name}はひらりとかわした！`);
+        this.evade(t);
         continue;
       }
       flashModel(t.obj, 0xff4030, 1.4);
       setTimeout(() => resetFlash(t.obj), 110);
       this.fx.shake = Math.max(this.fx.shake, 0.35);
+      const big = (skill?.mul || 1) > 1.2 || def.boss;
       if (t.mc) {
         const ms = machineStats(t.mc);
         let dmg = def.atk * 2 * mul * rand(0.85, 1.15) - ms.def * 0.5;
@@ -853,6 +994,8 @@ export class BattleScene {
         dmg = Math.max(1, Math.round(dmg));
         t.mc.armor = Math.max(0, t.mc.armor - dmg);
         this.fx.number(p, `${dmg}`, 'armor');
+        this.fx.sparks(this.partyPoint(t), 0xffd080, big ? 18 : 10);
+        this.knockback(t, big || dmg >= ms.maxArmor * 0.2);
         this.log(`${machineName(t.mc)}の装甲に${dmg}のダメージ！`);
         if (t.mc.armor <= 0) await this.machineDown(t);
       } else {
@@ -861,6 +1004,7 @@ export class BattleScene {
         dmg = Math.max(1, Math.round(dmg));
         t.m.hp = Math.max(0, t.m.hp - dmg);
         this.fx.number(p, `${dmg}`, 'hurt');
+        if (t.m.hp > 0) this.knockback(t, big || dmg >= st.maxHp * 0.3);
         this.log(`${t.m.name}に${dmg}のダメージ！`);
         if (t.m.hp <= 0) {
           t.m.ko = true;
