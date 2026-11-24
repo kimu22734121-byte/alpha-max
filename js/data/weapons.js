@@ -16,7 +16,9 @@ export const WEAPONS = {
   pc2: { name: 'プラズマキャノンPC-2', cat: 'cannon', mount: 'back', target: 'one', atk: 132, hit: -4, wt: 17, price: 26000, tier: 4, model: 'wpn_cannon', color: 0xa03aa0, size: 1.25 },
   hrg: { name: 'ヘビーレールガン', cat: 'cannon', mount: 'back', target: 'one', atk: 170, hit: 8, wt: 20, price: 42000, tier: 5, model: 'wpn_cannon', color: 0x1a2a5a, size: 1.35, elem: 'elec' },
   gpc: { name: 'ギガプラズマ', cat: 'cannon', mount: 'back', target: 'one', atk: 230, hit: -6, wt: 24, price: 70000, tier: 6, model: 'wpn_cannon', color: 0xd04ad0, size: 1.45 },
-  abuster: { name: 'アルファバスター', cat: 'cannon', mount: 'back', target: 'one', atk: 400, hit: 20, wt: 18, price: 0, tier: 7, model: 'wpn_alpha_buster', color: 0xe8e8f0, size: 1.0, unique: true, alphaOnly: true },
+  // ---- オメガ専用（only: 'omega'）。単体・グループ・全体のどれにも対応する特別な武器 ----
+  omega_buster: { name: 'オメガバスター', cat: 'cannon', mount: 'back', target: 'one', atk: 150, hit: 25, wt: 9, price: 0, tier: 7, model: 'wpn_alpha_buster', color: 0x1a1a22, size: 0.95, unique: true, only: 'omega', elem: 'elec', glow: 0xff2a3a, noRule: true },
+  abuster: { name: 'アルファバスター', cat: 'cannon', mount: 'back', target: 'one', atk: 400, hit: 20, wt: 18, price: 0, tier: 7, model: 'wpn_alpha_buster', color: 0xe8e8f0, size: 1.0, unique: true, only: 'alpha' },
 
   // ---------------- 機銃（敵グループをまとめて攻撃） ----------------
   mg7: { name: '7mmマシンガン', cat: 'mg', mount: 'arm', target: 'group', atk: 11, hit: 5, wt: 3, price: 250, tier: 1, model: 'wpn_gatling', color: 0x5a5f68, size: 0.8 },
@@ -28,10 +30,11 @@ export const WEAPONS = {
   v30: { name: '30mmバルカン', cat: 'mg', mount: 'arm', target: 'group', atk: 52, hit: 0, wt: 9, price: 21000, tier: 4, model: 'wpn_gatling', color: 0x3a3a3a, size: 1.2 },
   plg: { name: 'パルスガトリング', cat: 'mg', mount: 'arm', target: 'group', atk: 68, hit: 10, wt: 9, price: 36000, tier: 5, model: 'wpn_gatling', color: 0x4a6aca, size: 1.2, elem: 'elec' },
   hvg: { name: 'ヘビーバルカン', cat: 'mg', mount: 'arm', target: 'all', atk: 80, hit: 0, wt: 12, price: 60000, tier: 6, model: 'wpn_gatling', color: 0x2a2a2a, size: 1.35 },
+  omega_storm: { name: 'オメガストーム', cat: 'mg', mount: 'arm', target: 'group', atk: 62, hit: 20, wt: 5, price: 0, tier: 7, model: 'wpn_gatling', color: 0x1a1a22, size: 1.0, unique: true, only: 'omega', glow: 0xff2a3a, noRule: true },
   stormr: { name: 'ストームレイザー', cat: 'mg', mount: 'arm', target: 'all', atk: 120, hit: 20, wt: 8, price: 0, tier: 7, model: 'wpn_gatling', color: 0x8ae8ff, size: 1.2, unique: true },
 
   // ---------------- ミサイル（命中が高い） ----------------
-  rpod: { name: 'ロケットポッド', cat: 'missile', mount: 'back', target: 'one', atk: 25, hit: 20, wt: 6, price: 350, tier: 1, model: 'wpn_missile', color: 0x6a6a5a, size: 0.8 },
+  rpod: { name: 'ミサイルポッドMP-1', cat: 'missile', mount: 'back', target: 'all', atk: 25, hit: 20, wt: 6, price: 350, tier: 1, model: 'wpn_missile', color: 0x6a6a5a, size: 0.8 },
   hm1: { name: 'ホーミングミサイルHM-1', cat: 'missile', mount: 'back', target: 'one', atk: 34, hit: 35, wt: 7, price: 1200, tier: 1, model: 'wpn_missile', color: 0x5a6a7a, size: 0.9 },
   cm1: { name: 'クラスターミサイルCM-1', cat: 'missile', mount: 'back', target: 'group', atk: 24, hit: 22, wt: 9, price: 2400, tier: 1, model: 'wpn_missile', color: 0x7a5a3a, size: 1.0 },
   hm2: { name: 'ホーミングミサイルHM-2', cat: 'missile', mount: 'back', target: 'one', atk: 48, hit: 38, wt: 9, price: 4600, tier: 1, model: 'wpn_missile', color: 0x3a5a7a, size: 1.0 },
@@ -40,6 +43,7 @@ export const WEAPONS = {
   cm3: { name: 'クラスターミサイルCM-3', cat: 'missile', mount: 'back', target: 'all', atk: 58, hit: 26, wt: 14, price: 27000, tier: 4, model: 'wpn_missile', color: 0x9a4a1a, size: 1.2 },
   sm2: { name: 'スマートミサイルII', cat: 'missile', mount: 'back', target: 'one', atk: 120, hit: 50, wt: 14, price: 44000, tier: 5, model: 'wpn_missile', color: 0x2a6aaa, size: 1.25 },
   nova: { name: 'ノヴァミサイル', cat: 'missile', mount: 'back', target: 'all', atk: 110, hit: 30, wt: 18, price: 72000, tier: 6, model: 'wpn_missile', color: 0xe0a020, size: 1.35 },
+  omega_nova: { name: 'オメガノヴァ', cat: 'missile', mount: 'back', target: 'all', atk: 72, hit: 40, wt: 8, price: 0, tier: 7, model: 'wpn_missile', color: 0x2a0a10, size: 1.0, unique: true, only: 'omega', en: 20, glow: 0xff2a3a, noRule: true },
   galaxia: { name: 'ギャラクシアン', cat: 'missile', mount: 'back', target: 'all', atk: 180, hit: 60, wt: 14, price: 0, tier: 7, model: 'wpn_missile', color: 0xf0f0ff, size: 1.3, unique: true },
 
   // ---------------- 特殊兵器（属性つき。エネルギーを使う） ----------------
@@ -67,6 +71,21 @@ export const WEAPONS = {
   photon: { name: 'フォトンセイバー', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 210, hit: 25, wt: 6, price: 70000, tier: 6, model: 'wpn_blade', color: 0x8ae8ff, size: 1.25, elem: 'elec' },
   valiant: { name: 'ヴァリアントエッジ', cat: 'melee', style: 'blade', mount: 'arm', target: 'all', atk: 300, hit: 30, wt: 6, price: 0, tier: 7, model: 'wpn_blade', color: 0xffe08a, size: 1.4, unique: true },
 };
+
+// 攻撃の範囲（技ではなく武器ごとに決まる）
+// 全体の武器は1体あたりの威力を低め・エネルギー消費を多めに、単体の武器は威力を高めにする
+// （ザコ戦は全体、ボス戦は単体の大ダメージ、と使い分けられるように）
+export const RANGES = {
+  one: { name: '単体', short: '単', atkRate: 1.15, enAdd: 0 },
+  group: { name: 'グループ', short: 'G', atkRate: 1.0, enAdd: 0 },
+  all: { name: '全体', short: '全', atkRate: 0.62, enAdd: 8 },
+};
+for (const w of Object.values(WEAPONS)) {
+  if (w.noRule) continue;
+  const r = RANGES[w.target];
+  w.atk = Math.round(w.atk * r.atkRate);
+  if (r.enAdd) w.en = (w.en || 0) + r.enAdd + Math.round((w.tier - 1) * 2);
+}
 
 export const WEAPON_CATS = {
   cannon: { name: '主砲', icon: '◆' },

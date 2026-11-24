@@ -5,12 +5,13 @@ import { audio } from '../core/audio.js';
 import { save, describeSave } from '../core/save.js';
 import { MAPS } from '../data/maps.js';
 import { SHOPS } from '../data/shops.js';
-import { WEAPONS, WEAPON_CATS, UPGRADE } from '../data/weapons.js';
+import { WEAPONS, WEAPON_CATS, UPGRADE, RANGES } from '../data/weapons.js';
 import { PARTS, MODS, SLOT_INFO, MACHINE_TYPES } from '../data/parts.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
 import { CHARACTERS, LEVEL } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
+import { TILES } from '../data/tiles.js';
 import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
@@ -19,7 +20,8 @@ import {
 import { flow } from '../game/flow.js';
 
 export const settings = audio.settings;
-settings.mapMode ||= '2d';
+// v0.4 から立体的なマップ（3D）が標準。軽くしたい時は「せってい」で2Dにできる
+if (!settings.mapV) { settings.mapMode = '3d'; settings.mapV = 1; }
 
 // いまいる町（建物の中なら、その建物がある町）
 export const currentTown = () => MAPS[G.pos.map]?.town || G.pos.map;
@@ -298,7 +300,7 @@ async function weaponShop() {
       for (;;) {
         const id = await ui.menu({
           title: 'マシン用の武器', wide: true, desc: true, header: `所持 ${GEAR}${fmt(G.gear)}`,
-          items: s.machine.map((id) => { const w = WEAPONS[id]; return { label: `${WEAPON_CATS[w.cat].icon} ${esc(w.name)}`, right: `${GEAR}${fmt(w.price)}`, value: id, desc: weaponDesc(w) }; }),
+          items: s.machine.map((id) => { const w = WEAPONS[id]; return { label: `${WEAPON_CATS[w.cat].icon} ${esc(w.name)} ${rangeBadge(w)}`, right: `${GEAR}${fmt(w.price)}`, value: id, desc: weaponDesc(w) }; }),
         });
         if (!id) break;
         const w = WEAPONS[id];
@@ -413,6 +415,7 @@ async function garage(world) {
       title: 'ガレージ', header: `${esc(shop.keeper)}「何をする？」　預かり中：${here.map((m) => esc(machineName(m))).join('・') || 'なし'}`,
       items: [
         { label: '乗り込んで出発', value: 'depart' },
+        { label: '転送装置（行った町へ無料で移動）', value: 'teleport' },
         { label: '修理', value: 'repair' },
         { label: '武器の付け替え', value: 'weapons' },
         { label: 'パーツ交換', value: 'parts' },
@@ -434,7 +437,84 @@ async function garage(world) {
     if (v === 'pilot') await pilotMenu(here);
     if (v === 'tow') await towMenu(town, shop);
     if (v === 'depart') { if (await depart(world, here)) return; }
+    if (v === 'teleport') { if (await teleportMenu(world, true)) return; }
   }
+}
+
+// ---------------- 転送（ガレージの転送装置・ワープユニット） ----------------
+const TOWN_NAMES = () => Object.fromEntries(['town1', 'town2', 'town3'].map((t) => [t, MAPS[t].name]));
+export async function teleportMenu(world, fromGarage) {
+  const here = currentTown();
+  const names = TOWN_NAMES();
+  const visited = Object.keys(G.flags.visited || {}).filter((t) => names[t]);
+  const items = visited.map((t) => ({ label: esc(names[t]), right: t === here && fromGarage ? '<small>いまいる町</small>' : MAPS[t].subtitle ? `<small>${esc(MAPS[t].subtitle)}</small>` : '', value: t, disabled: t === here && fromGarage }));
+  if (items.filter((i) => !i.disabled).length === 0) { await ui.say('まだ転送できる町がない。ほかの町に行くと登録される。'); return false; }
+  const to = await ui.menu({ title: fromGarage ? '転送装置：どの町へ？（無料）' : 'ワープユニット：どの町へ？', header: fromGarage ? 'ガレージに預けたマシンも一緒に転送されます' : '', items });
+  if (!to) return false;
+  ui.closeAll();
+  if (!fromGarage) addItem('warpunit', -1);
+  await world.teleport(to, { garage: fromGarage, from: here });
+  return true;
+}
+
+// ---------------- 装備の比較（今の値 → 変更後の値（差）） ----------------
+export const rangeBadge = (def) => `<b class="rg rg-${def.target}">${RANGES[def.target].name}</b>`;
+function compareTable(rows) {
+  const cell = (r) => {
+    const [label, a, b, opt = {}] = r;
+    const fmtv = (v) => (v == null ? '―' : typeof v === 'number' ? (opt.fmt ? opt.fmt(v) : String(v)) : v);
+    let diff = '', cls = '';
+    if (typeof a === 'number' && typeof b === 'number' && a !== b && opt.better !== null) {
+      const d = Math.round((b - a) * 100) / 100;
+      const good = (opt.better === 'low') ? d < 0 : d > 0;
+      cls = good ? 'up' : 'down';
+      diff = `<span class="cmp-${cls}">（${good ? '▲' : '▼'}${d > 0 ? '+' : ''}${opt.fmt ? opt.fmt(d) : d}）</span>`;
+    } else if (a !== b && opt.better === null) cls = 'chg';
+    return `<tr><th>${label}</th><td>${fmtv(a)}</td><td class="arr">→</td><td class="cmp-${cls || 'same'}">${fmtv(b)}</td><td>${diff}</td></tr>`;
+  };
+  return `<table class="cmp">${rows.map(cell).join('')}</table>`;
+}
+function slotAtk(mc, slot, w) {
+  if (!w) return null;
+  const st = machineStats(mc), def = WEAPONS[w.id];
+  const arm = slot === 0 ? st.armMul.R : slot === 1 ? st.armMul.L : 1;
+  return Math.round(weaponAtk(w) * arm * st.mul * typeBoost(mc, def));
+}
+function weaponCompare(mc, slot, newUid) {
+  const cur = mc.slots[slot] ? weaponByUid(mc.slots[slot]) : null;
+  const nw = newUid ? weaponByUid(newUid) : null;
+  const clone = { ...mc, parts: { ...mc.parts }, slots: [...mc.slots] };
+  if (newUid) { const on = clone.slots.indexOf(newUid); if (on >= 0) clone.slots[on] = null; }
+  clone.slots[slot] = newUid || null;
+  const a = machineStats(mc), b = machineStats(clone);
+  const cd = cur && WEAPONS[cur.id], nd = nw && WEAPONS[nw.id];
+  const head = nd ? `${WEAPON_CATS[nd.cat].icon} ${esc(weaponLabel(nw))} ${rangeBadge(nd)}${typeBoost(mc, nd) > 1 ? ` <b class="ok">得意武器×${typeBoost(mc, nd).toFixed(2)}</b>` : ''}` : '外す';
+  return `<div class="cmp-head">${head}</div>` + compareTable([
+    ['範囲', cd ? RANGES[cd.target].name : '―', nd ? RANGES[nd.target].name : '―', { better: null }],
+    ['攻撃', slotAtk(mc, slot, cur) ?? 0, slotAtk(clone, slot, nw) ?? 0],
+    ['命中', cd ? cd.hit + a.hit : 0, nd ? nd.hit + b.hit : 0],
+    ['EN消費', cd ? cd.en || 0 : 0, nd ? nd.en || 0 : 0, { better: 'low' }],
+    ['重さ合計', a.weight, b.weight, { better: 'low', fmt: (v) => `${v}` }],
+    ['積める重さ', a.cap, b.cap],
+  ]) + (b.weight > b.cap ? '<b class="warn">重量オーバー</b>' : '');
+}
+function partCompare(mc, slotKey, partId) {
+  const clone = { ...mc, parts: { ...mc.parts, [slotKey]: partId }, slots: [...mc.slots] };
+  const a = machineStats(mc), b = machineStats(clone);
+  const rows = [
+    ['装甲', a.maxArmor, b.maxArmor], ['防御', a.def, b.def], ['命中', a.hit, b.hit], ['回避', a.eva, b.eva], ['速さ', a.spd, b.spd],
+    ['重さ合計', a.weight, b.weight, { better: 'low' }], ['積める重さ', a.cap, b.cap], ['EN', a.maxEn, b.maxEn], ['スロット', a.slots, b.slots],
+  ];
+  if (slotKey === 'armR' || slotKey === 'armL') rows.splice(1, 0, [`${slotKey === 'armR' ? '右' : '左'}腕の攻撃倍率`, a.armMul[slotKey === 'armR' ? 'R' : 'L'], b.armMul[slotKey === 'armR' ? 'R' : 'L']]);
+  if (slotKey === 'body') rows.unshift(['タイプ', a.typeName, b.typeName, { better: null }]);
+  return `<div class="cmp-head">${esc(PARTS[partId].name)}</div>` + compareTable(rows) + (b.weight > b.cap ? '<b class="warn">重量オーバー</b>' : '');
+}
+function footCompare(m, kind, id) {
+  const clone = { ...m, equip: { ...m.equip, [kind]: id } };
+  const a = memberStats(m), b = memberStats(clone);
+  return `<div class="cmp-head">${esc(FOOT_GEAR[id].name)}</div>` + compareTable([
+    ['攻撃', a.atk + a.weaponAtk, b.atk + b.weaponAtk], ['防御', a.def, b.def], ['命中', a.hit, b.hit], ['回避', a.eva, b.eva],
+  ]);
 }
 
 async function pickMachine(list) {
@@ -482,7 +562,7 @@ async function weaponSlots(mc) {
     const items = SLOT_INFO.map((info, i) => {
       const w = mc.slots[i] ? weaponByUid(mc.slots[i]) : null;
       const locked = i >= st.slots;
-      return { label: `${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? esc(weaponLabel(w)) : '<small>なし</small>'}`, value: i, disabled: locked, desc: w ? weaponDesc(WEAPONS[w.id], w) : (info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付けられる' : '背中には主砲・ミサイル・特殊兵器（背中用）を付けられる') };
+      return { label: `${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: w ? weaponDesc(WEAPONS[w.id], w) : (info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付けられる' : '背中には主砲・ミサイル・特殊兵器（背中用）を付けられる') };
     });
     const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/5`, wide: true, desc: true, items });
     if (slot == null) return;
@@ -491,13 +571,11 @@ async function weaponSlots(mc) {
     const list = cands.map((w) => {
       const on = weaponEquippedOn(w.uid);
       const err = checkMount(mc, slot, w);
-      const boost = typeBoost(mc, WEAPONS[w.id]);
-      const tip = boost > 1 ? `<br><b class="ok">${esc(machineStats(mc).typeName)}タイプの得意武器（威力×${boost.toFixed(2)}）</b>` : '';
-      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: err ? `<b class="warn">${esc(err)}</b>` : weaponDesc(WEAPONS[w.id], w) + tip };
+      return { label: `${WEAPON_CATS[WEAPONS[w.id].cat].icon} ${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}`, right: on ? `<small>${esc(machineName(on.mc))}に装備中</small>` : '', value: w.uid, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + weaponCompare(mc, slot, w.uid) };
     });
-    if (mc.slots[slot]) list.unshift({ label: '外す', value: '__none' });
+    if (mc.slots[slot]) list.unshift({ label: '外す', value: '__none', desc: weaponCompare(mc, slot, null) });
     if (!list.length) { await ui.say('付けられる武器を持っていない。武器屋で買おう。'); continue; }
-    const uid = await ui.menu({ title: `${info.name}に付ける武器`, wide: true, desc: true, items: list });
+    const uid = await ui.menu({ title: `${info.name}に付ける武器`, header: '選んでいる武器に替えたときの「今 → 変更後（差）」', wide: true, desc: true, className: 'cmp-menu', items: list });
     if (!uid) continue;
     const err = equipWeapon(mc, slot, uid === '__none' ? null : uid);
     if (err) { audio.sfx('error'); await ui.say(err); } else audio.sfx('repair');
@@ -520,7 +598,8 @@ async function partSlots(mc) {
     if (!cands.length) { await ui.say('付け替えられるパーツを持っていない。パーツ屋で買おう。'); continue; }
     const id = await ui.menu({
       title: '付け替えるパーツ', wide: true, desc: true,
-      items: cands.map((id) => { const err = checkPart(mc, slotKey, id); return { label: `${esc(PARTS[id].name)} ×${G.inv.parts[id]}`, value: id, disabled: !!err, desc: err ? `<b class="warn">${esc(err)}</b>` : partDesc(PARTS[id], PARTS[mc.parts[slotKey]]) }; }),
+      header: '選んでいるパーツに替えたときの「今 → 変更後（差）」', className: 'cmp-menu',
+      items: cands.map((id) => { const err = checkPart(mc, slotKey, id); return { label: `${esc(PARTS[id].name)} ×${G.inv.parts[id]}`, value: id, disabled: !!err, desc: (err ? `<b class="warn">${esc(err)}</b><br>` : '') + partCompare(mc, slotKey, id) }; }),
     });
     if (!id) continue;
     const err = equipPart(mc, slotKey, id);
@@ -649,6 +728,7 @@ export async function openFieldMenu(world) {
       items: [
         { label: 'つよさ', value: 'status' },
         { label: 'どうぐ', value: 'items' },
+        { label: 'ちず', value: 'map' },
         { label: 'そうび（生身）', value: 'equip' },
         { label: 'マシン', value: 'machines' },
         { label: '調べる', value: 'search' },
@@ -660,7 +740,8 @@ export async function openFieldMenu(world) {
     });
     if (!v) return;
     if (v === 'status') await statusMenu();
-    if (v === 'items') await itemMenu(false);
+    if (v === 'items') { const before = G.pos.map; await itemMenu(false, world); if (G.pos.map !== before || !world.active) return; }
+    if (v === 'map') await openMapView(world);
     if (v === 'equip') await equipMenu();
     if (v === 'machines') await machineList();
     if (v === 'bounty') await bountyList();
@@ -671,6 +752,35 @@ export async function openFieldMenu(world) {
       if (await ui.confirm('タイトル画面にもどりますか？（オートセーブされます）')) { autosave(); ui.closeAll(); flow.toTitle(); return; }
     }
   }
+}
+
+// ---------------- ちず（歩いた場所が記録される） ----------------
+export async function openMapView(world) {
+  const map = world.map;
+  if (map.type === 'town' || map.type === 'interior') { await ui.say(`${map.name}にいる。町の中に地図はいらない。`); return; }
+  const W = map.width, H = map.height;
+  const k = Math.max(3, Math.floor(Math.min(520 / W, 300 / H)));
+  const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#05060a'; g.fillRect(0, 0, cv.width, cv.height);
+  const ex = G.explored?.[map.id] || '';
+  const walkCol = { 5: '#c8a060', 2: '#7a8496', 1: '#9a8672', 25: '#9a8672', 26: '#6a7090', 17: '#7a5a90', 12: '#6a6a6a', 9: '#a8a060', 0: '#c8b088' };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    if (ex[y * W + x] !== '1') continue;
+    const t = map.grid[y][x];
+    const info = TILES[t];
+    g.fillStyle = info?.walk ? (walkCol[t] || '#b09a78') : t === 8 ? '#3a8a2a' : '#2e2a2a';
+    if (info?.hidden) g.fillStyle = '#2e2a2a';
+    g.fillRect(x * k, y * k, k, k);
+  }
+  const dot = (x, y, col, r = k * 0.9) => { g.fillStyle = col; g.beginPath(); g.arc((x + 0.5) * k, (y + 0.5) * k, r, 0, 7); g.fill(); };
+  for (const w of map.warps || []) if (ex[w.y * W + w.x] === '1') dot(w.x, w.y, '#ffd040', k);
+  for (const c of map.chests || []) if (ex[c.y * W + c.x] === '1') { const op = G.flags.opened?.[`${map.id}:${c.id}`]; g.fillStyle = op ? '#5a5a5a' : '#ffcc33'; g.fillRect(c.x * k, c.y * k, k, k); }
+  for (const sy of map.symbols || []) if (ex[sy.y * W + sy.x] === '1' && !(sy.bounty ? G.bounties[sy.bounty] : G.flags[sy.flag])) dot(sy.x, sy.y, '#ff3a2a', k * 1.2);
+  dot(G.pos.x - 0.5, G.pos.y - 0.5, '#5ff2ff', k * 1.3);
+  const known = ex.split('').filter((c) => c === '1').length;
+  await ui.panel(`<div class="mapview"><img src="${cv.toDataURL()}" alt="地図"></div>
+    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　■ 金＝まだ開けていない宝箱　● 赤＝ボス　（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
 }
 
 async function statusMenu() {
@@ -699,13 +809,16 @@ async function statusMenu() {
 }
 
 // 道具を使う（inBattle=true の時は battle.js から呼ばれる）
-export async function chooseItemTarget(id) {
+export async function chooseItemTarget(id, inBattle = false) {
   const it = ITEMS[id];
-  if (it.use === 'hp') return ui.menu({ title: `${esc(it.name)}：誰に？`, items: partyMembers().map((m) => ({ label: esc(m.name), right: `${m.hp}/${memberStats(m).maxHp}`, value: { member: m }, disabled: m.ko })) });
-  if (it.use === 'revive') return ui.menu({ title: `${esc(it.name)}：誰に？`, items: partyMembers().map((m) => ({ label: esc(m.name), right: m.ko ? '気絶' : '', value: { member: m }, disabled: !m.ko })) });
+  if (it.use === 'warp') return inBattle ? null : { warp: true };
+  // 戦闘中は、味方のマシンやキャラを直接タップしても選べる（battle.js が ui.pickHook で光らせる）
+  const bo = inBattle ? { className: 'battle-cmd', passThrough: true, onFocus: (x) => ui.pickHook?.focus?.(x?.value) } : {};
+  if (it.use === 'hp') return ui.menu({ ...bo, title: `${esc(it.name)}：誰に？`, items: partyMembers().map((m) => ({ label: esc(m.name), right: `${m.hp}/${memberStats(m).maxHp}`, value: { member: m }, disabled: m.ko })) });
+  if (it.use === 'revive') return ui.menu({ ...bo, title: `${esc(it.name)}：誰に？`, items: partyMembers().map((m) => ({ label: esc(m.name), right: m.ko ? '気絶' : '', value: { member: m }, disabled: !m.ko })) });
   if (it.use === 'allheal') return { all: true };
   const mcs = Object.values(G.machines).filter((mc) => mc.owned && (mc.loc.type === 'party' || mc.loc.type === 'garage' || mc.loc.type === 'map'));
-  return ui.menu({ title: `${esc(it.name)}：どのマシンに？`, items: mcs.map((mc) => { const st = machineStats(mc); return { label: esc(machineName(mc)), right: `装甲${mc.armor}/${st.maxArmor} EN${mc.en}/${st.maxEn}`, value: { mc }, disabled: mc.broken }; }) });
+  return ui.menu({ ...bo, title: `${esc(it.name)}：どのマシンに？`, items: (inBattle ? mcs.filter((mc) => mc.loc.type === 'party') : mcs).map((mc) => { const st = machineStats(mc); return { label: esc(machineName(mc)), right: `装甲${mc.armor}/${st.maxArmor} EN${mc.en}/${st.maxEn}`, value: { mc }, disabled: mc.broken }; }) });
 }
 
 export function applyItem(id, target) {
@@ -728,15 +841,22 @@ export function applyItem(id, target) {
   return '';
 }
 
-export async function itemMenu(inBattle) {
+let itemWorld = null;
+export async function itemMenu(inBattle, world) {
+  if (world) itemWorld = world;
   for (;;) {
     const list = Object.entries(G.inv.items).filter(([, n]) => n > 0);
     if (!list.length) { await ui.say('道具を持っていない。'); return null; }
-    const id = await ui.menu({ title: 'どうぐ', desc: true, items: list.map(([id, n]) => ({ label: esc(ITEMS[id].name), right: `×${n}`, value: id, desc: esc(ITEMS[id].desc) })) });
+    const id = await ui.menu({ title: 'どうぐ', desc: true, className: inBattle ? 'battle-cmd wide' : '', items: list.map(([id, n]) => ({ label: esc(ITEMS[id].name), right: `×${n}`, value: id, desc: esc(ITEMS[id].desc) })) });
     if (!id) return null;
-    const target = await chooseItemTarget(id);
+    if (inBattle && ITEMS[id].use === 'warp') { await ui.say('戦闘中はワープユニットを使えない。'); continue; }
+    const target = await chooseItemTarget(id, inBattle);
     if (!target) continue;
     if (inBattle) return { id, target };
+    if (target.warp) {
+      if (await teleportMenu(itemWorld, false)) return null;
+      continue;
+    }
     const msg = applyItem(id, target);
     audio.sfx(ITEMS[id].use === 'armor' || ITEMS[id].use === 'maint' ? 'repair' : 'heal');
     await ui.say(msg);
@@ -751,7 +871,7 @@ async function equipMenu() {
     if (!kind) continue;
     const owned = Object.entries(G.inv.foot).filter(([id, n]) => n > 0 && FOOT_GEAR[id].type === kind);
     if (!owned.length) { await ui.say('付け替えられる装備がない。武器屋で買おう。'); continue; }
-    const id = await ui.menu({ title: '付け替える装備', desc: true, items: owned.map(([id, n]) => ({ label: `${esc(FOOT_GEAR[id].name)} ×${n}`, value: id, desc: footDesc(FOOT_GEAR[id]) })) });
+    const id = await ui.menu({ title: '付け替える装備', header: '「今 → 変更後（差）」', desc: true, wide: true, className: 'cmp-menu', items: owned.map(([id, n]) => ({ label: `${esc(FOOT_GEAR[id].name)} ×${n}`, value: id, desc: footCompare(m, kind, id) })) });
     if (!id) continue;
     const old = m.equip[kind];
     if (old) addFoot(old, 1);
@@ -788,7 +908,7 @@ async function settingsMenu(world) {
       items: [
         { label: 'BGMの音量', right: pct(settings.bgm), value: 'bgm' },
         { label: '効果音の音量', right: pct(settings.se), value: 'se' },
-        { label: 'マップ表示', right: settings.mapMode === '3d' ? '3D（試験版）' : '2D', value: 'map' },
+        { label: 'マップ表示', right: settings.mapMode === '3d' ? '立体（標準）' : '2D（軽量）', value: 'map' },
         { label: '全画面表示', value: 'fs' },
       ],
     });

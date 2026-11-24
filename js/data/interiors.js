@@ -17,7 +17,7 @@ function room(W, H, extra = []) {
 
 const KEEPERS = {
   inn: { model: 'npc_clerk', colors: { primary: 0x7a4a3a } },
-  weapon: { model: 'npc_a', colors: { primary: 0x5a3a2a } },
+  weapon: { model: 'npc_pirate', colors: { primary: 0x3a2a24, secondary: 0x1e1612, accent: 0x6a6a6a, hair: 0x101010 }, scale: 1.3 }, // いかつい店主
   parts: { model: 'npc_a', colors: { primary: 0x3a6a5a } },
   item: { model: 'npc_b', colors: { primary: 0x8a5a7a } },
   bar: { model: 'npc_a', colors: { primary: 0x2a2a2a } },
@@ -26,59 +26,97 @@ const KEEPERS = {
 };
 const TITLES = { inn: '宿屋', weapon: '武器屋', parts: 'パーツ屋', item: '道具屋', bar: '酒場', office: 'ハンターオフィス', garage: 'ガレージ', home: 'レンの修理屋' };
 
+// 町ごとの内装の雰囲気（床の素材・色・壁・照明）
+const TOWN_THEME = {
+  town1: { floor: 'wood', floorColor: '#8a6440', wallColor: '#5a4a3e', light: 0xffd8a0, mood: '木のぬくもりのある辺境の店' },
+  town2: { floor: 'stone', floorColor: '#6e665c', wallColor: '#4a4038', light: 0xffb060, mood: '石造りでランプの灯る鉱山町の店' },
+  town3: { floor: 'metal', floorColor: '#56606c', wallColor: '#36404e', light: 0xbfe0ff, mood: '金属パネルと白い照明の中継ステーション' },
+};
+// 施設ごとの特色（照明の色・床の敷物など）
+const FAC_THEME = {
+  inn: { light: 0xffa860, lightK: 1.2, rug: [6, 3, 11, 7], rugColor: '#8a2a2a' },
+  weapon: { light: 0xff8a6a, lightK: 0.9 },
+  parts: { light: 0xd8f0ff },
+  item: { light: 0xfff0c8, rug: [4, 4, 8, 7], rugColor: '#2a6a5a' },
+  bar: { light: 0xc070ff, lightK: 0.8, rug: [2, 4, 11, 7], rugColor: '#4a1a3a' },
+  office: { light: 0xf0f0e0 },
+  garage: { floor: 'metal', floorColor: '#4e535a', light: 0xffffff, lightK: 1.2 },
+  home: { light: 0xffd090, rug: [9, 5, 12, 8], rugColor: '#3a5a8a' },
+};
+
 // ひな形。x, y はタイル座標（小数OK）、rot は向き（ラジアン）
 const TEMPLATES = {
+  // 宿屋：暖かい照明とベッドが並ぶ
   inn: () => ({
-    W: 12, H: 9, keeper: { x: 3, y: 2.1 },
+    W: 13, H: 9, keeper: { x: 3, y: 2.1 },
     props: [
       { id: 'counter', model: 'f_counter', x: 3, y: 3.1, block: [2.4, 0.7] },
-      { id: 'bed1', model: 'f_bed', x: 8, y: 2.2, block: [1, 1.9], search: { loot: { gear: 60 }, found: 'ベッドの下に、だれかの忘れたギアが落ちていた。' } },
-      { id: 'bed2', model: 'f_bed', x: 10, y: 2.2, block: [1, 1.9], search: { text: 'ふかふかのベッドだ。泊まるなら受付で。' } },
-      { id: 'dresser', model: 'f_dresser', x: 10.4, y: 5.6, rot: -Math.PI / 2, block: [0.6, 1], search: { loot: { item: 'kitS', n: 1 }, rare: { mat: 'cell', n: 1, rate: 0.3 } } },
-      { id: 'plant', model: 'f_plant', x: 1.4, y: 6.6, block: [0.6, 0.6], search: { text: 'よく手入れされた鉢植え。この星では貴重な緑だ。' } },
-      { id: 'lamp', model: 'f_lamp', x: 5.3, y: 1.5, block: [0.5, 0.5] },
+      { id: 'bed1', model: 'f_bed', x: 7, y: 2.2, block: [1, 1.9], search: { loot: { gear: 60 }, found: 'ベッドの下に、だれかの忘れたギアが落ちていた。' } },
+      { id: 'bed2', model: 'f_bed', x: 8.6, y: 2.2, block: [1, 1.9], search: { text: 'ふかふかのベッドだ。泊まるなら受付で。' } },
+      { id: 'bed3', model: 'f_bed', x: 10.2, y: 2.2, block: [1, 1.9], search: { text: 'シーツからお日さまのにおいがする。' } },
+      { id: 'bed4', model: 'f_bed', x: 11.6, y: 5.6, rot: -Math.PI / 2, block: [1.9, 1], search: { loot: { item: 'kitS', n: 1 }, found: 'まくらの下に救急キットがはさまっていた。' } },
+      { id: 'dresser', model: 'f_dresser', x: 1.4, y: 5.6, rot: Math.PI / 2, block: [0.6, 1], search: { loot: { item: 'kitS', n: 1 }, rare: { mat: 'cell', n: 1, rate: 0.3 } } },
+      { id: 'lamp1', model: 'f_lamp', x: 5.4, y: 1.5, block: [0.5, 0.5] },
+      { id: 'lamp2', model: 'f_lamp', x: 11.6, y: 1.5, block: [0.5, 0.5] },
+      { id: 'plant', model: 'f_plant', x: 1.4, y: 7.4, block: [0.6, 0.6], search: { text: 'よく手入れされた鉢植え。この星では貴重な緑だ。' } },
     ],
   }),
+  // 武器屋：壁一面に武器が飾られ、いかつい店主
   weapon: () => ({
     W: 12, H: 9, keeper: { x: 6, y: 2.1 },
     props: [
       { id: 'counter', model: 'f_counter', x: 6, y: 3.1, block: [2.4, 0.7] },
-      { id: 'rack1', model: 'f_rack', x: 2.4, y: 1.3, block: [1.8, 0.4], search: { text: '銃がずらりと並んでいる。どれもよく手入れされている。' } },
-      { id: 'rack2', model: 'f_rack', x: 9.6, y: 1.3, block: [1.8, 0.4], search: { text: '「試し撃ち禁止」の札が下がっている。' } },
+      { id: 'rack1', model: 'f_rack', x: 2.2, y: 1.15, block: [1.8, 0.4], search: { text: '銃がずらりと並んでいる。どれもよく手入れされている。' } },
+      { id: 'rack2', model: 'f_rack', x: 4.2, y: 1.15, block: [1.8, 0.4], search: { text: '大口径のライフルだ。持ち上げただけで肩が外れそう。' } },
+      { id: 'rack3', model: 'f_rack', x: 7.8, y: 1.15, block: [1.8, 0.4], search: { text: '「試し撃ち禁止」の札が下がっている。' } },
+      { id: 'rack4', model: 'f_rack', x: 9.8, y: 1.15, block: [1.8, 0.4], search: { text: 'ブレードとハンマーの見本。刃がぎらりと光る。' } },
+      { id: 'rack5', model: 'f_rack', x: 10.8, y: 4.5, rot: -Math.PI / 2, block: [0.4, 1.8], search: { text: 'マシン用の主砲の砲身が立てかけてある。' } },
       { id: 'crate1', model: 'f_crate', x: 1.5, y: 6.5, block: [0.8, 0.8], search: { loot: { item: 'kitS', n: 2 } } },
       { id: 'crate2', model: 'f_crate', x: 2.4, y: 6.6, rot: 0.4, block: [0.8, 0.8], search: { loot: { mat: 'scrap', n: 2 }, rare: { mat: 'alloy', n: 1, rate: 0.25 } } },
-      { id: 'barrel', model: 'f_barrel', x: 10.5, y: 6.5, block: [0.7, 0.7], search: { text: '火薬のにおいがする。近づかないほうがよさそうだ。' } },
+      { id: 'barrel', model: 'f_barrel', x: 10.5, y: 7, block: [0.7, 0.7], search: { text: '火薬のにおいがする。近づかないほうがよさそうだ。' } },
     ],
   }),
+  // パーツ屋：歯車や部品の棚と作業台
   parts: () => ({
     W: 12, H: 9, keeper: { x: 6, y: 2.1 },
     props: [
       { id: 'counter', model: 'f_counter', x: 6, y: 3.1, block: [2.4, 0.7] },
       { id: 'shelf', model: 'f_shelf', x: 2.4, y: 1.3, block: [1.8, 0.5], search: { text: '中古のセンサーや配線がぎっしり詰まっている。' } },
-      { id: 'gears', model: 'f_gears', x: 9.8, y: 5.8, block: [0.8, 0.8], search: { text: '大きな歯車が積んである。重くて持ち上がらない。' } },
-      { id: 'crate', model: 'f_crate', x: 10.4, y: 1.6, block: [0.8, 0.8], search: { loot: { mat: 'scrap', n: 3 }, rare: { mat: 'cell', n: 1, rate: 0.3 } } },
-      { id: 'toolbox', model: 'f_toolbox', x: 1.4, y: 6.4, block: [0.8, 0.6], search: { loot: { gear: 40 } } },
+      { id: 'shelf2', model: 'f_shelf', x: 9.6, y: 1.3, block: [1.8, 0.5], search: { text: '脚パーツのサスペンションが山積みだ。' } },
+      { id: 'bench', model: 'f_workbench', x: 9.4, y: 5.4, block: [1.8, 0.8], search: { text: '分解中のセンサーヘッドが置いてある。作業の途中らしい。' } },
+      { id: 'gears', model: 'f_gears', x: 2.0, y: 5.2, block: [0.8, 0.8], search: { text: '大きな歯車が積んである。重くて持ち上がらない。' } },
+      { id: 'gears2', model: 'f_gears', x: 3.0, y: 5.6, block: [0.8, 0.8] },
+      { id: 'crate', model: 'f_crate', x: 10.6, y: 7.2, block: [0.8, 0.8], search: { loot: { mat: 'scrap', n: 3 }, rare: { mat: 'cell', n: 1, rate: 0.3 } } },
+      { id: 'toolbox', model: 'f_toolbox', x: 1.4, y: 7.2, block: [0.8, 0.6], search: { loot: { gear: 40 } } },
     ],
   }),
+  // 道具屋：薬や食料の棚
   item: () => ({
     W: 12, H: 9, keeper: { x: 6, y: 2.1 },
     props: [
       { id: 'counter', model: 'f_counter', x: 6, y: 3.1, block: [2.4, 0.7] },
-      { id: 'shelf1', model: 'f_shelf', x: 2.4, y: 1.3, block: [1.8, 0.5], search: { text: '商品の救急キットが並んでいる。勝手に取ってはいけない。' } },
-      { id: 'shelf2', model: 'f_shelf', x: 9.6, y: 1.3, block: [1.8, 0.5], search: { text: '「本日の特売：バッテリーS」と書いてある。' } },
-      { id: 'barrel', model: 'f_barrel', x: 1.5, y: 6.5, block: [0.7, 0.7], search: { loot: { item: 'repS', n: 1 } } },
-      { id: 'plant', model: 'f_plant', x: 10.5, y: 6.6, block: [0.6, 0.6], search: { text: '鉢の土の中に……何もなかった。' } },
+      { id: 'potions1', model: 'f_potions', x: 2.4, y: 1.3, block: [1.8, 0.5], search: { text: '色とりどりの薬のびん。救急キットの中身もここで作っているらしい。' } },
+      { id: 'potions2', model: 'f_potions', x: 9.6, y: 1.3, block: [1.8, 0.5], search: { text: '「本日の特売：バッテリーS」と書いてある。' } },
+      { id: 'food1', model: 'f_food', x: 1.6, y: 5.4, block: [0.9, 0.6], search: { text: '缶詰と固いパン。旅の保存食だ。' } },
+      { id: 'food2', model: 'f_food', x: 10.4, y: 5.4, block: [0.9, 0.6], search: { loot: { item: 'kitS', n: 1 }, found: '缶詰の箱のすき間に救急キットが入っていた。' } },
+      { id: 'barrel', model: 'f_barrel', x: 1.5, y: 7.2, block: [0.7, 0.7], search: { loot: { item: 'repS', n: 1 } } },
+      { id: 'plant', model: 'f_plant', x: 10.5, y: 7.4, block: [0.6, 0.6], search: { text: '鉢の土の中に……何もなかった。' } },
     ],
   }),
+  // 酒場：カウンターと丸テーブルとジュークボックス
   bar: () => ({
-    W: 12, H: 9, keeper: { x: 6, y: 1.6 },
+    W: 13, H: 9, keeper: { x: 6.5, y: 1.6 },
     props: [
-      { id: 'counter', model: 'f_counter', x: 6, y: 2.6, block: [2.4, 0.7] },
+      { id: 'counter', model: 'f_counter', x: 6.5, y: 2.6, block: [2.4, 0.7] },
+      { id: 'bottles', model: 'f_bottles', x: 6.5, y: 2.6, y0: 0.92 },
       { id: 'table1', model: 'f_table', x: 3, y: 5, block: [1, 1], search: { text: '飲みかけのグラスが置いてある。' } },
       { id: 'chair1', model: 'f_chair', x: 2.1, y: 5, rot: Math.PI / 2, block: [0.4, 0.4] },
-      { id: 'table2', model: 'f_table', x: 9, y: 5, block: [1, 1], search: { loot: { gear: 25 }, found: 'テーブルの上にチップが置きっぱなしだ。' } },
-      { id: 'chair2', model: 'f_chair', x: 9.9, y: 5, rot: -Math.PI / 2, block: [0.4, 0.4] },
-      { id: 'jukebox', model: 'f_jukebox', x: 10.5, y: 1.4, block: [0.8, 0.5], search: { text: '古いジュークボックス。ノイズまじりの電子音が流れている。' } },
+      { id: 'chair1b', model: 'f_chair', x: 3.9, y: 5, rot: -Math.PI / 2, block: [0.4, 0.4] },
+      { id: 'table2', model: 'f_table', x: 6.5, y: 6, block: [1, 1], search: { loot: { gear: 25 }, found: 'テーブルの上にチップが置きっぱなしだ。' } },
+      { id: 'chair2', model: 'f_chair', x: 7.4, y: 6, rot: -Math.PI / 2, block: [0.4, 0.4] },
+      { id: 'table3', model: 'f_table', x: 10, y: 5, block: [1, 1], search: { text: 'カードゲームのチップが散らばっている。' } },
+      { id: 'chair3', model: 'f_chair', x: 10.9, y: 5, rot: -Math.PI / 2, block: [0.4, 0.4] },
+      { id: 'jukebox', model: 'f_jukebox', x: 11.5, y: 1.4, block: [0.8, 0.5], search: { text: '古いジュークボックス。ノイズまじりの電子音が流れている。' } },
       { id: 'barrel1', model: 'f_barrel', x: 1.3, y: 1.5, block: [0.7, 0.7], search: { loot: { item: 'batS', n: 1 }, rare: { mat: 'cell', n: 1, rate: 0.2 } } },
       { id: 'barrel2', model: 'f_barrel', x: 2.1, y: 1.5, block: [0.7, 0.7], search: { text: '中身は……強そうなお酒だ。' } },
     ],
@@ -93,12 +131,16 @@ const TEMPLATES = {
       { id: 'lamp', model: 'f_lamp', x: 10.6, y: 6.5, block: [0.5, 0.5] },
     ],
   }),
+  // ガレージ：工具と整備中のマシン
   garage: () => ({
-    W: 16, H: 10, keeper: { x: 3, y: 3.2 }, showMachines: [[8.5, 4.4], [12.5, 4.4], [8.5, 7.2], [12.5, 7.2]],
+    W: 16, H: 10, keeper: { x: 3, y: 3.2 }, showMachines: [[8.5, 4.4], [12.5, 4.4], [8.5, 7.2], [12.5, 7.2]], maintenance: true,
     props: [
+      { id: 'lift', model: 'f_lift', x: 8.5, y: 4.4 },
       { id: 'workbench', model: 'f_workbench', x: 3, y: 1.6, block: [1.8, 0.8], search: { text: '整備用の作業台。工具がきれいに並べてある。' } },
       { id: 'toolbox', model: 'f_toolbox', x: 1.4, y: 6, rot: Math.PI / 2, block: [0.6, 0.8], search: { loot: { mat: 'scrap', n: 2 }, rare: { mat: 'alloy', n: 1, rate: 0.3 } } },
+      { id: 'toolbox2', model: 'f_toolbox', x: 5.6, y: 1.5, block: [0.8, 0.5], search: { text: 'レンチにトルクドライバー……どれも年季が入っている。' } },
       { id: 'barrel', model: 'f_barrel', x: 14.4, y: 1.5, block: [0.7, 0.7], search: { text: 'オイルのドラム缶。べとべとだ。' } },
+      { id: 'barrel2', model: 'f_barrel', x: 14.4, y: 2.3, block: [0.7, 0.7] },
       { id: 'crate', model: 'f_crate', x: 1.5, y: 8, block: [0.8, 0.8], search: { loot: { item: 'repS', n: 1 } } },
     ],
   }),
@@ -142,7 +184,9 @@ export function addInteriors(MAPS) {
         arrive: [exitX, tpl.H - 2],
         props: tpl.props,
         showMachines: tpl.showMachines,
-        npcs: tpl.keeper ? [{ id: 'keeper', name: '', model: KEEPERS[b.facility].model, colors: KEEPERS[b.facility].colors, x: tpl.keeper.x - 0.5, y: tpl.keeper.y - 0.5, facility: b.facility, range: 2.6, lines: [] }] : [],
+        npcs: tpl.keeper ? [{ id: 'keeper', name: '', model: KEEPERS[b.facility].model, colors: KEEPERS[b.facility].colors, scale: KEEPERS[b.facility].scale, x: tpl.keeper.x - 0.5, y: tpl.keeper.y - 0.5, facility: b.facility, range: 2.6, lines: [] }] : [],
+        theme: { ...TOWN_THEME[town.id], ...FAC_THEME[b.facility] },
+        maintenance: tpl.maintenance,
       };
       if (b.facility === 'home') {
         // 本棚の裏の階段 → 地下格納庫

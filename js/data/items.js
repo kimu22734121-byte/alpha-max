@@ -13,6 +13,7 @@ export const ITEMS = {
   batL: { name: 'バッテリーL', use: 'en', amount: 9999, price: 600, desc: 'マシン1台のエネルギーを全回復' },
   maint: { name: 'フルメンテキット', use: 'maint', amount: 9999, price: 1500, desc: 'マシン1台の装甲とエネルギーを全回復' },
   revive: { name: '気つけスプレー', use: 'revive', amount: 0.5, price: 300, desc: '気絶した仲間を体力半分で起こす' },
+  warpunit: { name: 'ワープユニット', use: 'warp', amount: 0, price: 120, desc: '一度行った町へ一瞬で移動する。ダンジョンからの脱出にも使える（戦闘中は使えない）' },
   megaheal: { name: 'メガリカバリー', use: 'allheal', amount: 9999, price: 5000, rare: true, desc: '全員の体力とマシンの装甲をまとめて全回復（ボス戦用）' },
 };
 

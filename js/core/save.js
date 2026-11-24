@@ -1,5 +1,5 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
 
@@ -28,9 +28,26 @@ function read(key) {
 
 // セーブ形式を変えたらここで古いデータを直す
 // v1 → v2：第1章の流れ（町3つ・仲間の加入・マシン構成）を作り直したので、v1 のデータは使わない
+// v2 → v3：フィールドとダンジョンを約2倍に作り直したので、そこにいたら最後の町から再開する
+const RESHAPED = ['field1', 'mine1', 'ship1', 'factory1'];
+const TOWN_GATE = { town1: [15, 19], town2: [14, 19], town3: [14, 19] };
 function migrate(data) {
   if (!data || !data.state) return null;
   if ((data.v || 1) < 2) return null;
+  if (data.v < 3) {
+    const G = data.state;
+    const town = G.lastTown || 'town1';
+    if (RESHAPED.includes(G.pos.map)) {
+      const [x, y] = TOWN_GATE[town] || TOWN_GATE.town1;
+      G.pos = { map: town, x: x + 0.5, y: y + 0.5, dir: Math.PI };
+    }
+    for (const mc of Object.values(G.machines || {})) {
+      if ((mc.loc?.type === 'map' && RESHAPED.includes(mc.loc.map)) || mc.loc?.type === 'party') mc.loc = { type: 'garage', town };
+    }
+    G.flags ||= {};
+    (G.flags.visited ||= {})[town] = true;
+    data.v = 3;
+  }
   return data;
 }
 

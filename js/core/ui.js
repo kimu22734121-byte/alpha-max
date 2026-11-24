@@ -30,6 +30,8 @@ function popModal(m) {
 export const ui = {
   onChange: null,
   get busy() { return stack.length > 0; },
+  // いちばん上に開いているメニュー（無ければ null）
+  topMenu() { const t = stack[stack.length - 1]; return t?.isMenu ? t : null; },
 
   init(rootEl) {
     root = rootEl;
@@ -86,10 +88,10 @@ export const ui = {
 
   // ---- コマンドメニュー ----
   // items: [{ label, value, disabled, right, desc }]
-  menu({ title, items, cancel = true, desc = false, className = '', onFocus, header, wide = false, pos }) {
+  menu({ title, items, cancel = true, desc = false, className = '', onFocus, header, wide = false, pos, passThrough = false }) {
     return new Promise((resolve) => {
       const depth = stack.filter((s) => s.isMenu).length;
-      const wrap = el('div', 'modal modal-menu');
+      const wrap = el('div', `modal modal-menu${passThrough ? ' pass-through' : ''}`);
       const panel = el('div', `menu-panel ${className} ${wide ? 'wide' : ''}`);
       if (pos === 'right') panel.classList.add('pos-right');
       if (pos === 'left') panel.classList.add('pos-left');
@@ -150,9 +152,14 @@ export const ui = {
         audio.sfx('cursor');
         setIdx(j);
       };
+      const findBy = (pred) => items.findIndex((it) => !it.disabled && !it.separator && pred(it.value, it));
       const m = {
         el: wrap,
         isMenu: true,
+        // 画面のタップなどから、メニューの中の項目を選ぶ（戦闘で敵や味方を直接タップした時）
+        pickBy: (pred) => { const i = findBy(pred); if (i < 0) return false; setIdx(i, false); choose(); return true; },
+        focusBy: (pred) => { const i = findBy(pred); if (i < 0) return false; if (i !== idx) { audio.sfx('cursor'); setIdx(i); } return true; },
+        focused: () => items[idx],
         onKey: (e) => {
           if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); move(1); }
           else if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); move(-1); }
