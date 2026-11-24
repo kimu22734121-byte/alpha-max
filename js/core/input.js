@@ -21,7 +21,7 @@ export const input = {
 
     layer.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, t0: performance.now(), moved: false, stick: false };
+      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, t0: performance.now(), moved: false, stick: false };
       // 画面の左側60%で置いた指はスティックになる
       if (this.enabled && !this.stick && e.clientX < window.innerWidth * 0.6) {
         p.stick = true;
@@ -38,6 +38,9 @@ export const input = {
       if (!p) return;
       const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
       if (Math.hypot(dx, dy) > 12) p.moved = true;
+      // スティックではない指（画面の右側）を横に動かすと「スワイプ」（フィールドのカメラを回す）
+      if (!p.stick && p.moved) { this.emit('swipe', { dx: e.clientX - p.lastX }); }
+      p.lastX = e.clientX;
       if (p.stick) {
         const len = Math.hypot(dx, dy);
         const k = len > R ? R / len : 1;
@@ -77,6 +80,7 @@ export const input = {
     window.addEventListener('blur', () => keys.clear());
   },
 
+  isDown(k) { return keys.has(k); },
   // キーボードとスティックをまとめた移動量
   getMove() {
     if (!this.enabled) return { x: 0, y: 0 };

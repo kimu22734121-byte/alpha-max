@@ -11,6 +11,7 @@ import { createMapView, heightAt } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { buildCharModel } from '../models/char-look.js';
 import { devStore, robotStation, charStation, showcaseModel } from './devroom.js';
+import { hangarList, machineViewer } from './hangar.js';
 import { MAPS } from '../data/maps.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
 import { CHARACTERS } from '../data/characters.js';
@@ -30,6 +31,10 @@ const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が�
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
 const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
 const CHAR_SCALE = 0.9;
+// フィールドのカメラの回転（スワイプ）。最大で左右90度ずつ。360度にするときは CAM_MAX_YAW を外す
+const CAM_MAX_YAW = Math.PI / 2;
+const CAM_SWIPE = 0.006; // 1ピクセルあたりの回転（ラジアン）
+const clampYaw = (y) => Math.max(-CAM_MAX_YAW, Math.min(CAM_MAX_YAW, y));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // 光の粒子（アルファ・オメガが動くと舞う）
@@ -69,12 +74,20 @@ export class WorldScene {
     input.on('action', () => { if (this.active && !this.busy && !ui.busy) this.onAction(); });
     input.on('menu', () => { if (this.active && !this.busy && !ui.busy) this.onMenu(); });
     input.on('tap', (p) => { if (this.active && !this.busy && !ui.busy) this.onTap(p); });
+    // フィールドでは画面の右側を横にスワイプするとカメラが左右に回る（最大90度ずつ。指を離した角度で止まる）
+    input.on('swipe', ({ dx }) => { if (this.active && !ui.busy && this.canRotate()) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) - dx * CAM_SWIPE); } });
+    this.camResetBtn = document.createElement('button');
+    this.camResetBtn.className = 'cam-reset';
+    this.camResetBtn.textContent = '⟲ 正面に戻す';
+    this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = 0; });
+    this.camResetBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     // 調べられる物の正面に立つと出る「調べる」ボタン
     this.pop = document.createElement('button');
     this.pop.className = 'examine-pop';
     this.pop.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.pop.addEventListener('click', (e) => { e.stopPropagation(); if (this.active && !this.busy && !ui.busy) this.onAction(); });
     document.body.appendChild(this.pop);
+    document.body.appendChild(this.camResetBtn);
   }
 
   get map() { return MAPS[G.pos.map]; }
@@ -95,6 +108,7 @@ export class WorldScene {
   async exit() {
     this.active = false;
     this.pop.classList.remove('on');
+    this.camResetBtn.classList.remove('on');
     input.setEnabled(false);
     hud.hide();
   }
@@ -180,7 +194,8 @@ export class WorldScene {
     }
     // ガレージの中には預けてあるマシンが並ぶ
     if (map.showMachines) {
-      machinesInGarage(map.town).slice(0, map.showMachines.length).forEach((mc, i) => {
+      // 仲間が使っているマシンだけを並べる（台数が増えても重くならない）
+      machinesInGarage(map.town).filter((mc) => partyMembers().some((m) => m.machine === mc.id)).slice(0, map.showMachines.length).forEach((mc, i) => {
         const obj = buildMachineModel(machineSpec(mc));
         obj.scale.setScalar(0.78);
         obj.position.set(map.showMachines[i][0], 0, map.showMachines[i][1]);
@@ -306,14 +321,17 @@ export class WorldScene {
       if (mag > 0.05) {
         const mspd = lead.kind === 'machine' ? machineStats(lead.mc).spd : 0;
         const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2);
-        const dx = mv.x * speed * dt / Math.max(mag, 1), dz = mv.y * speed * dt / Math.max(mag, 1);
+        // カメラが回っていても、スティックを倒した画面上の向きに進む
+        const yaw = this.camYaw || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
+        const wx = mv.x * cy + mv.y * sy, wz = -mv.x * sy + mv.y * cy;
+        const dx = wx * speed * dt / Math.max(mag, 1), dz = wz * speed * dt / Math.max(mag, 1);
         const r = lead.kind === 'machine' ? 0.4 : 0.26;
         const p = G.pos;
         let nx = p.x + dx, ny = p.y;
         if (this.canStand(nx, ny, r)) p.x = nx;
         nx = p.x; ny = p.y + dz;
         if (this.canStand(nx, ny, r)) p.y = ny;
-        const target = Math.atan2(mv.x, mv.y);
+        const target = Math.atan2(wx, wz);
         p.dir = target;
         moving = Math.min(1, mag * 1.3);
         const last = this.trail[0];
@@ -351,7 +369,7 @@ export class WorldScene {
       const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
       h.mesh.material.opacity += ((near ? 0.3 : 1) - h.mesh.material.opacity) * Math.min(1, dt * 6);
     }
-    for (const o of this.showcases || []) { o.rotation.y = t * 0.6; if (o.userData.showcase === 'robot') animateMachine(o, t, 0); }
+    for (const o of this.showcases || []) { o.rotation.y = t * 0.6; if (o.userData.showcase !== 'char') animateMachine(o, t, 0); }
     // 転送台の光の輪がゆっくり回る
     for (const pr of this.props) if (pr.data.pad && pr.obj) { const r = pr.obj.getObjectByName('padRing'); if (r) r.rotation.y = t * 0.8; const c = pr.obj.getObjectByName('padCore'); if (c?.material.emissive) c.material.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.6; }
     // ガレージで整備中のマシンから火花
@@ -456,6 +474,18 @@ export class WorldScene {
     }
     this.camZoom = (this.camZoom ?? zoom) + (zoom - (this.camZoom ?? zoom)) * Math.min(1, dt * 3);
     off.multiplyScalar(this.camZoom);
+    // フィールドのカメラの回転：Q／Eキーでも回せる。「正面に戻す」でゆっくり0度へ
+    if (this.canRotate()) {
+      const kq = (input.isDown('q') || input.isDown('Q') ? 1 : 0) - (input.isDown('e') || input.isDown('E') ? 1 : 0);
+      if (kq && !ui.busy) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) + kq * dt * 1.6); }
+      if (this.camYawTarget != null) {
+        this.camYaw += (this.camYawTarget - this.camYaw) * Math.min(1, dt * 3);
+        if (Math.abs(this.camYaw - this.camYawTarget) < 0.002) { this.camYaw = this.camYawTarget; this.camYawTarget = null; }
+      }
+    } else { this.camYaw = 0; this.camYawTarget = null; }
+    const yaw = this.camYaw || 0;
+    if (yaw) { const ox = off.x, oz = off.z; off.x = ox * Math.cos(yaw) + oz * Math.sin(yaw); off.z = -ox * Math.sin(yaw) + oz * Math.cos(yaw); }
+    this.camResetBtn.classList.toggle('on', this.canRotate() && Math.abs(yaw) > 0.01 && !ui.busy);
     let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
     // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
     if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
@@ -468,6 +498,9 @@ export class WorldScene {
     this.sun.target.position.set(p.x, 0, p.y);
     if (this.lamp) this.lamp.position.set(p.x, 2.5, p.y + 0.5);
   }
+
+  // カメラを回せるのは、まずはフィールドだけ（町やダンジョンは使い心地を見てから決める）
+  canRotate() { return this.map?.type === 'field'; }
 
   canStand(x, z, r) {
     const map = this.map;
@@ -608,8 +641,13 @@ export class WorldScene {
     this.showcases = [];
     for (const pr of this.props || []) {
       if (!pr.data.showcase) continue;
-      const o = showcaseModel(pr.data.showcase);
-      o.scale.multiplyScalar(pr.data.showcase === 'char' ? CHAR_SCALE * 1.4 : MACHINE_SCALE);
+      let o;
+      if (pr.data.showcase === 'garage') {
+        const mc = G.machines[G.flags.garageShow?.[this.map.town]];
+        if (!mc?.owned) continue;
+        o = buildMachineModel(machineSpec(mc));
+      } else o = showcaseModel(pr.data.showcase);
+      o.scale.multiplyScalar(pr.data.showcase === 'char' ? CHAR_SCALE * 1.4 : pr.data.showcase === 'garage' ? 0.78 : MACHINE_SCALE);
       o.position.set(pr.x, 0.42, pr.z);
       o.userData.showcase = pr.data.showcase;
       this.scene.add(o);
@@ -851,6 +889,13 @@ export class WorldScene {
     }
     if (name === 'gearMachine') { await gearMachine(); return; }
     if (name === 'devStore') { await devStore(this); return; }
+    if (name === 'hangar') { await ui.say('格納庫モニター。持っているマシンとパーツが全部ここに記録されている。'); await hangarList(this); this.refreshShowcases(); return; }
+    if (name === 'hangarView') {
+      const mc = G.machines[G.flags.garageShow?.[this.map.town]];
+      if (mc?.owned) await machineViewer(this, mc); else { await ui.say('展示台。格納庫モニターの一覧で選んだマシンがここに出てくる。'); await hangarList(this); }
+      this.refreshShowcases();
+      return;
+    }
     if (name === 'robotStation') { await robotStation(this); this.refreshShowcases(); return; }
     if (name === 'charStation') { await charStation(this); this.refreshShowcases(); return; }
     if (name === 'testTargets') {

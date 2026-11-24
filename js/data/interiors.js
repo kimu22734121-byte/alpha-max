@@ -133,9 +133,12 @@ const TEMPLATES = {
   }),
   // ガレージ：工具と整備中のマシン
   garage: () => ({
-    W: 16, H: 10, keeper: { x: 3, y: 3.2 }, showMachines: [[8.5, 4.4], [12.5, 4.4], [8.5, 7.2], [12.5, 7.2]], maintenance: true,
+    // 床に並べるのは仲間が使っているマシン（最大3台）と、展示台の1台だけ。ほかは奥のモニター（格納庫）に収納
+    W: 16, H: 10, keeper: { x: 3, y: 3.2 }, showMachines: [[8.5, 4.4], [12.5, 4.4], [8.5, 7.4]], maintenance: true,
     props: [
       { id: 'lift', model: 'f_lift', x: 8.5, y: 4.4 },
+      { id: 'hangarmon', model: 'f_devpc', x: 10.6, y: 1.3, block: [1.6, 0.6], search: { event: 'hangar' } }, // 格納庫モニター（全部のマシン・パーツの一覧）
+      { id: 'hangarPedestal', model: 'f_pedestal', x: 12.8, y: 7.4, block: [2.1, 2.1], showcase: 'garage', search: { event: 'hangarView' } }, // 一覧で選んだ機体を出す展示台
       // 転送台：調べると行ったことのある町へ転送できる（上に乗って調べる）
       { id: 'teleporter', model: 'f_teleporter', x: 4.6, y: 7.0, block: null, pad: true, search: { event: 'teleport' } },
       { id: 'workbench', model: 'f_workbench', x: 3, y: 1.6, block: [1.8, 0.8], search: { text: '整備用の作業台。工具がきれいに並べてある。' } },
