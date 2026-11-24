@@ -201,6 +201,7 @@
 - ビルド不要の静的サイト。`index.html` を開けば動く（ES Modules + importmap）。GitHub Pages でそのまま公開できる
 - Three.js は `js/lib/` に同梱（CDNに依存しない）。バージョンは `package.json` の devDependencies と合わせる
 - ローカル確認：`npx serve .` や `python3 -m http.server` などで配信して開く（file:// ではモジュールが読めない）。`?skip` でオープニングを飛ばせる
+- 公開（GitHub Pages）は `main` に入ったときに自動で行われる。公開時に js の import と index.html の読み込みに `?v=コミット番号` を付けて、古いファイルが使われないようにしている
 
 ```
 index.html            エントリ。importmap / UIのDOM
@@ -299,3 +300,5 @@ tools/                モデル書き出し・サウンドフォント取得の�
   - 町の人の家（民家）を増やして、調べられる家具をもっと置く
   - 建物の中のBGM（お店・酒場ごとの曲）
   - 第2章「風」の惑星（新しい町・敵・マシン）
+- 公開：PR #2 で main に取り込み、GitHub Pages に反映済み（1回目の公開は GitHub 側の一時エラーで失敗したため再実行）
+- 修正：公開後もブラウザが古いファイルを使い続けてタイトルが変わらなかったため、公開のたびに読み込むファイル名へ版番号（`?v=コミット番号`）を付けるようにした（`.github/workflows/pages.yml` の Cache busting）
