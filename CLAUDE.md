@@ -6,6 +6,8 @@
 >
 > **作業のルール：作業が終わるたびに、やったことと次にやることをこのファイル（末尾の「作業ログ」）に追記し、コミットして GitHub にプッシュすること。**
 > 毎回言われなくても、このルールに従う。
+>
+> **キャッシュ対策のルール：index.html で読み込んでいる JS と CSS の後ろには `?v=日付時刻`（例：`?v=20261124-2130`、日本時間）のバージョン番号を付けている。このリポジトリを更新するときは、push する前に毎回 `sh tools/bump-version.sh` を実行してバージョン番号を新しくすること。**
 
 ## 概要
 - タイトル：アルファマックス（Alpha Max）
@@ -201,7 +203,8 @@
 - ビルド不要の静的サイト。`index.html` を開けば動く（ES Modules + importmap）。GitHub Pages でそのまま公開できる
 - Three.js は `js/lib/` に同梱（CDNに依存しない）。バージョンは `package.json` の devDependencies と合わせる
 - ローカル確認：`npx serve .` や `python3 -m http.server` などで配信して開く（file:// ではモジュールが読めない）。`?skip` でオープニングを飛ばせる
-- 公開（GitHub Pages）は `main` に入ったときに自動で行われる。公開時に js の import と index.html の読み込みに `?v=コミット番号` を付けて、古いファイルが使われないようにしている
+- 公開（GitHub Pages）は `main` に入ったときに自動で行われる
+- キャッシュ対策：index.html の `js/main.js` と `css/style.css` に `?v=日付時刻` を付けている（`tools/bump-version.sh` で更新。push 前に毎回実行）。JS の中から読み込むファイルには、公開時に `?v=コミット番号` を自動で付ける（`.github/workflows/pages.yml`）
 
 ```
 index.html            エントリ。importmap / UIのDOM
@@ -302,3 +305,4 @@ tools/                モデル書き出し・サウンドフォント取得の�
   - 第2章「風」の惑星（新しい町・敵・マシン）
 - 公開：PR #2 で main に取り込み、GitHub Pages に反映済み（1回目の公開は GitHub 側の一時エラーで失敗したため再実行）
 - 修正：公開後もブラウザが古いファイルを使い続けてタイトルが変わらなかったため、公開のたびに読み込むファイル名へ版番号（`?v=コミット番号`）を付けるようにした（`.github/workflows/pages.yml` の Cache busting）
+- キャッシュ対策：index.html の JS・CSS に `?v=日付時刻` のバージョン番号を付けた（`tools/bump-version.sh`）。push 前に毎回番号を新しくするルールを冒頭に追加
