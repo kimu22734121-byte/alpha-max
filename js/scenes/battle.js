@@ -459,14 +459,79 @@ export class BattleScene {
     }
     const skillName = cmd.skill ? CHARACTERS[u.m.id].skill.name : null;
     this.log(`${name}の${skillName ? `${skillName}！ ` : ''}${def ? `${def.name}！` : '攻撃！'}`);
-    await this.shotOf(u, targets);
-    // 前に出る
-    const fwd = u.home.clone().add(V(0, 0, -1.1));
-    await tweenTo(u.obj.position, { x: fwd.x, z: fwd.z }, 0.22, Ease.out);
+    this.camIdle = false;
     const ctx = { u, def, w, skill: cmd.skill };
     if (!def) await this.footAttack(u, targets, ctx);
     else await this.fireWeapon(u, cmd.slot, def, targets, ctx);
-    await tweenTo(u.obj.position, { x: u.home.x, z: u.home.z }, 0.3, Ease.inOut);
+    await this.returnHome(u);
+  }
+
+  // ---------------------------------------------------------------- 攻撃の動き
+  // 攻撃のたびにマシンが敵の周りを回り込み、カメラも一緒に回る
+  centerOf(targets) {
+    const c = V(0, 0, 0);
+    for (const e of targets) c.add(e.obj.position);
+    c.multiplyScalar(1 / Math.max(1, targets.length)); c.y = 0;
+    return c;
+  }
+  face(u, c) { u.obj.rotation.y = Math.atan2(c.x - u.obj.position.x, c.z - u.obj.position.z); }
+  // 攻撃する味方の斜め後ろからカメラで追いかける
+  camFollow(u, c, side = 1, k = 1) {
+    const pos = u.obj.position;
+    const dir = V(pos.x - c.x, 0, pos.z - c.z).normalize();
+    // 仲間とかぶらないように、カメラは外側（陣形の端の方）へ寄せる
+    void side;
+    const out = u.home.x >= 0 ? 1 : -1;
+    const perp = V(-dir.z, 0, dir.x);
+    if (perp.x * out < 0) perp.multiplyScalar(-1);
+    const want = pos.clone().addScaledVector(dir, u.mc ? 4.2 : 3.2).addScaledVector(perp, u.mc ? 2.4 : 1.8).add(V(0, u.mc ? 2.6 : 1.8, 0));
+    this.camera.position.lerp(want, k);
+    this.look.lerp(c.clone().lerp(pos, 0.35).add(V(0, 1.1, 0)), k);
+  }
+  // 敵の中心のまわりを角度 ang だけ回り込む（距離は radiusK 倍に）
+  async orbit(u, c, ang, radiusK, dur, side) {
+    const v0 = u.obj.position.clone().sub(c); v0.y = 0;
+    const r0 = v0.length(), a0 = Math.atan2(v0.x, v0.z);
+    await tween(dur, (k) => {
+      const a = a0 + ang * k, r = r0 * (1 + (radiusK - 1) * k);
+      u.obj.position.set(c.x + Math.sin(a) * r, u.obj.position.y, c.z + Math.cos(a) * r);
+      this.face(u, c);
+      this.camFollow(u, c, side, Math.min(1, 0.15 + k));
+    }, Ease.inOut);
+  }
+  // 横にスライド（onStep で途中に発射）
+  async strafe(u, c, dist, dur, side, onStep) {
+    const p0 = u.obj.position.clone();
+    const dir = V(p0.x - c.x, 0, p0.z - c.z).normalize();
+    const perp = V(-dir.z, 0, dir.x).multiplyScalar(side * dist);
+    let last = -1;
+    await tween(dur, (k) => {
+      u.obj.position.set(p0.x + perp.x * k, p0.y + Math.sin(k * Math.PI) * 0.15, p0.z + perp.z * k);
+      this.face(u, c);
+      this.camFollow(u, c, -side, 0.2);
+      const step = Math.floor(k * 6);
+      if (step !== last && onStep) { last = step; onStep(step); }
+    }, Ease.inOut);
+  }
+  async dash(u, to, dur, c) {
+    const p0 = u.obj.position.clone();
+    await tween(dur, (k) => {
+      u.obj.position.lerpVectors(p0, to, k);
+      u.obj.position.y = Math.sin(k * Math.PI) * 0.3;
+      this.face(u, c);
+      this.camFollow(u, c, 1, 0.25);
+    }, Ease.in);
+  }
+  async returnHome(u) {
+    const p0 = u.obj.position.clone();
+    const r0 = u.obj.rotation.y;
+    await tween(0.4, (k) => {
+      u.obj.position.lerpVectors(p0, u.home, k);
+      u.obj.position.y = Math.sin(k * Math.PI) * 0.4;
+      u.obj.rotation.y = r0 + (Math.PI - r0) * k;
+    }, Ease.inOut);
+    u.obj.position.copy(u.home);
+    u.obj.rotation.y = Math.PI;
   }
 
   async footAttack(u, targets, ctx) {
@@ -474,15 +539,16 @@ export class BattleScene {
     if (!fw.atk || fw.name === 'モンキーレンチ') {
       // 近接：走って殴る
       const e = targets[0];
-      const back = u.obj.position.clone();
-      const to = e.obj.position.clone().add(V(0, 0, 1.2));
-      await tweenTo(u.obj.position, { x: to.x, z: to.z }, 0.25, Ease.in);
+      const c = e.obj.position.clone(); c.y = 0;
+      await this.dash(u, c.clone().add(V(0.5, 0, 1.2)), 0.3, c);
       audio.sfx('metalhit');
       this.fx.claw(this.hitPoint(e), 0xffffff);
       await this.applyHit(u, e, ctx);
-      await tweenTo(u.obj.position, { x: back.x, z: back.z }, 0.25);
       return;
     }
+    const c = this.centerOf(targets);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    await this.orbit(u, c, side * 0.35, 0.85, 0.45, side);
     for (const e of targets) {
       audio.sfx('shot');
       await this.fx.tracers(this.muzzleOf(u), this.hitPoint(e), 0xffe08a, fw.target === 'group' ? 3 : 4, 0.2);
@@ -493,23 +559,53 @@ export class BattleScene {
   async fireWeapon(u, slot, def, targets, ctx, fast = false) {
     const from = () => this.muzzleOf(u, slot);
     const big = def.unique;
-    if (def.cat === 'blade') {
-      // 近接：ブースターで一気に間合いをつめて斬る
+    const c = this.centerOf(targets);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    if (def.cat === 'melee') {
+      // 近接：ダッシュで詰め寄って攻撃し、元の位置に戻る（ブレード＝連続斬り／ハンマー＝跳んでたたきつけ／パイル＝杭を打ちこむ）
       for (const e of targets) {
-        const back = u.obj.position.clone();
-        const to = e.obj.position.clone().add(V(0.6, 0, 1.6));
+        const ep = e.obj.position.clone(); ep.y = 0;
+        const to = ep.clone().add(V(side * 0.7, 0, 1.5 + (e.def.boss ? 1.2 : 0)));
         audio.sfx('charge');
-        await tweenTo(u.obj.position, { x: to.x, z: to.z }, fast ? 0.15 : 0.25, Ease.in);
-        audio.sfx(def.elem === 'elec' ? 'laser' : 'metalhit');
-        this.fx.claw(this.hitPoint(e), def.elem === 'elec' ? 0x8affff : def.elem === 'fire' ? 0xffa040 : 0xffffff);
-        this.fx.sparks(this.hitPoint(e), def.elem === 'elec' ? 0x8affff : 0xffc060, 14);
+        await this.dash(u, to, fast ? 0.18 : 0.3, ep);
+        const col = def.elem === 'elec' ? 0x8affff : def.elem === 'fire' ? 0xffa040 : 0xffffff;
+        if (def.style === 'hammer') {
+          await tween(0.25, (k) => { u.obj.position.y = Math.sin(k * Math.PI * 0.5) * 1.4; this.camFollow(u, ep, side, 0.2); }, Ease.out);
+          await tween(0.12, (k) => { u.obj.position.y = 1.4 * (1 - k); }, Ease.in);
+          audio.sfx('press');
+          this.fx.shake = 1;
+          this.fx.ring(ep.clone().add(V(0, 0.1, 0)), 0xffd080, 3, 0.5);
+          this.fx.debris(ep.clone().add(V(0, 0.3, 0)), 6, 0x8a7a60, 3);
+        } else if (def.style === 'pile') {
+          const pile = u.obj.userData.weapons?.find((wp) => wp.def === def)?.obj.getObjectByName('pile');
+          audio.sfx('cannon');
+          if (pile) await tween(0.08, (k) => { pile.position.z = 0.6 + k * 0.5; });
+          this.fx.ring(this.hitPoint(e), 0x9fe8ff, 2.2, 0.4);
+          this.fx.flash(this.hitPoint(e), 0xffffff, 2.5, 0.2);
+          this.fx.shake = 0.8;
+          if (pile) tween(0.3, (k) => { pile.position.z = 1.1 - k * 0.5; });
+        } else {
+          for (let i = 0; i < 2; i++) {
+            audio.sfx(def.elem === 'elec' ? 'laser' : 'metalhit');
+            u.obj.rotation.y += i ? -0.6 : 0.6;
+            this.fx.claw(this.hitPoint(e), col);
+            await wait(0.12);
+          }
+          this.face(u, ep);
+        }
+        this.fx.sparks(this.hitPoint(e), col === 0xffffff ? 0xffc060 : col, 14);
         await this.applyHit(u, e, ctx, 0.12);
-        await tweenTo(u.obj.position, { x: back.x, z: back.z }, 0.25);
       }
     } else if (def.cat === 'cannon') {
+      // 主砲：敵の周りを回り込んでから撃つ（回り込み／ジャンプ撃ちのどちらか）
+      const move = fast ? 'none' : Math.random() < 0.7 ? 'flank' : 'jump';
+      if (move === 'flank') await this.orbit(u, c, side * 0.6, 0.9, 0.6, side);
+      if (move === 'jump') {
+        await this.orbit(u, c, side * 0.25, 0.95, 0.35, side);
+        await tween(0.3, (k) => { u.obj.position.y = Math.sin(k * Math.PI * 0.5) * 1.6; this.camFollow(u, c, side, 0.2); }, Ease.out);
+      }
       for (const e of targets) {
-        audio.sfx(def.elem === 'elec' || def.model === 'wpn_alpha_buster' || def.id === 'pc1' ? 'beam' : 'cannon');
-        u.obj.position.z += 0.25; tweenTo(u.obj.position, { z: u.obj.position.z - 0.25 }, 0.3);
+        audio.sfx(def.elem === 'elec' || def.model === 'wpn_alpha_buster' || def.name.includes('プラズマ') ? 'beam' : 'cannon');
         if (def.elem === 'elec' || def.name.includes('レール')) await this.fx.beam(from(), this.hitPoint(e), 0x7ad8ff, big ? 0.35 : 0.12);
         else if (def.name.includes('プラズマ')) await this.fx.beam(from(), this.hitPoint(e), 0xd070ff, 0.22);
         else await this.fx.shell(from(), this.hitPoint(e));
@@ -517,18 +613,36 @@ export class BattleScene {
         this.fx.explosion(this.hitPoint(e), big ? 1.8 : 1.1);
         await this.applyHit(u, e, ctx);
       }
+      if (move === 'jump') await tween(0.25, (k) => { u.obj.position.y = 1.6 * (1 - k); }, Ease.in);
     } else if (def.cat === 'mg') {
+      // 機銃：横に走りながら連射
+      const col = def.elem === 'elec' ? 0x7affff : 0xffe08a;
+      const shots = [];
       audio.sfx(def.elem === 'elec' ? 'laser' : 'mg');
-      await Promise.all(targets.map((e, i) => wait(i * 0.12).then(() => this.fx.tracers(from(), this.hitPoint(e), def.elem === 'elec' ? 0x7affff : 0xffe08a, fast ? 4 : 7, 0.35))));
+      await this.strafe(u, c, fast ? 1.2 : 2.6, fast ? 0.5 : 0.9, side, (step) => {
+        if (step % 2) audio.sfx(def.elem === 'elec' ? 'laser' : 'mg');
+        targets.forEach((e) => shots.push(this.fx.tracers(from(), this.hitPoint(e), col, 2, 0.35)));
+      });
+      await Promise.all(shots);
       for (const e of targets) await this.applyHit(u, e, ctx, 0.15);
     } else if (def.cat === 'missile') {
-      audio.sfx('missile');
-      const n = def.target === 'one' ? 2 : 1;
+      // ミサイル：横にスライドしながら次々に発射
+      const n = def.target === 'one' ? 3 : 1;
+      const queue = [];
+      targets.forEach((e) => { for (let k = 0; k < n; k++) queue.push(e); });
       const shots = [];
-      targets.forEach((e, i) => { for (let k = 0; k < n; k++) shots.push(this.fx.missile(from(), this.hitPoint(e), (i * n + k) * 0.08).then(() => { audio.sfx('explosion'); this.fx.explosion(this.hitPoint(e), 0.9); })); });
+      await this.strafe(u, c, fast ? 1.2 : 2.2, fast ? 0.45 : 0.8, side, (step) => {
+        const e = queue.shift();
+        if (!e) return;
+        audio.sfx('missile');
+        shots.push(this.fx.missile(from(), this.hitPoint(e), 0).then(() => { audio.sfx('explosion'); this.fx.explosion(this.hitPoint(e), 0.9); }));
+      });
+      for (const e of queue) shots.push(this.fx.missile(from(), this.hitPoint(e), 0.05).then(() => { audio.sfx('explosion'); this.fx.explosion(this.hitPoint(e), 0.9); }));
       await Promise.all(shots);
       for (const e of targets) await this.applyHit(u, e, ctx, 0.15);
     } else {
+      // 特殊兵器：少し回り込んで構えてから撃つ
+      if (!fast) await this.orbit(u, c, side * 0.3, 0.8, 0.45, side);
       if (def.elem === 'fire') {
         audio.sfx('flame');
         await Promise.all(targets.map((e) => this.fx.flame(from(), this.hitPoint(e))));
@@ -569,7 +683,8 @@ export class BattleScene {
       if (ctx.skill === 'rampage') atk *= 1.8;
     }
     const elem = ctx.def ? ctx.def.elem : st.weapon.elem;
-    let dmg = crit ? atk * 1.5 : atk * rand(0.9, 1.1) - e.def.def * 0.5;
+    const defRate = ctx.def?.pierce ? 0.25 : 0.5; // パイルバンカーは防御を半分むしする
+    let dmg = crit ? atk * 1.5 : atk * rand(0.9, 1.1) - e.def.def * defRate;
     const weak = elem && WEAKNESS[e.def.type] === elem;
     if (weak) dmg *= ELEMENT_RATE;
     return { dmg: Math.max(e.def.minDamage || 1, Math.round(dmg)), weak };
@@ -623,7 +738,25 @@ export class BattleScene {
       setGlow(u.obj, base + k * 4);
       if (Math.random() < 0.3) this.fx.sparks(c.clone().add(V(rand(-1, 1), rand(-0.5, 1), rand(-1, 1))), 0x8affff, 2);
     });
-    await this.camTo(u.home.clone().add(V(3, 3.2, 4.5)), V(0, 1, -3), 0.35);
+    // 光が弾ける
+    audio.sfx('beam');
+    this.fx.flash(c, 0xbff4ff, 5, 0.5);
+    this.fx.ring(u.home.clone().add(V(0, 0.2, 0)), 0x9fe8ff, 5, 0.7);
+    this.fx.ring(u.home.clone().add(V(0, 1.2, 0)), 0xffe08a, 4, 0.6);
+    // 撃っている間もカメラは回り続ける
+    const ec = this.centerOf(this.aliveEnemies());
+    const mid = ec.clone().lerp(u.home, 0.5);
+    let spin = true;
+    const t0 = this.t;
+    const loop = () => {
+      if (!spin) return;
+      const a = (this.t - t0) * 0.7 + 0.6;
+      this.camera.position.set(mid.x + Math.sin(a) * 9, 4.5, mid.z + Math.cos(a) * 9);
+      this.look.copy(mid).add(V(0, 1, 0));
+      if (Math.random() < 0.4) this.fx.sparks(u.obj.position.clone().add(V(rand(-1, 1), rand(0.5, 2.2), rand(-1, 1))), 0x9fe8ff, 1);
+      requestAnimationFrame(loop);
+    };
+    loop();
     const slots = u.mc.slots.map((uid, i) => (uid ? i : -1)).filter((i) => i >= 0);
     for (const slot of slots) {
       const w = weaponByUid(u.mc.slots[slot]);
@@ -631,9 +764,15 @@ export class BattleScene {
       const alive = this.aliveEnemies();
       if (!alive.length) break;
       const targets = def.target === 'one' ? [pick(alive)] : def.target === 'group' ? alive.filter((e) => e.key === pick(alive).key) : alive;
-      await this.fireWeapon(u, slot, def, targets, { u, def, w, allfire: true, slot }, true);
+      const ctxA = { u, def, w, allfire: true, slot };
+      const saved = this.camFollow;
+      this.camFollow = () => {}; // 一斉発射中はカメラを回したままにする
+      await this.fireWeapon(u, slot, def, targets, ctxA, true);
+      this.camFollow = saved;
     }
+    spin = false;
     setGlow(u.obj, base);
+    await this.returnHome(u);
     this.fx.shake = 1;
   }
 

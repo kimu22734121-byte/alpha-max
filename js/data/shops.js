@@ -5,7 +5,7 @@ export const SHOPS = {
     weapon: {
       keeper: '武器屋のダッジ',
       greet: 'いらっしゃい！ 荒野を生き抜くなら火力だぜ。',
-      machine: ['mg7', 'gt1', 'sc1', 'c75', 'rpod', 'hm1', 'flm1', 'hblade'],
+      machine: ['mg7', 'gt1', 'sc1', 'c75', 'rpod', 'hm1', 'flm1', 'hblade', 'hammer1'],
       foot: ['handgun', 'vest'],
     },
     parts: {
@@ -26,7 +26,7 @@ export const SHOPS = {
     weapon: {
       keeper: '武器屋のボーグ',
       greet: '掘り出し物ばかりだ。……鉱山だけにな。',
-      machine: ['gt1', 'lm1', 'c75', 'rg1', 'hm1', 'cm1', 'emp1', 'tsl1', 'lzblade'],
+      machine: ['gt1', 'lm1', 'c75', 'rg1', 'hm1', 'cm1', 'emp1', 'tsl1', 'lzblade', 'hammer1', 'pile1'],
       foot: ['shotgun', 'rifle', 'pilotsuit'],
     },
     parts: {
@@ -47,7 +47,7 @@ export const SHOPS = {
     weapon: {
       keeper: '武器商人ヴァンス',
       greet: '宇宙港から流れてきた品だ。値は張るが、性能は保証する。',
-      machine: ['v20', 'lm1', 'rg1', 'pc1', 'hm2', 'cm1', 'npm1', 'tsl1', 'lzblade'],
+      machine: ['v20', 'lm1', 'rg1', 'pc1', 'hm2', 'cm1', 'npm1', 'tsl1', 'lzblade', 'pile1'],
       foot: ['rifle', 'lblade', 'heavyarmor'],
     },
     parts: {

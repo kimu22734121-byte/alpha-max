@@ -173,6 +173,19 @@ export const SONGS = {
     ],
   },
 
+  // オープニング：宇宙をただよう静かな曲から、だんだん広がっていく
+  opening: {
+    bpm: 72,
+    tracks: [
+      { inst: 'bell', vol: 0.7, mml: `o5 l8 d a > d < a f a > c < a | d a > d < a g b- > d < b- | c g > c < g e g > c < g | c+ a > c+ < a e a > c+ < a |
+        d a > d < a f a > c < a | b- > f b- f < g > d g d < | a > e a e < c+ a > e < a | d1 |` },
+      { inst: 'warmpad', vol: 0.55, mml: pad(['Dm', 'Gm', 'C', 'A', 'Dm', 'Bb Gm', 'A', 'Dm'], 50) },
+      { inst: 'strings', vol: 0.4, mml: `r1 r1 r1 r1 ${pad(['Dm', 'Bb Gm', 'A', 'Dm'], 62)}` },
+      { inst: 'ebass', vol: 0.5, mml: bass(['Dm', 'Gm', 'C', 'A', 'Dm', 'Bb Gm', 'A', 'Dm'], { 4: 'R1', 2: 'R2' }, 1) },
+      { inst: 'drums', vol: 0.35, mml: 'r1 r1 r1 r1 [o4 g2 r4 g4]3 o4 g8 g8 a8 a8 b2' },
+    ],
+  },
+
   fanfare: {
     bpm: 150,
     loop: false,

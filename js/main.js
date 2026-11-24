@@ -170,7 +170,7 @@ const boot = document.getElementById('boot');
 const bar = boot.querySelector('.boot-bar i');
 const msg = boot.querySelector('.boot-msg');
 await loadModels((p) => { bar.style.width = `${Math.round(p * 100)}%`; });
-msg.textContent = '画面をタップしてください';
+msg.textContent = 'タップしてスタート';
 boot.classList.add('ready');
 
 boot.addEventListener('click', async () => {

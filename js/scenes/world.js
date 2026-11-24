@@ -15,10 +15,11 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid,
+  G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openFacility, openFieldMenu, autosave, settings, runEvent } from './menus.js';
+import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop } from './menus.js';
+import { addBuildings, updateBuildings, addProps, addChests, makeSparkle } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
 const CHAR_SCALE = 0.9;
@@ -60,6 +61,12 @@ export class WorldScene {
     input.on('action', () => { if (this.active && !this.busy && !ui.busy) this.onAction(); });
     input.on('menu', () => { if (this.active && !this.busy && !ui.busy) this.onMenu(); });
     input.on('tap', (p) => { if (this.active && !this.busy && !ui.busy) this.onTap(p); });
+    // 調べられる物の正面に立つと出る「調べる」ボタン
+    this.pop = document.createElement('button');
+    this.pop.className = 'examine-pop';
+    this.pop.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.pop.addEventListener('click', (e) => { e.stopPropagation(); if (this.active && !this.busy && !ui.busy) this.onAction(); });
+    document.body.appendChild(this.pop);
   }
 
   get map() { return MAPS[G.pos.map]; }
@@ -79,6 +86,7 @@ export class WorldScene {
 
   async exit() {
     this.active = false;
+    this.pop.classList.remove('on');
     input.setEnabled(false);
     hud.hide();
   }
@@ -99,9 +107,10 @@ export class WorldScene {
     this.clear();
     const map = this.map;
     const dark = !!map.dark;
-    this.scene.background = new THREE.Color(dark ? 0x101014 : 0x2a2018);
-    this.scene.fog = new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
-    const hemi = new THREE.HemisphereLight(dark ? 0x8a90a8 : 0xfff2dc, dark ? 0x201820 : 0x6a5038, dark ? 0.55 : 1.0);
+    const indoor = map.type === 'interior';
+    this.scene.background = new THREE.Color(indoor ? 0x140e0a : dark ? 0x101014 : 0x2a2018);
+    this.scene.fog = indoor ? null : new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
+    const hemi = new THREE.HemisphereLight(indoor ? 0xffe8c8 : dark ? 0x8a90a8 : 0xfff2dc, indoor ? 0x4a3020 : dark ? 0x201820 : 0x6a5038, indoor ? 0.9 : dark ? 0.55 : 1.0);
     this.scene.add(hemi);
     const sun = new THREE.DirectionalLight(dark ? 0xb0b8ff : 0xfff0d0, dark ? 0.5 : 1.8);
     sun.castShadow = true;
@@ -114,12 +123,54 @@ export class WorldScene {
       this.lamp = new THREE.PointLight(0xffd8a0, 18, 9, 1.6);
       this.scene.add(this.lamp);
     } else this.lamp = null;
+    if (indoor) {
+      sun.intensity = 1.0;
+      const room = new THREE.PointLight(0xffd8a0, 25, 14, 1.4);
+      room.position.set(map.width / 2, 3.2, map.height / 2);
+      this.scene.add(room);
+    }
 
     this.mapView = createMapView(map, settings.mapMode, engine.renderer);
     this.scene.add(this.mapView.group);
 
-    // 町の上にドームの骨組み（雰囲気用）
-    // （ドームの骨組みは視界をさえぎるので表示しない。addDome は今後の3Dマップ用に残す）
+    // 町の建物（ローポリ3D）と、何の店かわかるアイコン
+    this.buildings = map.buildings3d ? addBuildings(this.scene, map) : [];
+    // 建物の中の家具・ダンジョンの宝箱
+    const fl = (G.flags.taken ||= {});
+    this.props = addProps(this.scene, map, (pr) => !!fl[`${map.id}:${pr.id}`]);
+    for (const pr of this.props) {
+      // 本棚が動いたあと（隠し階段が見えている）
+      if (pr.data.secret && G.flags.stairsOpen) { pr.x += 1.1; if (pr.obj) pr.obj.position.x = pr.x; }
+    }
+    const op = (G.flags.opened ||= {});
+    this.chests = addChests(this.scene, map, (c) => !!op[`${map.id}:${c.id}`]);
+    this.extras = [];
+    // 修理屋の中の、修理中のアルファ
+    if (map.alphaAt && alphaInShop()) {
+      const a = G.machines.alpha;
+      const obj = buildMachineModel(machineSpec(a));
+      obj.scale.setScalar(0.8);
+      obj.position.set(map.alphaAt[0], 0, map.alphaAt[1]);
+      obj.rotation.y = 0.5;
+      this.scene.add(obj);
+      this.extras.push(obj);
+    }
+    // ガレージの中には預けてあるマシンが並ぶ
+    if (map.showMachines) {
+      machinesInGarage(map.town).slice(0, map.showMachines.length).forEach((mc, i) => {
+        const obj = buildMachineModel(machineSpec(mc));
+        obj.scale.setScalar(0.78);
+        obj.position.set(map.showMachines[i][0], 0, map.showMachines[i][1]);
+        obj.userData.entity = { kind: 'garageMachine', mc };
+        this.scene.add(obj);
+        this.extras.push(obj);
+        this.props.push({ data: { id: `mc_${mc.id}`, block: [1.6, 1.4], search: { text: `${machineName(mc)}。整備士がていねいに磨いてくれている。（店の人に話すと出発できます）` } }, obj, x: obj.position.x, z: obj.position.z, taken: false });
+      });
+    }
+    // 調べられる物の上の光の目印
+    this.sparkles = [];
+    for (const pr of this.props) if (pr.data.search?.loot && !pr.taken) this.addSparkle(pr, pr.x, pr.z, 1.3);
+    for (const c of this.chests) if (!c.opened) this.addSparkle(c, c.x, c.z, c.data.big ? 1.3 : 1.0);
 
     // NPC
     this.npcs = (map.npcs || []).filter((n) => !(n.hideIfJoined && G.members[n.hideIfJoined]?.joined)).map((n) => {
@@ -160,6 +211,13 @@ export class WorldScene {
     this.updateFollowers(0, true);
     this.lastTile = `${Math.floor(p.x)},${Math.floor(p.y)}`;
     this.updateCamera(1);
+  }
+
+  addSparkle(ref, x, z, y) {
+    const sp = makeSparkle(getGlowTex(), ref.data?.secret ? 0xff9af0 : 0xffe08a);
+    sp.position.set(x, y, z);
+    this.scene.add(sp);
+    this.sparkles.push({ ref, sp, y });
   }
 
   addDome(map) {
@@ -259,7 +317,17 @@ export class WorldScene {
       s.ring.material.opacity = 0.35 + Math.sin(t * 4) * 0.25;
     }
     for (const pk of this.parked) animateMachine(pk.obj, t, 0);
+    for (const o of this.extras) animateMachine(o, t, 0);
+    updateBuildings(this.buildings, p.x, p.y, t);
+    for (const s of this.sparkles) {
+      const gone = s.ref.opened || s.ref.taken;
+      const d = Math.hypot(s.ref.x - p.x, s.ref.z - p.y);
+      s.sp.visible = !gone && d < 6;
+      s.sp.position.y = s.y + Math.sin(t * 3 + s.ref.x) * 0.1;
+      s.sp.material.opacity = 0.55 + Math.sin(t * 5 + s.ref.z) * 0.35;
+    }
     this.updateCamera(dt);
+    this.updateFocus();
     if (Math.floor(t * 4) !== this.hudTick) { this.hudTick = Math.floor(t * 4); hud.update(); this.updateActionLabel(); }
     // 賞金首にぶつかったら
     if (!this.busy && !ui.busy) {
@@ -331,8 +399,11 @@ export class WorldScene {
   updateCamera(dt) {
     const p = G.pos;
     const town = this.map.type === 'town';
-    const off = town ? V(0, 11, 8.2) : V(0, 13, 9.6);
-    const target = V(p.x, 0, p.y - 0.6);
+    const indoor = this.map.type === 'interior';
+    const off = indoor ? V(0, 8, 6.4) : town ? V(0, 11, 8.2) : V(0, 13, 9.6);
+    let target = V(p.x, 0, p.y - 0.6);
+    // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
+    if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
     const want = target.clone().add(off);
     const k = Math.min(1, dt * 6);
     this.camera.position.lerp(want, k);
@@ -350,6 +421,14 @@ export class WorldScene {
     }
     for (const n of this.npcs) if (Math.hypot(n.x - x, n.z - z) < 0.55) return false;
     for (const pk of this.parked) if (Math.hypot(pk.mc.loc.x - x, pk.mc.loc.y - z) < 0.75) return false;
+    for (const pr of this.props) {
+      const b = pr.data.block;
+      if (!b || (pr.data.id === 'alpha' && !alphaInShop())) continue;
+      const sideways = Math.abs(Math.sin(pr.data.rot || 0)) > 0.7;
+      const hw = (sideways ? b[1] : b[0]) / 2 + r * 0.6, hd = (sideways ? b[0] : b[1]) / 2 + r * 0.6;
+      if (Math.abs(x - pr.x) < hw && Math.abs(z - pr.z) < hd) return false;
+    }
+    for (const c of this.chests) if (Math.hypot(c.x - x, c.z - z) < (c.data.big ? 0.75 : 0.55)) return false;
     return true;
   }
 
@@ -365,6 +444,12 @@ export class WorldScene {
     const info = TILES[tile];
     if (info?.step === 'door') {
       const b = (map.buildings || []).find((bb) => bb.door[0] === tx && bb.door[1] === ty);
+      if (b?.interior) {
+        // 建物の中へ
+        const inside = MAPS[b.interior];
+        this.warp({ to: b.interior, tx: inside.arrive[0], ty: inside.arrive[1], dir: 'up', door: true });
+        return;
+      }
       if (b) {
         this.lock(true);
         const mapBefore = G.pos.map;
@@ -410,8 +495,8 @@ export class WorldScene {
       this.lock(false);
       return;
     }
-    audio.sfx('warp');
-    await ui.fade(true, 0.35);
+    audio.sfx(w.door || MAPS[w.to]?.type === 'interior' || this.map.type === 'interior' ? 'door' : 'warp');
+    await ui.fade(true, 0.3);
     const toMap = MAPS[w.to];
     const fromMap = this.map;
     // 町に入る時：乗っているマシンは入口のガレージに預ける
@@ -433,7 +518,8 @@ export class WorldScene {
     this.build();
     audio.playSong(toMap.bgm);
     await ui.fade(false, 0.35);
-    ui.banner(esc(toMap.name), esc(toMap.subtitle || ''));
+    if (toMap.type === 'interior') ui.toast(esc(toMap.name));
+    else if (fromMap.type !== 'interior') ui.banner(esc(toMap.name), esc(toMap.subtitle || ''));
     if (note) ui.toast(note);
     hud.update(true);
     this.lock(false);
@@ -466,35 +552,64 @@ export class WorldScene {
   }
 
   // ---------------------------------------------------------------- 調べる・タップ
-  nearest(maxDist = 1.7) {
+  // 調べられる物の候補（正面にあるものを優先）
+  candidates() {
     const p = G.pos;
-    const cands = [];
-    for (const n of this.npcs) cands.push({ kind: 'npc', d: Math.hypot(n.x - p.x, n.z - p.y), ref: n });
-    for (const pk of this.parked) cands.push({ kind: pk.mc.owned ? 'parked' : 'hiddenMachine', d: Math.hypot(pk.mc.loc.x - p.x, pk.mc.loc.y - p.y) - 0.5, ref: pk });
-    for (const s of this.symbols) cands.push({ kind: 'symbol', d: Math.hypot(s.x - p.x, s.z - p.y) - 0.6, ref: s });
-    // ドア
-    const tx = Math.floor(p.x), ty = Math.floor(p.y);
-    for (const b of this.map.buildings || []) {
-      const d = Math.hypot(b.door[0] + 0.5 - p.x, b.door[1] + 0.5 - p.y);
-      cands.push({ kind: 'door', d, ref: b });
+    const out = [];
+    const push = (kind, ref, x, z, edge, range, label, y = 1.2) => out.push({ kind, ref, x, z, d: Math.max(0, Math.hypot(x - p.x, z - p.y) - edge), range, label, y });
+    for (const n of this.npcs) push('npc', n, n.x, n.z, 0, n.data.range || 1.6, '話す', 1.5);
+    for (const pk of this.parked) push(pk.mc.owned ? 'parked' : 'hiddenMachine', pk, pk.mc.loc.x, pk.mc.loc.y, 0.5, 1.3, pk.mc.owned ? '乗る' : '調べる', 2.0);
+    for (const s of this.symbols) push('symbol', s, s.x, s.z, 0.6, 1.0, '調べる', 1.6);
+    for (const pr of this.props) {
+      if (!pr.data.search || (pr.data.id === 'alpha' && !alphaInShop() && !pr.data.search.text)) continue;
+      const b = pr.data.block || [0.8, 0.8];
+      const dx = Math.max(0, Math.abs(p.x - pr.x) - b[0] / 2), dz = Math.max(0, Math.abs(p.y - pr.z) - b[1] / 2);
+      out.push({ kind: 'prop', ref: pr, x: pr.x, z: pr.z, d: Math.hypot(dx, dz), range: 0.9, label: '調べる', y: 1.4 });
     }
-    cands.sort((a, b) => a.d - b.d);
-    const c = cands[0];
-    if (c && c.d <= maxDist) return c;
+    for (const c of this.chests) push('chest', c, c.x, c.z, c.data.big ? 0.6 : 0.4, 0.9, c.opened ? '調べる' : '開ける', 1.0);
+    return out;
+  }
+
+  nearest() {
+    const p = G.pos;
+    const fx = Math.sin(p.dir || 0), fz = Math.cos(p.dir || 0);
+    let best = null, bestScore = Infinity;
+    for (const c of this.candidates()) {
+      if (c.d > c.range) continue;
+      const vx = c.x - p.x, vz = c.z - p.y, len = Math.hypot(vx, vz) || 1;
+      const facing = (vx * fx + vz * fz) / len;
+      if (facing < 0.25 && c.d > 0.3) continue; // 正面にないものは選ばない
+      const score = c.d - facing * 0.5;
+      if (score < bestScore) { bestScore = score; best = c; }
+    }
+    if (best) return best;
     // 崩れた岩（隠し通路）
-    for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (tileAt(this.map, tx + dx, ty + dy) === 21) return { kind: 'crumble' };
+    const tx = Math.floor(p.x), ty = Math.floor(p.y);
+    for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) if (tileAt(this.map, tx + dx, ty + dy) === 21) return { kind: 'crumble', label: '調べる' };
     return null;
   }
 
+  // 正面に調べられる物があれば「調べる」ボタンをその上にポップアップ
+  updateFocus() {
+    const c = (!this.busy && !ui.busy) ? this.nearest() : null;
+    this.focus = c;
+    const pop = this.pop;
+    if (!c || c.x == null) { pop.classList.remove('on'); return; }
+    const v = V(c.x, c.y, c.z).project(this.camera);
+    pop.style.left = `${(v.x * 0.5 + 0.5) * window.innerWidth}px`;
+    pop.style.top = `${(-v.y * 0.5 + 0.5) * window.innerHeight}px`;
+    const label = `🔍 ${c.label}`;
+    if (pop.textContent !== label) pop.textContent = label;
+    pop.classList.add('on');
+  }
+
   updateActionLabel() {
-    const c = this.nearest();
+    const c = this.focus;
     const lead = this.avatars?.[0];
     let label = '調べる';
-    if (c?.kind === 'npc') label = '話す';
-    else if (c?.kind === 'parked' || c?.kind === 'hiddenMachine') label = '乗る';
-    else if (c?.kind === 'door') label = '入る';
-    else if (lead?.kind === 'machine') label = '降りる';
-    hud.setAction(label);
+    if (c) label = c.label;
+    else if (lead?.kind === 'machine' && this.map.type !== 'town') label = '降りる';
+    hud.setAction(label, !!c);
   }
 
   async onAction() {
@@ -513,17 +628,97 @@ export class WorldScene {
     else if (kind === 'parked') await this.askBoard(ref.mc, ref.obj);
     else if (kind === 'hiddenMachine') await this.discoverMachine(ref);
     else if (kind === 'symbol') { this.lock(false); await this.challengeSymbol(ref); }
-    else if (kind === 'door') {
-      await openFacility(ref.facility, this);
-      hud.update(true);
-    } else if (kind === 'crumble') await ui.say('岩がもろく崩れている。……すき間を通り抜けられそうだ。');
+    else if (kind === 'prop') await this.searchProp(ref);
+    else if (kind === 'chest') await this.openChest(ref);
+    else if (kind === 'crumble') await ui.say('岩がもろく崩れている。……すき間を通り抜けられそうだ。');
     else if (kind === 'myMachine') await this.askUnboard();
+  }
+
+  // 調べる動作：先頭のキャラ（またはマシンのアーム）が手をのばす
+  async reachAnim(x, z) {
+    const lead = this.avatars[0];
+    const p = G.pos;
+    p.dir = Math.atan2(x - p.x, z - p.y);
+    lead.obj.rotation.y = p.dir;
+    if (lead.kind === 'machine') {
+      const arm = lead.obj.userData.armR;
+      if (arm) { audio.sfx('hatch'); await tween(0.3, (k) => { arm.rotation.x = -1.3 * k; }); }
+      return async () => { if (arm) await tween(0.25, (k) => { arm.rotation.x = -1.3 * (1 - k); }); };
+    }
+    const armR = lead.obj.getObjectByName('armR');
+    await tween(0.2, (k) => { if (armR) armR.rotation.x = -1.4 * k; lead.obj.position.y = Math.sin(k * Math.PI) * 0.08; });
+    return async () => { await tween(0.15, (k) => { if (armR) armR.rotation.x = -1.4 * (1 - k); }); };
+  }
+
+  // 家具を調べる
+  async searchProp(pr) {
+    const sr = pr.data.search;
+    const back = await this.reachAnim(pr.x, pr.z);
+    try {
+      if (sr.event) { await this.propEvent(sr.event, pr); return; }
+      if (sr.text) { await ui.say(sr.text); return; }
+      if (!sr.loot) return;
+      const key = `${this.map.id}:${pr.data.id}`;
+      if (G.flags.taken[key]) { await ui.say('もう何も入っていない。'); return; }
+      G.flags.taken[key] = true;
+      pr.taken = true;
+      const got = [giveLoot(sr.loot)];
+      if (sr.rare && Math.random() < sr.rare.rate) got.push(giveLoot(sr.rare));
+      audio.sfx(got.length > 1 ? 'levelup' : 'buy');
+      const head = sr.found || `${{ f_dresser: 'タンス', f_crate: '木箱', f_barrel: 'たる', f_toolbox: '工具箱', f_table: 'テーブル' }[pr.data.model] || 'それ'}を調べた。`;
+      await ui.say([head, `${got.join('と')}を手に入れた！${got.length > 1 ? '（めずらしい素材だ！）' : ''}`]);
+      autosave();
+    } finally { await back(); }
+  }
+
+  async propEvent(name, pr) {
+    if (name === 'rest') await restAtHome();
+    else if (name === 'alpha') await runEvent('alphaRepair', this);
+    else if (name === 'wanted') await bountyList();
+    else if (name === 'bookshelf') {
+      if (G.flags.stairsOpen) { await ui.say('本棚の裏に、地下へ続く階段がある。'); return; }
+      const r = G.members.ren.name;
+      await ui.say([
+        '古い本や設計図がぎっしり並んだ本棚だ。',
+        '……一冊だけ、やけに重たい本がある。引っぱってみると――',
+      ]);
+      audio.sfx('press');
+      G.flags.stairsOpen = true;
+      const from = pr.x;
+      await tween(1.2, (k) => { pr.x = from + 1.1 * k; if (pr.obj) { pr.obj.position.x = pr.x; pr.obj.position.y = Math.sin(k * 40) * 0.01; } }, Ease.inOut);
+      audio.sfx('hatch');
+      await ui.say([
+        { name: '', text: 'ゴゴゴ……と音を立てて本棚が動き、床に地下への階段が現れた！' },
+        { name: r, text: 'こんな仕掛けが……！ ボルツじいさんの言ってた変な音って、これのことか！' },
+      ]);
+      autosave();
+    }
+  }
+
+  // 宝箱を開ける（マシンに乗っているときはアームで開ける）
+  async openChest(c) {
+    const key = `${this.map.id}:${c.data.id}`;
+    if (c.opened) { await ui.say('宝箱はからっぽだ。'); return; }
+    const back = await this.reachAnim(c.x, c.z);
+    audio.sfx('hatch');
+    if (c.lid) await tween(0.45, (k) => { c.lid.rotation.x = -1.9 * k; }, Ease.outBack);
+    c.opened = true;
+    G.flags.opened[key] = true;
+    const got = c.data.contents.map((x) => giveLoot(x));
+    audio.sfx(c.data.big || c.data.secret ? 'seal' : 'levelup');
+    const lead = this.avatars[0];
+    const how = lead.kind === 'machine' ? `${machineName(lead.mc)}のアームで宝箱を開けた！` : '宝箱を開けた！';
+    const lines = [how, `${got.join('と')}を手に入れた！`];
+    if (c.data.secret) lines.push('隠し通路の奥でしか手に入らない、限定パーツだ！');
+    await back();
+    await ui.say(lines);
+    autosave();
   }
 
   async onTap(pt) {
     const ndc = new THREE.Vector2((pt.x / window.innerWidth) * 2 - 1, -(pt.y / window.innerHeight) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
-    const objs = [...this.npcs.map((n) => n.obj), ...this.parked.map((p) => p.obj), ...this.symbols.map((s) => s.obj), ...this.avatars.map((a) => a.obj)];
+    const objs = [...this.npcs.map((n) => n.obj), ...this.parked.map((p) => p.obj), ...this.symbols.map((s) => s.obj), ...this.avatars.map((a) => a.obj), ...this.props.filter((pr) => pr.obj && pr.data.search).map((pr) => { pr.obj.userData.entity = { kind: 'prop', ref: pr }; return pr.obj; }), ...this.chests.map((c) => { c.obj.userData.entity = { kind: 'chest', ref: c }; return c.obj; })];
     const hits = this.raycaster.intersectObjects(objs, true);
     if (!hits.length) return;
     let o = hits[0].object;
@@ -542,6 +737,10 @@ export class WorldScene {
       } else if (ent.kind === 'npc') {
         if (dist > 2.6) ui.toast('もっと近づこう');
         else await this.talk(this.npcs.find((n) => n.obj === o));
+      } else if (ent.kind === 'prop' || ent.kind === 'chest') {
+        const r = ent.ref;
+        if (Math.hypot(r.x - p.x, r.z - p.y) > 2.0) ui.toast('もっと近づこう');
+        else if (ent.kind === 'prop') await this.searchProp(r); else await this.openChest(r);
       } else if (ent.kind === 'symbol') {
         if (dist > 3.5) ui.toast('賞金首だ。近づくと戦闘になる');
         else { this.lock(false); await this.challengeSymbol(this.symbols.find((s) => s.obj === o)); }
@@ -550,6 +749,16 @@ export class WorldScene {
   }
 
   async talk(n) {
+    if (n.data.facility) {
+      // お店の人：施設のメニューを開く
+      const p0 = G.pos;
+      this.avatars[0].obj.rotation.y = Math.atan2(n.x - p0.x, n.z - p0.y);
+      const mapBefore = G.pos.map;
+      await openFacility(n.data.facility, this);
+      if (G.pos.map !== mapBefore) return;
+      hud.update(true);
+      return;
+    }
     if (n.data.event) {
       const p0 = G.pos;
       n.obj.rotation.y = Math.atan2(p0.x - n.x, p0.y - n.z);

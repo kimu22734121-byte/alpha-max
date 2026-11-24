@@ -572,6 +572,219 @@ function buildBlade(colors) {
   return root;
 }
 
+// 近接武器：ハンマーとパイルバンカー
+function buildHammer(colors) {
+  const m = makeMats({ primary: 0x4a4e56, ...colors });
+  const root = grp(null, 'weapon');
+  root.userData = { kind: 'weapon', weaponKind: 'hammer' };
+  add(root, Bx(0.14, 0.14, 0.3), m('primary'), 0, 0, 0);
+  add(root, Cy(0.05, 0.05, 0.9, 6), m('metal'), 0, 0, 0.55, Math.PI / 2, 0, 0);
+  const head = grp(root, 'head', 0, 0, 1.05);
+  add(head, Bx(0.5, 0.32, 0.32), m('secondary'), 0, 0, 0);
+  add(head, Bx(0.54, 0.08, 0.34), m('accent'), 0, 0.12, 0);
+  for (const s of [-1, 1]) add(head, Cy(0.1, 0.14, 0.08, 6), m('dark'), 0.29 * s, 0, 0, 0, 0, Math.PI / 2);
+  add(head, Bx(0.3, 0.04, 0.04), m('glow'), 0, -0.1, 0.17);
+  socket(root, 'muzzle', 0, 0, 1.1);
+  return root;
+}
+function buildPile(colors) {
+  const m = makeMats({ primary: 0x4a4e56, ...colors });
+  const root = grp(null, 'weapon');
+  root.userData = { kind: 'weapon', weaponKind: 'pile' };
+  add(root, Bx(0.3, 0.3, 0.7), m('primary'), 0, 0, 0.25);
+  add(root, Bx(0.34, 0.1, 0.5), m('accent'), 0, 0.18, 0.25);
+  for (const s of [-1, 1]) add(root, Cy(0.05, 0.05, 0.5, 6), m('dark'), 0.17 * s, -0.05, 0.25, Math.PI / 2, 0, 0);
+  const pile = grp(root, 'pile', 0, 0, 0.6);
+  add(pile, Cy(0.06, 0.06, 0.5, 8), m('metal'), 0, 0, 0.2, Math.PI / 2, 0, 0);
+  add(pile, Co(0.06, 0.2, 8), m('metal'), 0, 0, 0.55, Math.PI / 2, 0, 0);
+  add(root, To(0.1, 0.025, 4, 10), m('glow'), 0, 0, 0.62);
+  socket(root, 'muzzle', 0, 0, 1.2);
+  return root;
+}
+
+// =====================================================================
+// 町の建物（大きさ・形・色を変えて使い回す）
+// style: gable（三角屋根）/ flat（平屋根）/ hangar（かまぼこ型）/ tower（塔付き）/ twostory（2階建て）
+// w, d は床の大きさ（タイル数）、正面は +Z。原点は建物の中心の地面
+// =====================================================================
+export function buildBuilding({ style = 'gable', w = 5, d = 4, colors = {} } = {}) {
+  const m = makeMats({ primary: 0xb8a68a, secondary: 0x8a4a2c, accent: 0xe8b04a, dark: 0x3a2e26, glow: 0xffd98a, metal: 0x8a9098, ...colors });
+  const root = grp(null, 'building');
+  root.userData = { kind: 'building', style };
+  const W = w - 0.2, D = d - 0.55;
+  const H = style === 'twostory' ? 2.6 : style === 'hangar' ? 1.4 : 1.7;
+  const z0 = -0.27; // 正面を入口のタイルに少しかぶせる
+  add(root, Bx(W, H, D), m('primary'), 0, H / 2, z0);
+  add(root, Bx(W + 0.08, 0.16, D + 0.08), m('dark'), 0, 0.08, z0);
+  if (style === 'gable' || style === 'twostory') {
+    const roof = grp(root, 'roof', 0, H, z0);
+    const rh = Math.min(1.3, D * 0.35);
+    const half = Math.hypot(D / 2 + 0.15, rh);
+    const ang = Math.atan2(rh, D / 2 + 0.15);
+    for (const s of [-1, 1]) add(roof, Bx(W + 0.3, 0.12, half), m('secondary'), 0, rh / 2, s * (D / 4 + 0.07), s * ang, 0, 0);
+    const tri = new THREE.Shape([new THREE.Vector2(-D / 2, 0), new THREE.Vector2(D / 2, 0), new THREE.Vector2(0, rh)]);
+    for (const s of [-1, 1]) {
+      const g = new THREE.ShapeGeometry(tri); g.deleteAttribute('uv');
+      const gable = add(roof, g, m('primary'), s * (W / 2 - 0.01), 0, 0, 0, s * Math.PI / 2, 0);
+      gable.material.side = THREE.DoubleSide;
+    }
+    if (style === 'twostory') for (let i = 0; i < Math.floor(W); i++) add(root, Bx(0.4, 0.36, 0.04), m('glow'), -W / 2 + 0.6 + i, H * 0.72, z0 + D / 2 + 0.02);
+    add(root, Bx(0.3, 0.7, 0.3), m('dark'), W / 2 - 0.6, H + rh * 0.7, z0 - D / 5); // 煙突
+  } else if (style === 'hangar') {
+    const roof = add(root, Cy(D / 2 + 0.1, D / 2 + 0.1, W + 0.1, 10, true), m('secondary'), 0, H, z0, 0, 0, Math.PI / 2);
+    roof.scale.set(0.55, 1, 1);
+    for (let i = 0; i < 4; i++) add(root, To(D / 2 + 0.12, 0.04, 4, 10), m('dark'), -W / 2 + 0.2 + i * (W - 0.4) / 3, H, z0, 0, Math.PI / 2, 0).scale.set(1, 0.55, 1);
+  } else {
+    // 平屋根（flat / tower）：へり・看板の台・室外機
+    add(root, Bx(W + 0.2, 0.18, D + 0.2), m('secondary'), 0, H + 0.09, z0);
+    add(root, Bx(0.6, 0.35, 0.5), m('metal'), -W / 2 + 0.6, H + 0.35, z0 - 0.2);
+    if (style === 'tower') {
+      add(root, Bx(1.2, 1.4, 1.2), m('primary'), W / 2 - 0.9, H + 0.7, z0 - 0.3);
+      add(root, Bx(1.3, 0.12, 1.3), m('secondary'), W / 2 - 0.9, H + 1.45, z0 - 0.3);
+      add(root, Cy(0.03, 0.03, 1.2, 4), m('metal'), W / 2 - 0.9, H + 2.1, z0 - 0.3);
+      add(root, Sp(0.08, 0), m('glow'), W / 2 - 0.9, H + 2.7, z0 - 0.3);
+    }
+    // 日よけ
+    add(root, Bx(W * 0.8, 0.06, 0.6), m('accent'), 0, H * 0.72, z0 + D / 2 + 0.3, 0.3, 0, 0);
+  }
+  // 入口（正面中央）
+  const fz = z0 + D / 2;
+  add(root, Bx(0.86, 1.15, 0.08), m('dark'), 0, 0.58, fz + 0.01);
+  add(root, Bx(1.0, 0.1, 0.12), m('accent'), 0, 1.2, fz + 0.03);
+  add(root, Bx(0.6, 0.06, 0.02), m('glow'), 0, 1.06, fz + 0.06);
+  // 窓
+  const n = Math.max(1, Math.floor((W - 1.2) / 1.1));
+  for (let i = 0; i < n; i++) {
+    const x = -W / 2 + 0.55 + i * ((W - 1.1) / Math.max(1, n - 1 || 1));
+    if (Math.abs(x) < 0.7) continue;
+    add(root, Bx(0.46, 0.42, 0.04), m('glow'), x, Math.min(1.1, H * 0.55), fz + 0.02);
+    add(root, Bx(0.54, 0.06, 0.06), m('dark'), x, Math.min(1.1, H * 0.55) - 0.24, fz + 0.03);
+  }
+  root.userData.height = H + (style === 'tower' ? 2.8 : style === 'hangar' ? D * 0.3 : 1.2);
+  root.userData.frontZ = fz;
+  return root;
+}
+
+// =====================================================================
+// 家具（建物の中）と宝箱。だいたい1タイル＝1の大きさ、正面は +Z
+// =====================================================================
+const WOOD = { primary: 0x8a5a34, secondary: 0x6a4228, accent: 0xc8a060, dark: 0x3a2618 };
+function furniture(id, colors, fn, defaults = {}) {
+  const m = makeMats({ ...WOOD, ...defaults, ...colors });
+  const root = grp(null, id);
+  root.userData = { kind: 'furniture' };
+  fn(root, m);
+  return root;
+}
+const FURNITURE = {
+  f_counter: (c) => furniture('counter', c, (r, m) => {
+    add(r, Bx(2.4, 0.85, 0.6), m('primary'), 0, 0.42, 0);
+    add(r, Bx(2.5, 0.08, 0.7), m('accent'), 0, 0.88, 0);
+    add(r, Bx(2.3, 0.6, 0.02), m('secondary'), 0, 0.42, 0.31);
+    add(r, Bx(0.3, 0.2, 0.25), m('metal'), 0.8, 1.02, 0);
+  }),
+  f_shelf: (c) => furniture('shelf', c, (r, m) => {
+    add(r, Bx(1.8, 1.7, 0.4), m('secondary'), 0, 0.85, 0);
+    for (let i = 0; i < 3; i++) {
+      add(r, Bx(1.7, 0.05, 0.38), m('primary'), 0, 0.4 + i * 0.5, 0.02);
+      for (let k = 0; k < 4; k++) add(r, Bx(0.28, 0.28, 0.28), m(['accent', 'metal', 'glow', 'dark'][(i + k) % 4]), -0.6 + k * 0.4, 0.57 + i * 0.5, 0.04);
+    }
+  }),
+  f_rack: (c) => furniture('rack', c, (r, m) => {
+    add(r, Bx(1.8, 1.5, 0.15), m('secondary'), 0, 0.75, -0.1);
+    for (let i = 0; i < 3; i++) {
+      add(r, Bx(1.2, 0.1, 0.1), m('metal'), 0, 0.45 + i * 0.45, 0.02);
+      add(r, Bx(0.15, 0.15, 0.25), m('dark'), -0.5, 0.45 + i * 0.45, 0.04);
+    }
+  }),
+  f_bookshelf: (c) => furniture('bookshelf', c, (r, m) => {
+    add(r, Bx(1.0, 1.8, 0.4), m('secondary'), 0, 0.9, 0);
+    const cols = [0x8a2a2a, 0x2a5a8a, 0x3a7a3a, 0xc8a040, 0x6a3a8a];
+    for (let i = 0; i < 4; i++) for (let k = 0; k < 6; k++) {
+      const b = add(r, Bx(0.12, 0.32, 0.3), new THREE.MeshStandardMaterial({ name: 'book', color: cols[(i * 3 + k) % 5], flatShading: true }), -0.36 + k * 0.145, 0.32 + i * 0.42, 0.04);
+      b.rotation.z = (k % 3 === 2) ? 0.15 : 0;
+    }
+  }),
+  f_bed: (c) => furniture('bed', c, (r, m) => {
+    add(r, Bx(0.95, 0.35, 1.8), m('secondary'), 0, 0.18, 0);
+    add(r, Bx(0.9, 0.15, 1.7), m('metal'), 0, 0.42, 0);
+    add(r, Bx(0.92, 0.12, 1.2), m('accent'), 0, 0.52, 0.25);
+    add(r, Bx(0.6, 0.15, 0.32), m('glow'), 0, 0.55, -0.62);
+    add(r, Bx(0.95, 0.7, 0.1), m('secondary'), 0, 0.35, -0.9);
+  }),
+  f_dresser: (c) => furniture('dresser', c, (r, m) => {
+    add(r, Bx(0.95, 1.05, 0.5), m('primary'), 0, 0.52, 0);
+    for (let i = 0; i < 3; i++) { add(r, Bx(0.85, 0.28, 0.02), m('secondary'), 0, 0.22 + i * 0.32, 0.26); add(r, Bx(0.16, 0.05, 0.04), m('accent'), 0, 0.22 + i * 0.32, 0.28); }
+  }),
+  f_crate: (c) => furniture('crate', c, (r, m) => {
+    add(r, Bx(0.7, 0.7, 0.7), m('primary'), 0, 0.35, 0);
+    for (const s of [-1, 1]) add(r, Bx(0.72, 0.08, 0.72), m('secondary'), 0, 0.35 + s * 0.3, 0);
+    add(r, Bx(0.08, 0.72, 0.72), m('secondary'), 0, 0.35, 0, 0, 0, 0.75);
+  }),
+  f_barrel: (c) => furniture('barrel', c, (r, m) => {
+    add(r, Cy(0.32, 0.32, 0.85, 10), m('primary'), 0, 0.43, 0);
+    for (const y of [0.15, 0.7]) add(r, Cy(0.34, 0.34, 0.06, 10), m('dark'), 0, y, 0);
+  }),
+  f_table: (c) => furniture('table', c, (r, m) => {
+    add(r, Cy(0.5, 0.5, 0.08, 10), m('primary'), 0, 0.72, 0);
+    add(r, Cy(0.06, 0.12, 0.7, 6), m('dark'), 0, 0.35, 0);
+    add(r, Cy(0.08, 0.06, 0.2, 6), m('glow'), 0.15, 0.86, 0.1);
+  }),
+  f_chair: (c) => furniture('chair', c, (r, m) => {
+    add(r, Bx(0.4, 0.06, 0.4), m('primary'), 0, 0.45, 0);
+    add(r, Bx(0.4, 0.45, 0.06), m('primary'), 0, 0.7, -0.18);
+    for (const [x, z] of [[-0.16, -0.16], [0.16, -0.16], [-0.16, 0.16], [0.16, 0.16]]) add(r, Bx(0.05, 0.45, 0.05), m('dark'), x, 0.22, z);
+  }),
+  f_workbench: (c) => furniture('workbench', c, (r, m) => {
+    add(r, Bx(1.8, 0.1, 0.8), m('primary'), 0, 0.85, 0);
+    for (const [x, z] of [[-0.8, -0.3], [0.8, -0.3], [-0.8, 0.3], [0.8, 0.3]]) add(r, Bx(0.08, 0.85, 0.08), m('dark'), x, 0.42, z);
+    add(r, Bx(0.3, 0.12, 0.15), m('metal'), -0.4, 0.96, 0);
+    add(r, Cy(0.03, 0.03, 0.4, 4), m('metal'), 0.3, 0.92, 0.1, 0, 0, Math.PI / 2);
+    add(r, Bx(0.5, 0.3, 0.3), m('accent'), 0.5, 1.05, -0.2);
+  }),
+  f_toolbox: (c) => furniture('toolbox', c, (r, m) => {
+    add(r, Bx(0.8, 0.9, 0.5), m('accent'), 0, 0.45, 0);
+    for (let i = 0; i < 4; i++) add(r, Bx(0.7, 0.02, 0.02), m('dark'), 0, 0.15 + i * 0.2, 0.26);
+  }, { accent: 0xb83a2a }),
+  f_board: (c) => furniture('board', c, (r, m) => {
+    add(r, Bx(1.6, 1.0, 0.08), m('secondary'), 0, 1.2, 0);
+    for (let i = 0; i < 3; i++) add(r, Bx(0.4, 0.55, 0.02), m('glow'), -0.5 + i * 0.5, 1.2, 0.05);
+  }, { glow: 0xe8d8b0 }),
+  f_lamp: (c) => furniture('lamp', c, (r, m) => {
+    add(r, Cy(0.03, 0.15, 1.4, 6), m('dark'), 0, 0.7, 0);
+    add(r, Co(0.25, 0.3, 8), m('glow'), 0, 1.45, 0);
+  }),
+  f_plant: (c) => furniture('plant', c, (r, m) => {
+    add(r, Cy(0.22, 0.16, 0.35, 8), m('secondary'), 0, 0.18, 0);
+    for (let i = 0; i < 5; i++) add(r, Co(0.1, 0.6, 4), new THREE.MeshStandardMaterial({ name: 'leaf', color: 0x4a7a3a, flatShading: true }), Math.cos(i) * 0.08, 0.6, Math.sin(i) * 0.08, Math.cos(i * 2) * 0.4, 0, Math.sin(i * 2) * 0.4);
+  }),
+  f_jukebox: (c) => furniture('jukebox', c, (r, m) => {
+    add(r, Bx(0.8, 1.2, 0.5), m('secondary'), 0, 0.6, 0);
+    add(r, Cy(0.4, 0.4, 0.5, 10, false), m('accent'), 0, 1.2, 0, Math.PI / 2, 0, 0).scale.set(1, 1, 0.5);
+    add(r, Bx(0.6, 0.4, 0.02), m('glow'), 0, 0.8, 0.26);
+  }, { glow: 0xff7ad0 }),
+  f_gears: (c) => furniture('gears', c, (r, m) => {
+    for (let i = 0; i < 4; i++) add(r, Cy(0.3 - i * 0.05, 0.3 - i * 0.05, 0.1, 8), m('metal'), (i % 2) * 0.2 - 0.1, 0.05 + i * 0.11, (i % 2) * 0.1);
+  }),
+  chest: (c) => furniture('chest', { primary: 0x6a4a2a, accent: 0xd8b040, ...c }, (r, m) => {
+    add(r, Bx(0.75, 0.42, 0.5), m('primary'), 0, 0.21, 0);
+    for (const x of [-0.3, 0.3]) add(r, Bx(0.06, 0.44, 0.52), m('accent'), x, 0.21, 0);
+    const lid = grp(r, 'lid', 0, 0.42, -0.25);
+    add(lid, Bx(0.77, 0.16, 0.52), m('primary'), 0, 0.06, 0.25);
+    add(lid, Bx(0.79, 0.04, 0.54), m('accent'), 0, 0.14, 0.25);
+    add(r, Bx(0.12, 0.14, 0.04), m('accent'), 0, 0.38, 0.26);
+    add(r, Bx(0.6, 0.05, 0.4), m('glow'), 0, 0.4, 0);
+  }),
+  chest_big: (c) => furniture('chest_big', { primary: 0x3a4a6a, accent: 0xe8c050, glow: 0x9fe8ff, ...c }, (r, m) => {
+    add(r, Bx(1.2, 0.6, 0.75), m('primary'), 0, 0.3, 0);
+    for (const x of [-0.5, 0, 0.5]) add(r, Bx(0.08, 0.62, 0.77), m('accent'), x, 0.3, 0);
+    const lid = grp(r, 'lid', 0, 0.6, -0.375);
+    add(lid, Cy(0.38, 0.38, 1.22, 8, false), m('primary'), 0, 0, 0.375, 0, 0, Math.PI / 2).scale.set(0.5, 1, 1);
+    add(lid, Bx(1.24, 0.05, 0.1), m('accent'), 0, 0.05, 0.75);
+    add(r, Bx(0.16, 0.2, 0.05), m('glow'), 0, 0.55, 0.39);
+    add(r, Bx(1.0, 0.05, 0.6), m('glow'), 0, 0.58, 0);
+  }),
+};
 // =====================================================================
 // 敵（宇宙生物に乗っ取られたマシン＋宇宙生物）
 // =====================================================================
@@ -853,6 +1066,16 @@ export const MODEL_BUILDERS = {
   legs_wheel: buildLegsWheel,
   // 武器
   wpn_blade: buildBlade,
+  wpn_hammer: buildHammer,
+  wpn_pile: buildPile,
+  // 建物（見本。ゲームでは buildBuilding で大きさを変えて組み立てる）
+  bld_gable: (c) => buildBuilding({ style: 'gable', w: 5, d: 4, colors: c }),
+  bld_flat: (c) => buildBuilding({ style: 'flat', w: 5, d: 4, colors: c }),
+  bld_hangar: (c) => buildBuilding({ style: 'hangar', w: 5, d: 5, colors: c }),
+  bld_tower: (c) => buildBuilding({ style: 'tower', w: 6, d: 4, colors: c }),
+  bld_twostory: (c) => buildBuilding({ style: 'twostory', w: 5, d: 4, colors: c }),
+  // 家具・宝箱
+  ...FURNITURE,
   wpn_cannon: (c) => buildWeapon(c, 'cannon'),
   wpn_gatling: (c) => buildWeapon(c, 'gatling'),
   wpn_missile: (c) => buildWeapon(c, 'missile'),

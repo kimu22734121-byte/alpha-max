@@ -29,6 +29,12 @@ export const TILES = {
   25: { name: '線路', walk: true, enc: 'rock' }, // p
   26: { name: '船の床', walk: true, enc: 'ship' }, // q
   27: { name: '船の壁', walk: false }, // r
+  28: { name: '木の床', walk: true }, // s（建物の中）
+  29: { name: '部屋の壁', walk: false }, // t（建物の中）
+  30: { name: '坑道の壁？', walk: true, enc: 'rock', hidden: true }, // u（見た目は坑道の壁。隠し通路）
+  31: { name: '船の壁？', walk: true, enc: 'ship', hidden: true }, // v（見た目は船の壁。隠し通路）
+  32: { name: '壁？', walk: true, enc: 'metal', hidden: true }, // w（見た目は工場の壁。隠し通路）
+  33: { name: '地下への階段', walk: true, step: 'warp' }, // x
 };
 
 export function tileAt(map, x, y) {

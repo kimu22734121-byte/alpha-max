@@ -1,4 +1,4 @@
-// マシン用武器の表（4カテゴリ × 10種類 = 40種類＋近接ブレード）
+// マシン用武器の表（5カテゴリ × 10種類 = 50種類）
 // cat: cannon=主砲 / mg=機銃 / missile=ミサイル / special=特殊兵器
 // mount: back=背中のスロット / arm=腕のスロット
 // target: one=単体 / group=敵グループ / all=敵全体
@@ -54,10 +54,18 @@ export const WEAPONS = {
   thor: { name: 'サンダーボルト', cat: 'special', mount: 'back', target: 'all', atk: 100, hit: 15, wt: 15, price: 68000, tier: 6, model: 'wpn_special', color: 0x8aaaff, size: 1.3, elem: 'elec', en: 26 },
   solflare: { name: 'ソルフレア', cat: 'special', mount: 'back', target: 'all', atk: 160, hit: 25, wt: 12, price: 0, tier: 7, model: 'wpn_special', color: 0xffe08a, size: 1.3, elem: 'fire', en: 30, unique: true },
 
-  // ---------------- 近接（腕に持つブレード。シャープタイプが得意） ----------------
-  hblade: { name: 'ヒートブレード', cat: 'blade', mount: 'arm', target: 'one', atk: 34, hit: 15, wt: 4, price: 900, tier: 1, model: 'wpn_blade', color: 0x8a4a2a, size: 0.9, elem: 'fire' },
-  lzblade: { name: 'レーザーブレードLB', cat: 'blade', mount: 'arm', target: 'one', atk: 46, hit: 18, wt: 5, price: 2800, tier: 1, model: 'wpn_blade', color: 0x3a8aaa, size: 1.0, elem: 'elec' },
-  pzblade: { name: 'プラズマブレード', cat: 'blade', mount: 'arm', target: 'one', atk: 95, hit: 20, wt: 6, price: 16000, tier: 3, model: 'wpn_blade', color: 0x9a3aaa, size: 1.15 },
+  // ---------------- 近接（5つ目のカテゴリ。腕に持つ。シャープタイプが得意） ----------------
+  // style: blade=斬る / hammer=たたきつぶす / pile=杭を打ちこむ（敵の防御を半分むし）
+  hblade: { name: 'ヒートブレード', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 34, hit: 15, wt: 4, price: 900, tier: 1, model: 'wpn_blade', color: 0x8a4a2a, size: 0.9, elem: 'fire' },
+  hammer1: { name: 'スレッジハンマー', cat: 'melee', style: 'hammer', mount: 'arm', target: 'one', atk: 46, hit: 0, wt: 6, price: 1300, tier: 1, model: 'wpn_hammer', color: 0x6a6a5a, size: 0.9 },
+  pile1: { name: 'パイルバンカーP-1', cat: 'melee', style: 'pile', mount: 'arm', target: 'one', atk: 52, hit: 6, wt: 6, price: 2400, tier: 1, model: 'wpn_pile', color: 0x5a5a6a, size: 0.95, pierce: true },
+  lzblade: { name: 'レーザーブレードLB', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 46, hit: 18, wt: 5, price: 2800, tier: 1, model: 'wpn_blade', color: 0x3a8aaa, size: 1.0, elem: 'elec' },
+  haxe: { name: 'ヒートアックス', cat: 'melee', style: 'hammer', mount: 'arm', target: 'one', atk: 78, hit: 4, wt: 7, price: 9500, tier: 2, model: 'wpn_hammer', color: 0xa04a2a, size: 1.05, elem: 'fire' },
+  pzblade: { name: 'プラズマブレード', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 95, hit: 20, wt: 6, price: 16000, tier: 3, model: 'wpn_blade', color: 0x9a3aaa, size: 1.15 },
+  gigahammer: { name: 'ギガハンマー', cat: 'melee', style: 'hammer', mount: 'arm', target: 'group', atk: 110, hit: 0, wt: 10, price: 28000, tier: 4, model: 'wpn_hammer', color: 0x3a3a3a, size: 1.3 },
+  pile3: { name: 'パイルバンカーP-3', cat: 'melee', style: 'pile', mount: 'arm', target: 'one', atk: 170, hit: 8, wt: 9, price: 45000, tier: 5, model: 'wpn_pile', color: 0x2a2a4a, size: 1.2, pierce: true },
+  photon: { name: 'フォトンセイバー', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 210, hit: 25, wt: 6, price: 70000, tier: 6, model: 'wpn_blade', color: 0x8ae8ff, size: 1.25, elem: 'elec' },
+  valiant: { name: 'ヴァリアントエッジ', cat: 'melee', style: 'blade', mount: 'arm', target: 'all', atk: 300, hit: 30, wt: 6, price: 0, tier: 7, model: 'wpn_blade', color: 0xffe08a, size: 1.4, unique: true },
 };
 
 export const WEAPON_CATS = {
@@ -65,7 +73,7 @@ export const WEAPON_CATS = {
   mg: { name: '機銃', icon: '≡' },
   missile: { name: 'ミサイル', icon: '▲' },
   special: { name: '特殊', icon: '✦' },
-  blade: { name: '近接', icon: '†' },
+  melee: { name: '近接', icon: '†' },
 };
 
 // 武器強化（+1〜+5）。plus が1上がるごとに攻撃力が上がる

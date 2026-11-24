@@ -1,6 +1,6 @@
 {
   "name": "alpha-max",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "アルファマックス - 宇宙を舞台にしたターン制RPG（ブラウザゲーム）",

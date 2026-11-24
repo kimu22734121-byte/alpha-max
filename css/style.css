@@ -28,8 +28,8 @@ button { font-family: inherit; color: inherit; }
 
 /* ---- 起動画面 ---- */
 #boot { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: radial-gradient(ellipse at center, #1c1622 0%, #050508 70%); cursor: pointer; }
-.boot-title { font-size: clamp(32px, 7vw, 64px); letter-spacing: 0.1em; color: var(--accent); text-shadow: 0 0 18px rgba(255, 140, 40, 0.6), 3px 3px 0 #5a2a10; }
-.boot-sub { color: var(--en); letter-spacing: 0.6em; font-size: 14px; }
+.boot-title { font-family: 'Orbitron', var(--font); font-weight: 900; font-size: clamp(40px, 11vw, 120px); letter-spacing: 0.06em; background: linear-gradient(180deg, #fff6d0 0%, #f3c45a 45%, #b8741c 55%, #ffe39a 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 14px rgba(140, 220, 255, 0.75)); }
+.boot-sub { color: #cfefff; letter-spacing: 0.3em; font-size: clamp(13px, 2vw, 18px); text-shadow: 0 0 10px rgba(120, 210, 255, 0.8); }
 .boot-bar { width: min(320px, 60vw); height: 8px; border: 1px solid var(--line2); margin-top: 18px; }
 .boot-bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
 .boot-msg { color: var(--dim); font-size: 14px; }
@@ -151,7 +151,7 @@ b.fire { color: #ff8a5a; font-weight: normal; }
 
 /* ---- タイトル・オープニング ---- */
 .title-screen { position: fixed; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 6vh 0 3vh; cursor: pointer; }
-.title-logo { text-align: center; animation: logoIn 1.4s ease-out; }
+.title-logo { width: 100%; text-align: center; }
 @keyframes logoIn { from { opacity: 0; transform: scale(1.3); filter: blur(8px); } }
 .title-jp { font-size: clamp(38px, 8vw, 84px); color: #ffd28a; letter-spacing: 0.08em; text-shadow: 0 0 24px rgba(255, 140, 40, 0.75), 4px 4px 0 #6a2a08, -1px -1px 0 #fff3d0; }
 .title-en { font-size: clamp(14px, 2.4vw, 22px); color: var(--en); letter-spacing: 0.9em; margin-top: 6px; text-shadow: 0 0 12px rgba(90, 210, 255, 0.8); }
@@ -198,3 +198,28 @@ b.fire { color: #ff8a5a; font-weight: normal; }
   .hud-action { width: 74px; height: 74px; font-size: 14px; }
   .b-card { width: 132px; }
 }
+
+/* 調べる：正面の物の上に出るボタンと、光る調べるボタン */
+.examine-pop { position: fixed; z-index: 5; transform: translate(-50%, -100%); display: none; background: linear-gradient(#ffd27a, #e8913a); color: #2a1406; border: 2px solid #fff0c8; border-radius: 18px; padding: 6px 14px; font-family: var(--font); font-size: 15px; font-weight: bold; box-shadow: 0 0 14px rgba(255, 190, 80, 0.8), 0 3px 0 #6a3410; cursor: pointer; white-space: nowrap; animation: popBob 1s ease-in-out infinite; }
+.examine-pop.on { display: block; }
+@keyframes popBob { 50% { transform: translate(-50%, calc(-100% - 5px)); } }
+.hud-action.ready { box-shadow: 0 4px 0 #4a2208, 0 0 26px 6px rgba(255, 210, 110, 0.85); animation: actGlow 0.9s ease-in-out infinite; }
+@keyframes actGlow { 50% { box-shadow: 0 4px 0 #4a2208, 0 0 10px 2px rgba(255, 210, 110, 0.5); } }
+
+/* ---- タイトルロゴ「ALPHA MAX」 ---- */
+.logo { text-align: center; width: 100%; pointer-events: none; }
+.logo-wrap { position: relative; display: inline-block; }
+.logo-main, .logo-glow, .logo-shine { font-family: 'Orbitron', var(--font); font-weight: 900; font-size: min(11.2vw, 26vh); line-height: 1.05; letter-spacing: 0.02em; white-space: nowrap; }
+.logo-main { position: relative; background: linear-gradient(180deg, #fffbe6 0%, #ffe08a 30%, #e0a030 48%, #8a5410 52%, #f6c85a 70%, #fff1b8 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-stroke: 1px rgba(255, 245, 210, 0.6); filter: drop-shadow(0 3px 0 #3a2208) drop-shadow(0 0 6px rgba(255, 220, 140, 0.6)); }
+.logo-glow { position: absolute; inset: 0; color: transparent; text-shadow: 0 0 18px rgba(130, 225, 255, 0.95), 0 0 42px rgba(90, 190, 255, 0.75), 0 0 80px rgba(60, 150, 255, 0.5); animation: logoPulse 3s ease-in-out infinite; }
+@keyframes logoPulse { 50% { opacity: 0.55; } }
+.logo-shine { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 38%, rgba(255, 255, 255, 0.95) 50%, transparent 62%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 4s ease-in-out infinite; }
+@keyframes shine { 0% { background-position: 150% 0; } 60%, 100% { background-position: -100% 0; } }
+.logo .spark { position: absolute; width: calc(26px * var(--s)); height: calc(26px * var(--s)); margin: calc(-13px * var(--s)); background: radial-gradient(circle, #fff 0 8%, rgba(255, 220, 120, 0.9) 12%, transparent 22%), linear-gradient(0deg, transparent 46%, #ffe7a0 48% 52%, transparent 54%), linear-gradient(90deg, transparent 46%, #ffe7a0 48% 52%, transparent 54%); opacity: 0; animation: twinkle 2.6s ease-in-out infinite; }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
+.logo-sub { margin-top: 1.2vh; font-size: clamp(14px, 2.6vw, 26px); letter-spacing: 0.35em; color: #e6f7ff; text-shadow: 0 0 10px rgba(120, 210, 255, 0.9), 0 2px 0 #000; }
+.title-screen .logo { animation: logoIn 1.6s ease-out; }
+.op-logo { position: fixed; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(10, 16, 30, 0.35), rgba(0, 0, 0, 0.75)); opacity: 0; transition: opacity 1.2s; pointer-events: none; }
+.op-logo.in { opacity: 1; }
+.title-screen { justify-content: flex-start; }
+.title-press { margin-top: auto; margin-bottom: 1.5vh; }

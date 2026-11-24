@@ -28,7 +28,10 @@ export const hud = {
   },
   show() { root.classList.remove('hidden'); this.update(true); },
   hide() { root.classList.add('hidden'); },
-  setAction(label) { if (actBtn.textContent !== label) actBtn.textContent = label; },
+  setAction(label, ready = false) {
+    if (actBtn.textContent !== label) actBtn.textContent = label;
+    actBtn.classList.toggle('ready', ready); // 近くに調べられる物があると光る
+  },
   update(force = false) {
     if (!G) return;
     const html = partyMembers().map((m) => {
