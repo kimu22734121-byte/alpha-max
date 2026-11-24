@@ -1,5 +1,6 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
+import { START_EQUIP } from '../data/footgear.js';
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
 
@@ -64,6 +65,15 @@ function migrate(data) {
       G.pos = { map: town, x: x + 0.5, y: y + 0.5, dir: Math.PI };
     }
     data.v = 4;
+  }
+  // v4 → v5：生身の装備が「武器・防具」から「武器・頭・体・手・足・アクセサリー」になった
+  if (data.v < 5) {
+    for (const m of Object.values(data.state.members || {})) {
+      const old = m.equip || {};
+      const base = START_EQUIP[m.id] || {};
+      m.equip = { weapon: old.weapon ?? base.weapon ?? null, head: base.head ?? null, body: old.armor ?? base.body ?? null, hands: base.hands ?? null, feet: base.feet ?? null, acc: null };
+    }
+    data.v = 5;
   }
   return data;
 }

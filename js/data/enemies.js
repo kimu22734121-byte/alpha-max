@@ -34,7 +34,7 @@ export const ENEMIES = {
   pirate: {
     name: '宇宙海賊チンピラ', model: 'npc_pirate', type: 'pirate',
     hp: 44, atk: 14, def: 6, hit: 85, eva: 8, spd: 9, exp: 14, gear: 45, fx: 'shot',
-    drops: [['scrap', 0.3, 1]], loot: [['kitS', 0.25]],
+    drops: [['scrap', 0.3, 1]], loot: [['helmet', 0.06], ['kitS', 0.25]],
     desc: '荒野をうろつく宇宙海賊の下っ端',
   },
   armorbot: {
@@ -47,14 +47,14 @@ export const ENEMIES = {
   metalbeetle: {
     name: 'メタルビートル', model: 'en_beetle', type: 'machine', rare: true,
     hp: 10, atk: 6, def: 120, hit: 70, eva: 30, spd: 30, exp: 480, gear: 10, fx: 'bite', flee: 0.45, minDamage: 1,
-    drops: [['alloy', 0.5, 1]],
+    drops: [['alloy', 0.5, 1]], loot: [['beetlehorn', 0.25]],
     desc: 'すぐ逃げる銀色の甲虫。倒すと経験値がたくさん',
   },
   golddrone: {
     name: 'ゴールドドローン', model: 'en_drone', type: 'machine', rare: true, flying: true,
     colors: { primary: 0xf0c030, secondary: 0xb08a20, organic: 0xffe070, glow: 0xffffff }, metal: true,
     hp: 30, atk: 8, def: 30, hit: 70, eva: 25, spd: 26, exp: 30, gear: 1800, fx: 'laser', flee: 0.4,
-    drops: [['cell', 0.6, 1]],
+    drops: [['cell', 0.6, 1]], loot: [['gearmagnet', 0.25]],
     desc: '金ピカのドローン。倒すとギアがたくさん',
   },
 
@@ -97,7 +97,7 @@ export const ENEMIES = {
   shippirate: {
     name: '海賊の残党', model: 'npc_pirate', type: 'pirate', colors: { primary: 0x3a3a5a, accent: 0x8a2a2a },
     hp: 46, atk: 13, def: 6, hit: 85, eva: 8, spd: 9, exp: 18, gear: 50, fx: 'shot',
-    drops: [['scrap', 0.3, 1]], loot: [['kitS', 0.3]],
+    drops: [['scrap', 0.3, 1]], loot: [['knife', 0.08], ['kitS', 0.3]],
     desc: '墜落した海賊船に取り残された下っ端',
   },
   nestspider: {
@@ -116,7 +116,7 @@ export const ENEMIES = {
     name: 'ネストクイーン', model: 'en_spider', type: 'bio', boss: true, flag: 'shipBoss', colors: { primary: 0x5a1a4a, organic: 0xc03ab0, glow: 0xff4ae0 },
     hp: 380, atk: 15, def: 8, hit: 88, eva: 6, spd: 10, exp: 320, gear: 400, fx: 'bite', scale: 1.4,
     skills: [{ name: '毒の糸', mul: 0.8, target: 'all', chance: 0.25, fx: 'beam' }, { name: 'のしかかり', mul: 1.6, target: 'one', chance: 0.25, fx: 'press' }],
-    drops: [['core', 1, 1], ['bio', 1, 3]], loot: [['megaheal', 1]],
+    drops: [['core', 1, 1], ['bio', 1, 3]], loot: [['queenfang', 1], ['megaheal', 1]],
     desc: '墜落した宇宙船の奥に巣を作った宇宙生物の女王（生身で戦う小ボス）',
   },
 
@@ -151,7 +151,7 @@ export const ENEMIES = {
     name: 'ラストドリラー', model: 'boss_driller', type: 'machine', boss: true, bounty: 'rustdriller',
     hp: 420, atk: 15, def: 10, hit: 85, eva: 0, spd: 5, exp: 240, gear: 300, fx: 'drill', scale: 0.85,
     skills: [{ name: 'ドリルラッシュ', mul: 1.5, target: 'one', chance: 0.3, fx: 'drill' }, { name: '岩盤くだき', mul: 0.8, target: 'all', chance: 0.2, fx: 'press' }],
-    drops: [['core', 1, 1], ['scrap', 1, 4]], loot: [['arm_heavy', 1]],
+    drops: [['core', 1, 1], ['scrap', 1, 4]], loot: [['drillknuckle', 1], ['arm_heavy', 1]],
     desc: '宇宙生物に乗っ取られた採掘マシン。岩場に出る',
   },
   skywraith: {
@@ -165,7 +165,7 @@ export const ENEMIES = {
     name: 'グラインドタイタン', model: 'boss_titan', type: 'machine', boss: true, bounty: 'grindtitan', final: true,
     hp: 1600, atk: 22, def: 16, hit: 88, eva: 0, spd: 6, exp: 1200, gear: 900, fx: 'press', acts: 2, scale: 0.8,
     skills: [{ name: 'グラインドプレス', mul: 1.0, target: 'all', chance: 0.25, fx: 'press' }, { name: 'コアビーム', mul: 1.8, target: 'one', chance: 0.2, fx: 'beam' }],
-    drops: [['core', 1, 2], ['alloy', 1, 3]], loot: [['pc1', 1]],
+    drops: [['core', 1, 2], ['alloy', 1, 3]], loot: [['titanfinger', 1], ['pc1', 1]],
     desc: '廃工場の奥で宇宙生物に乗っ取られた巨大な工業用ロボット',
   },
 };

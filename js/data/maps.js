@@ -442,9 +442,9 @@ export const MAPS = {
     // 寄り道の宝箱（見張り小屋跡・オアシス・谷・中継塔跡・西の隠し洞窟）
     chests: [
       { id: 'fOutpost', x: 11, y: 13, contents: [{ gear: 400 }, { mat: 'scrap', n: 3 }] },
-      { id: 'fOasis', x: 48, y: 81, contents: [{ item: 'kitM', n: 2 }, { item: 'repM', n: 1 }] },
+      { id: 'fOasis', x: 48, y: 81, contents: [{ item: 'kitM', n: 2 }, { foot: 'oldrevolver' }] },
       { id: 'fCanyon', x: 127, y: 83, contents: [{ weapon: 'cm1' }] },
-      { id: 'fRelay', x: 97, y: 31, contents: [{ mat: 'cell', n: 2 }, { mat: 'alloy', n: 1 }] },
+      { id: 'fRelay', x: 97, y: 31, contents: [{ mat: 'cell', n: 2 }, { foot: 'combatboots' }] },
       { id: 'fCave', x: 4, y: 41, secret: true, contents: [{ weapon: 'haxe' }, { item: 'warpunit', n: 2 }] },
     ],
     warps: [
@@ -569,7 +569,7 @@ export const MAPS = {
       { id: 'm1', x: 59, y: 23, contents: [{ mat: 'alloy', n: 2 }] },
       { id: 'm2', x: 59, y: 2, contents: [{ weapon: 'pile1' }] },
       { id: 'm3', x: 51, y: 19, contents: [{ item: 'repM', n: 2 }] },
-      { id: 'm4', x: 38, y: 18, contents: [{ gear: 600 }, { mat: 'cell', n: 1 }] },
+      { id: 'm4', x: 38, y: 18, contents: [{ gear: 600 }, { foot: 'tacgloves' }] },
       { id: 'm5', x: 46, y: 15, contents: [{ item: 'batM', n: 2 }] },
       { id: 'm6', x: 55, y: 7, contents: [{ weapon: 'hammer1' }] },
       { id: 'mSecret', x: 31, y: 29, secret: true, contents: [{ part: 'head_oracle' }] },
@@ -635,11 +635,11 @@ export const MAPS = {
     // 宝箱（行き止まり・奥・ボスの手前の大きな宝箱・隠し通路の先の限定パーツ）
     chests: [
       { id: 's1', x: 7, y: 7, contents: [{ item: 'kitM', n: 2 }] },
-      { id: 's2', x: 2, y: 2, contents: [{ mat: 'cell', n: 2 }, { item: 'revive', n: 1 }] },
+      { id: 's2', x: 2, y: 2, contents: [{ foot: 'piratehat' }, { item: 'revive', n: 1 }] },
       { id: 's3', x: 18, y: 15, contents: [{ foot: 'shotgun' }] },
       { id: 's4', x: 17, y: 1, contents: [{ gear: 500 }] },
       { id: 's5', x: 43, y: 18, contents: [{ item: 'kitL', n: 1 }] },
-      { id: 's6', x: 43, y: 2, contents: [{ mat: 'bio', n: 3 }] },
+      { id: 's6', x: 43, y: 2, contents: [{ mat: 'bio', n: 3 }, { foot: 'visorhelm' }] },
       { id: 'sBig', x: 26, y: 7, big: true, contents: [{ foot: 'lblade' }, { item: 'megaheal', n: 1 }] },
       { id: 'sSecret', x: 52, y: 13, secret: true, contents: [{ part: 'arm_titan' }] },
     ],
@@ -720,7 +720,7 @@ export const MAPS = {
       { id: 'f1', x: 47, y: 2, contents: [{ item: 'repM', n: 2 }] },
       { id: 'f2', x: 34, y: 10, contents: [{ mat: 'alloy', n: 2 }, { mat: 'cell', n: 1 }] },
       { id: 'f3', x: 43, y: 10, contents: [{ weapon: 'v20' }] },
-      { id: 'f4', x: 2, y: 2, contents: [{ gear: 1200 }] },
+      { id: 'f4', x: 2, y: 2, contents: [{ gear: 1200 }, { foot: 'compvest' }] },
       { id: 'f5', x: 22, y: 14, contents: [{ item: 'repL', n: 1 }] },
       { id: 'f6', x: 47, y: 35, contents: [{ item: 'batL', n: 1 }] },
       { id: 'f7', x: 7, y: 19, contents: [{ weapon: 'tsl1' }] },

@@ -15,6 +15,9 @@ import { TitleScene } from './scenes/title.js';
 import { WorldScene } from './scenes/world.js';
 import { BattleScene } from './scenes/battle.js';
 import { autosave } from './scenes/menus.js';
+import { applyTuning } from './game/tuning.js';
+// 開発者の部屋で調整した数値（ブラウザに保存）を、お店や戦闘で使う表に反映する
+applyTuning();
 import { wait } from './core/tween.js';
 
 audio.loadSettings();

@@ -837,6 +837,92 @@ const FURNITURE = {
     add(r, Bx(0.24, 0.2, 0.06), m('glow'), 0.38, 1.4, 0.42);
     for (let i = 0; i < 5; i++) add(r, Cy(0.12, 0.12, 0.04, 8), m('accent'), -0.4 + i * 0.12, 0.03 + (i % 2) * 0.04, 0.6);
   }, { metal: 0x4a3a5a, accent: 0xf0c040, glow: 0xffe07a }),
+  // ---- 生身の武器（手に持つ。+z が前） ----
+  fw_pistol: (c) => furniture('fw_pistol', c, (r, m) => {
+    add(r, Bx(0.05, 0.06, 0.2), m('dark'), 0, 0.02, 0.06);
+    add(r, Bx(0.045, 0.1, 0.05), m('primary'), 0, -0.04, -0.01, -0.3);
+    grp(r, 'muzzle', 0, 0.02, 0.17);
+  }, { dark: 0x2a2c30, primary: 0x5a4030 }),
+  fw_rifle: (c) => furniture('fw_rifle', c, (r, m) => {
+    add(r, Bx(0.05, 0.07, 0.42), m('dark'), 0, 0.02, 0.12);
+    add(r, Bx(0.045, 0.09, 0.12), m('primary'), 0, -0.01, -0.12);
+    add(r, Bx(0.03, 0.03, 0.12), m('metal'), 0, 0.07, 0.1);
+    grp(r, 'muzzle', 0, 0.02, 0.34);
+  }, { dark: 0x2a2c30, primary: 0x6a4a2a, metal: 0x8a9098 }),
+  fw_blade: (c) => furniture('fw_blade', c, (r, m) => {
+    add(r, Bx(0.04, 0.04, 0.1), m('dark'), 0, 0, -0.02);
+    add(r, Bx(0.12, 0.03, 0.03), m('metal'), 0, 0, 0.04);
+    add(r, Bx(0.02, 0.05, 0.36), m('accent'), 0, 0, 0.23);
+    grp(r, 'muzzle', 0, 0, 0.4);
+  }, { dark: 0x2a2018, metal: 0x9aa0a8, accent: 0xd8e4f0 }),
+  fw_rod: (c) => furniture('fw_rod', c, (r, m) => {
+    add(r, Cy(0.022, 0.022, 0.36, 6), m('dark'), 0, 0, 0.12, Math.PI / 2);
+    add(r, Sp(0.04, 0), m('glow'), 0, 0, 0.31);
+    grp(r, 'muzzle', 0, 0, 0.32);
+  }, { dark: 0x30343a, glow: 0x8affff }),
+  fw_tool: (c) => furniture('fw_tool', c, (r, m) => {
+    add(r, Bx(0.035, 0.035, 0.26), m('metal'), 0, 0, 0.08);
+    add(r, Bx(0.1, 0.04, 0.05), m('metal'), 0, 0, 0.22);
+    add(r, Bx(0.03, 0.04, 0.05), m('metal'), 0.04, 0, 0.26);
+    grp(r, 'muzzle', 0, 0, 0.27);
+  }, { metal: 0x9aa0a8 }),
+  fw_launcher: (c) => furniture('fw_launcher', c, (r, m) => {
+    add(r, Cy(0.05, 0.05, 0.34, 8), m('primary'), 0, 0.03, 0.08, Math.PI / 2);
+    add(r, Bx(0.04, 0.08, 0.05), m('dark'), 0, -0.04, 0.0);
+    add(r, To(0.05, 0.01, 4, 8), m('accent'), 0, 0.03, 0.25);
+    grp(r, 'muzzle', 0, 0.03, 0.26);
+  }, { primary: 0x4a5a3a, dark: 0x2a2a2a, accent: 0xd8a030 }),
+  fw_gatling: (c) => furniture('fw_gatling', c, (r, m) => {
+    for (let i = 0; i < 4; i++) { const a2 = (i / 4) * Math.PI * 2; add(r, Cy(0.014, 0.014, 0.34, 5), m('metal'), Math.cos(a2) * 0.03, Math.sin(a2) * 0.03 + 0.03, 0.17, Math.PI / 2); }
+    add(r, Bx(0.1, 0.1, 0.14), m('dark'), 0, 0.03, -0.02);
+    grp(r, 'muzzle', 0, 0.03, 0.35);
+  }, { metal: 0x8a9098, dark: 0x3a3a3a }),
+  // ---- 各キャラ専用の最強武器（第1段階／最終段階） ----
+  // レン：工具型ランチャー（レンチの柄＋ミサイルポッド）
+  fw_ren1: (c) => furniture('fw_ren1', c, (r, m) => {
+    add(r, Bx(0.04, 0.04, 0.34), m('metal'), 0, 0, 0.1);
+    add(r, Bx(0.16, 0.05, 0.06), m('metal'), 0, 0, 0.28);
+    for (const sx of [-1, 1]) { add(r, Bx(0.07, 0.09, 0.14), m('primary'), 0.08 * sx, 0.06, 0.12); for (let k = 0; k < 2; k++) add(r, Cy(0.014, 0.014, 0.02, 6), m('glow'), 0.08 * sx, 0.04 + k * 0.04, 0.2, Math.PI / 2); }
+    grp(r, 'muzzle', 0, 0.06, 0.2);
+  }, { metal: 0xb0b8c0, primary: 0xd9782d, glow: 0xffd86a }),
+  fw_ren2: (c) => furniture('fw_ren2', c, (r, m) => {
+    add(r, Bx(0.05, 0.05, 0.4), m('accent'), 0, 0, 0.12);
+    add(r, Cy(0.11, 0.11, 0.03, 10), m('accent'), 0, 0.02, 0.34, Math.PI / 2);
+    add(r, Cy(0.05, 0.05, 0.04, 8), m('glow'), 0, 0.02, 0.35, Math.PI / 2);
+    for (const sx of [-1, 1]) { add(r, Bx(0.08, 0.11, 0.2), m('primary'), 0.1 * sx, 0.07, 0.14); add(r, Bx(0.02, 0.12, 0.12), m('glow'), 0.15 * sx, 0.1, 0.05, 0, 0, 0.4 * sx); }
+    grp(r, 'muzzle', 0, 0.07, 0.26);
+  }, { accent: 0xe8c24a, primary: 0xfff0d0, glow: 0xffd86a }),
+  // シオン：オメガと連動する狙撃銃（黒と赤）
+  fw_shion1: (c) => furniture('fw_shion1', c, (r, m) => {
+    add(r, Bx(0.045, 0.06, 0.6), m('dark'), 0, 0.02, 0.18);
+    add(r, Bx(0.012, 0.012, 0.5), m('glow'), 0.025, 0.04, 0.18);
+    add(r, Cy(0.025, 0.025, 0.12, 8), m('metal'), 0, 0.08, 0.12, Math.PI / 2);
+    add(r, Bx(0.04, 0.08, 0.1), m('dark'), 0, -0.02, -0.1);
+    grp(r, 'muzzle', 0, 0.02, 0.48);
+  }, { dark: 0x14141c, metal: 0x9aa0a8, glow: 0xff2a3a }),
+  fw_shion2: (c) => furniture('fw_shion2', c, (r, m) => {
+    add(r, Bx(0.05, 0.07, 0.72), m('dark'), 0, 0.02, 0.22);
+    for (const sx of [-1, 1]) { add(r, Bx(0.012, 0.014, 0.66), m('glow'), 0.03 * sx, 0.04, 0.22); add(r, Bx(0.08, 0.01, 0.16), m('glow'), 0.06 * sx, 0.02, 0.5, 0, 0.3 * sx); }
+    add(r, Cy(0.03, 0.03, 0.16, 8), m('metal'), 0, 0.09, 0.14, Math.PI / 2);
+    add(r, Sp(0.03, 0), m('glow'), 0, 0.02, 0.6);
+    grp(r, 'muzzle', 0, 0.02, 0.6);
+  }, { dark: 0x0a0a10, metal: 0xc0c8d0, glow: 0xff2a3a }),
+  // ジーナ：大型ブレード
+  fw_gina1: (c) => furniture('fw_gina1', c, (r, m) => {
+    add(r, Bx(0.05, 0.05, 0.14), m('dark'), 0, 0, -0.02);
+    add(r, Bx(0.2, 0.05, 0.05), m('accent'), 0, 0, 0.06);
+    add(r, Bx(0.13, 0.03, 0.62), m('metal'), 0, 0, 0.4);
+    add(r, Bx(0.03, 0.035, 0.6), m('dark'), 0, 0, 0.4);
+    grp(r, 'muzzle', 0, 0, 0.7);
+  }, { dark: 0x2a2c32, metal: 0x9aa0a8, accent: 0xc8402e }),
+  fw_gina2: (c) => furniture('fw_gina2', c, (r, m) => {
+    add(r, Bx(0.05, 0.05, 0.16), m('dark'), 0, 0, -0.03);
+    add(r, Bx(0.26, 0.06, 0.06), m('accent'), 0, 0, 0.07);
+    add(r, Bx(0.17, 0.035, 0.74), m('metal'), 0, 0, 0.47);
+    for (const sx of [-1, 1]) add(r, Bx(0.015, 0.04, 0.7), m('glow'), 0.085 * sx, 0, 0.47);
+    add(r, Co(0.09, 0.14, 4), m('metal'), 0, 0, 0.9, Math.PI / 2);
+    grp(r, 'muzzle', 0, 0, 0.9);
+  }, { dark: 0x1a1a1e, metal: 0xc8ccd4, accent: 0xff7a2a, glow: 0xff9a3a }),
   // ウェイポイントの広場の屋台
   f_stall: (c) => furniture('stall', c, (r, m) => {
     add(r, Bx(1.7, 0.75, 0.7), m('primary'), 0, 0.37, 0);

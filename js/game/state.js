@@ -4,6 +4,7 @@ import { MACHINES } from '../data/machines.js';
 import { PARTS, MODS, SLOT_INFO, HEAVY_ARM_WEAPON, MACHINE_TYPES } from '../data/parts.js';
 import { WEAPONS, UPGRADE } from '../data/weapons.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
+import { SETS, FAVORITE_RANGE, FAVORITE_BONUS } from '../data/footgear.js';
 import { SAVE_VERSION } from '../core/save.js';
 
 export const GEAR_MAX = 999999;
@@ -55,20 +56,49 @@ export const member = (id) => G.members[id];
 export const partyMembers = () => G.party.map((id) => G.members[id]);
 export const charDef = (m) => CHARACTERS[m.id];
 
+export const FOOT_SLOT_KEYS = ['weapon', 'head', 'body', 'hands', 'feet', 'acc'];
+
+// 4つそろった専用防具のセット（無ければ null）
+export function setOf(m) {
+  const ids = ['head', 'body', 'hands', 'feet'].map((k) => FOOT_GEAR[m.equip[k]]);
+  const set = ids[0]?.set;
+  return set && ids.every((g) => g?.set === set) ? SETS[set] : null;
+}
+// その装備を装備できるか（専用装備は本人だけ）
+export const canWearFoot = (m, id) => { const g = FOOT_GEAR[id]; return !!g && (!g.only || g.only === m.id); };
+// オメガが仲間のマシンとして動いているか（シオンの専用銃が連動する）
+export const omegaActive = () => !!G.machines.omega?.owned && G.machines.omega.loc.type !== 'map';
+
 export function memberStats(m) {
   const c = CHARACTERS[m.id];
   const L = m.lv - 1;
+  const gear = FOOT_SLOT_KEYS.map((k) => FOOT_GEAR[m.equip[k]]).filter(Boolean);
+  const sum = (k) => gear.reduce((a, g) => a + (g[k] || 0), 0);
   const w = FOOT_GEAR[m.equip.weapon] || {};
-  const a = FOOT_GEAR[m.equip.armor] || {};
+  const set = setOf(m);
+  const sb = set?.bonus || {};
+  // 武器の威力：得意な攻撃範囲ならボーナス、オメガ連動の専用銃はオメガがいると上がる
+  const fav = (w.target || 'one') === FAVORITE_RANGE[m.id];
+  let watk = (w.atk || 0) * (fav ? FAVORITE_BONUS : 1);
+  if (w.link === 'omega' && omegaActive()) watk *= 1.3 * (set?.linkMul || 1);
+  const maxHp = Math.round((c.base.hp + c.grow.hp * L + sum('hp')) * (set?.hpMul || 1));
   return {
-    maxHp: Math.min(LEVEL.hpMax, Math.round(c.base.hp + c.grow.hp * L)),
-    atk: Math.round(c.base.atk + c.grow.atk * L),
-    def: Math.round(c.base.def + c.grow.def * L + (a.def || 0)),
-    hit: Math.round(c.base.hit + c.grow.hit * L + (w.hit || 0)),
-    eva: Math.round(c.base.eva + c.grow.eva * L + (a.eva || 0)),
-    spd: Math.round(c.base.spd + c.grow.spd * L),
-    weaponAtk: w.atk || 0,
+    maxHp: Math.min(LEVEL.hpMax, maxHp),
+    atk: Math.round(c.base.atk + c.grow.atk * L + (sum('atk') - (w.atk || 0)) + (sb.atk || 0)),
+    def: Math.round(c.base.def + c.grow.def * L + sum('def')),
+    hit: Math.round(c.base.hit + c.grow.hit * L + sum('hit')),
+    eva: Math.round(c.base.eva + c.grow.eva * L + sum('eva') + (sb.eva || 0)),
+    spd: Math.round(c.base.spd + c.grow.spd * L + sum('spd')),
+    crit: sum('crit') + (sb.crit || 0),
+    weaponAtk: Math.round(watk),
+    favorite: fav,
     weapon: w,
+    set,
+    dmgCut: set?.dmgCut || 0,
+    repairMul: set?.repairMul || 1,
+    machineRegen: set?.machineRegen || 0,
+    regen: sum('regen'),
+    gearUp: sum('gearUp'),
   };
 }
 

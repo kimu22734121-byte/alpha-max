@@ -9,6 +9,7 @@ import { tween, Ease, wait, randInt } from '../core/tween.js';
 import { getModel, disposeObject, setOpacity } from '../core/assets.js';
 import { createMapView, heightAt } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
+import { buildCharModel } from '../models/char-look.js';
 import { MAPS } from '../data/maps.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
 import { CHARACTERS } from '../data/characters.js';
@@ -18,7 +19,7 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor } from './menus.js';
+import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
 import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
@@ -262,7 +263,7 @@ export class WorldScene {
       obj.userData.entity = { kind: 'myMachine', mc, member: m };
       return { member: m, obj, kind: 'machine', mc };
     }
-    const obj = getModel(CHARACTERS[m.id].model);
+    const obj = buildCharModel(m);
     obj.scale.setScalar(CHAR_SCALE);
     obj.userData.entity = { kind: 'member', member: m };
     return { member: m, obj, kind: 'char' };
@@ -830,6 +831,7 @@ export class WorldScene {
       return;
     }
     if (name === 'gearMachine') { await gearMachine(); return; }
+    if (name === 'tuning') { await ui.say('バランス調整の端末だ。値段・攻撃力・敵の強さを数字で変えられるらしい。'); await tuningMenu(); return; }
     if (name === 'rest') await restAtHome();
     else if (name === 'alpha') await runEvent('alphaRepair', this);
     else if (name === 'wanted') await bountyList();

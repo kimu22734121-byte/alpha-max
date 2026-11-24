@@ -199,6 +199,150 @@ export const ui = {
     });
   },
 
+  // ---- お店の画面 ----
+  // 左に商品の一覧、右に詳細（効果・値段・所持数・装備の比較）。選んでも買わず、右の「買う」ボタンを押した時だけ
+  //   items(): [{ label, right, detail: () => html, price, can: () => true|'理由', group }]
+  //   act(it): 「買う／売る」を押した時の処理（個数・確認は呼ぶ側で）。終わると一覧を作り直す
+  shop({ title, header, items, verb = '買う', act }) {
+    return new Promise((resolve) => {
+      const wrap = el('div', 'modal modal-menu');
+      const panel = el('div', 'menu-panel shop-panel');
+      panel.appendChild(el('div', 'menu-title', title));
+      const head = el('div', 'menu-header');
+      panel.appendChild(head);
+      const body = el('div', 'shop-body');
+      const list = el('div', 'menu-list shop-list');
+      const side = el('div', 'shop-side');
+      const detail = el('div', 'shop-detail');
+      const btn = el('button', 'shop-act', verb);
+      side.append(detail, btn);
+      body.append(list, side);
+      panel.appendChild(body);
+      const close = el('button', 'menu-close', '✕');
+      panel.appendChild(close);
+      wrap.appendChild(panel);
+      let cur = [], idx = 0, rows = [], working = false;
+      const render = () => {
+        cur = items();
+        head.innerHTML = typeof header === 'function' ? header() : header || '';
+        list.innerHTML = '';
+        let lastGroup = null;
+        rows = cur.map((it, i) => {
+          if (it.group && it.group !== lastGroup) { list.appendChild(el('div', 'menu-sep', it.group)); lastGroup = it.group; }
+          const r = el('button', 'menu-item');
+          r.innerHTML = `<span class="mi-label">${it.label}</span>${it.right != null ? `<span class="mi-right">${it.right}</span>` : ''}`;
+          r.addEventListener('click', (e) => { e.stopPropagation(); audio.sfx('cursor'); setIdx(i); });
+          list.appendChild(r);
+          return r;
+        });
+        if (!cur.length) list.appendChild(el('div', 'shop-empty', 'ありません'));
+        setIdx(Math.min(idx, Math.max(0, cur.length - 1)), true);
+      };
+      const setIdx = (i, scroll = true) => {
+        rows[idx]?.classList.remove('focus');
+        idx = i;
+        const it = cur[idx];
+        rows[idx]?.classList.add('focus');
+        if (scroll) rows[idx]?.scrollIntoView({ block: 'nearest' });
+        detail.innerHTML = it ? it.detail() : '';
+        const ok = it ? it.can() : false;
+        btn.disabled = ok !== true;
+        btn.innerHTML = ok === true ? verb : `${verb}<small>${ok ? `（${ok}）` : ''}</small>`;
+      };
+      const press = async () => {
+        const it = cur[idx];
+        if (!it || working) return;
+        if (it.can() !== true) { audio.sfx('error'); return; }
+        audio.sfx('ok');
+        working = true;
+        try { await act(it); } finally { working = false; }
+        render();
+      };
+      btn.addEventListener('click', (e) => { e.stopPropagation(); press(); });
+      const done = () => { audio.sfx('cancel'); popModal(m); resolve(); };
+      close.addEventListener('click', (e) => { e.stopPropagation(); done(); });
+      wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) { e.preventDefault(); done(); } });
+      const m = {
+        el: wrap, isMenu: true,
+        onKey: (e) => {
+          if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx + 1) % cur.length); } }
+          else if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx - 1 + cur.length) % cur.length); } }
+          else if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { e.preventDefault(); if (!e.repeat) press(); }
+          else if (['Escape', 'x', 'X'].includes(e.key)) { e.preventDefault(); done(); }
+        },
+      };
+      pushModal(m);
+      render();
+    });
+  },
+
+  // ---- 個数を選ぶ（＋ー）。0 ならやめた ----
+  qty({ title, unit, max, verb = '買う', note = '' }) {
+    return new Promise((resolve) => {
+      const wrap = el('div', 'modal modal-menu');
+      const panel = el('div', 'menu-panel qty-panel');
+      panel.appendChild(el('div', 'menu-title', title));
+      const box = el('div', 'qty-box');
+      const minus10 = el('button', 'qty-btn', '−10'), minus = el('button', 'qty-btn', '−'), num = el('div', 'qty-num'), plus = el('button', 'qty-btn', '＋'), plus10 = el('button', 'qty-btn', '+10');
+      box.append(minus10, minus, num, plus, plus10);
+      const total = el('div', 'qty-total');
+      const okB = el('button', 'menu-item focus qty-ok', `${verb}`), ngB = el('button', 'menu-item qty-ng', 'やめる');
+      panel.append(box, total, el('div', 'note', note), okB, ngB);
+      wrap.appendChild(panel);
+      let n = 1;
+      const draw = () => { num.textContent = n; total.innerHTML = `合計 ${GEAR}${fmt(unit * n)}`; minus.disabled = minus10.disabled = n <= 1; plus.disabled = plus10.disabled = n >= max; };
+      const set = (v) => { const nv = Math.max(1, Math.min(max, v)); if (nv !== n) audio.sfx('cursor'); n = nv; draw(); };
+      minus.addEventListener('click', (e) => { e.stopPropagation(); set(n - 1); });
+      plus.addEventListener('click', (e) => { e.stopPropagation(); set(n + 1); });
+      minus10.addEventListener('click', (e) => { e.stopPropagation(); set(n - 10); });
+      plus10.addEventListener('click', (e) => { e.stopPropagation(); set(n + 10); });
+      const done = (v) => { audio.sfx(v ? 'ok' : 'cancel'); popModal(m); resolve(v); };
+      okB.addEventListener('click', (e) => { e.stopPropagation(); done(n); });
+      ngB.addEventListener('click', (e) => { e.stopPropagation(); done(0); });
+      wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) { e.preventDefault(); done(0); } });
+      const m = {
+        el: wrap, isMenu: true,
+        onKey: (e) => {
+          e.preventDefault();
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') set(n + 1);
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') set(n - 1);
+          else if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { if (!e.repeat) done(n); }
+          else if (['Escape', 'x', 'X'].includes(e.key)) done(0);
+        },
+      };
+      pushModal(m);
+      draw();
+    });
+  },
+
+  // ---- 数字の入力（バランス調整用）。やめたら null ----
+  numberEntry({ title, value, def, step = 1, note = '' }) {
+    return new Promise((resolve) => {
+      const wrap = el('div', 'modal modal-menu');
+      const panel = el('div', 'menu-panel qty-panel');
+      panel.appendChild(el('div', 'menu-title', title));
+      const box = el('div', 'qty-box');
+      const minus = el('button', 'qty-btn', '−'), plus = el('button', 'qty-btn', '＋');
+      const inp = el('input', 'name-input num-input');
+      inp.type = 'number'; inp.value = value; inp.step = step;
+      box.append(minus, inp, plus);
+      const okB = el('button', 'menu-item focus qty-ok', '決定'), resetB = el('button', 'menu-item', `初期値（${def}）に戻す`), ngB = el('button', 'menu-item qty-ng', 'やめる');
+      panel.append(box, el('div', 'note', note), okB, resetB, ngB);
+      wrap.appendChild(panel);
+      const val = () => { const v = Number(inp.value); return Number.isFinite(v) ? v : value; };
+      const round = (v) => Math.round(v / step) * step;
+      minus.addEventListener('click', (e) => { e.stopPropagation(); inp.value = round(val() - step); audio.sfx('cursor'); });
+      plus.addEventListener('click', (e) => { e.stopPropagation(); inp.value = round(val() + step); audio.sfx('cursor'); });
+      const done = (v) => { audio.sfx(v == null ? 'cancel' : 'ok'); popModal(m); resolve(v); };
+      okB.addEventListener('click', (e) => { e.stopPropagation(); done(val()); });
+      resetB.addEventListener('click', (e) => { e.stopPropagation(); done(def); });
+      ngB.addEventListener('click', (e) => { e.stopPropagation(); done(null); });
+      const m = { el: wrap, isMenu: true, onKey: (e) => { if (e.key === 'Enter') { e.preventDefault(); done(val()); } else if (e.key === 'Escape') { e.preventDefault(); done(null); } } };
+      pushModal(m);
+      setTimeout(() => inp.focus(), 50);
+    });
+  },
+
   // ---- 名前入力（ゲーム開始時） ----
   nameEntry(fields) {
     return new Promise((resolve) => {
