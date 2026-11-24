@@ -17,6 +17,7 @@ import { PLANETS, planetOfTown } from '../data/planets.js';
 import { DEV_ROOM, devSession } from '../data/debug.js';
 import { TUNE_TABLES, FIELD_NAMES, CHOICES, fieldsOf, defaultOf, valueOf, isChanged, isColor, stepOf, showValue, changedCount, setTuning, resetTuning, exportTuning } from '../game/tuning.js';
 import { devStore } from './devroom.js';
+import { hangarList } from './hangar.js';
 import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
@@ -520,6 +521,7 @@ async function garage(world) {
       title: 'ガレージ', header: `${esc(shop.keeper)}「何をする？」　預かり中：${here.map((m) => esc(machineName(m)) + testTag(m)).join('・') || 'なし'}`,
       items: [
         { label: '乗り込んで出発', value: 'depart' },
+        { label: '格納庫の一覧（マシン・パーツ）', value: 'hangar' },
         { label: '修理', value: 'repair' },
         { label: '武器の付け替え', value: 'weapons' },
         { label: 'パーツ交換', value: 'parts' },
@@ -541,6 +543,7 @@ async function garage(world) {
     if (v === 'mod') { const mc = await pickMachine(here); if (mc) await modMenu(mc); }
     if (v === 'pilot') await pilotMenu(here);
     if (v === 'evolve') await evolveMenu();
+    if (v === 'hangar') await hangarList(world);
     if (v === 'tow') await towMenu(town, shop);
     if (v === 'depart') { if (await depart(world, here)) return; }
   }
@@ -839,7 +842,7 @@ async function depart(world, here) {
   return true;
 }
 
-async function weaponSlots(mc) {
+export async function weaponSlots(mc) {
   for (;;) {
     const st = machineStats(mc);
     const items = SLOT_INFO.map((info, i) => {
@@ -873,7 +876,7 @@ async function weaponSlots(mc) {
 const PART_SLOTS = [['head', '頭'], ['body', 'ボディ'], ['armR', '右腕'], ['armL', '左腕'], ['legs', '脚'], ['engine', 'エンジン']];
 const slotName = (s) => ({ head: '頭', body: 'ボディ', arm: '腕', legs: '脚', engine: 'エンジン' }[s]);
 
-async function partSlots(mc) {
+export async function partSlots(mc) {
   for (;;) {
     const st = machineStats(mc);
     const slotKey = await ui.menu({

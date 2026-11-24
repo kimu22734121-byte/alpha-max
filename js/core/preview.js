@@ -44,11 +44,25 @@ export function createStage(container, { count = 1, labels = [] } = {}) {
   }
   camera.position.set(0, 1.7, 3.6 + count * 1.1);
   const look = new THREE.Vector3(0, 0.75, 0);
-  let spin = 0.5, drag = null, auto = true, alive = true;
+  let spin = 0.5, drag = null, auto = true, alive = true, zoom = 1, baseDist = 4, pinch = null;
+  const touches = new Map();
   const el = r.domElement;
-  const down = (e) => { drag = e.clientX; auto = false; el.setPointerCapture?.(e.pointerId); };
-  const move = (e) => { if (drag != null) { spin += (e.clientX - drag) * 0.01; drag = e.clientX; } };
-  const up = () => { drag = null; };
+  const down = (e) => { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); drag = e.clientX; auto = false; el.setPointerCapture?.(e.pointerId); };
+  const move = (e) => {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const pts = [...touches.values()].filter((v) => typeof v === 'object');
+    if (pts.length >= 2) {
+      // 2本指：ピンチで拡大・縮小
+      const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (pinch) api.zoomBy(pinch / d);
+      pinch = d; drag = null; return;
+    }
+    if (drag != null) { spin += (e.clientX - drag) * 0.01; drag = e.clientX; }
+  };
+  const up = (e) => { touches.delete(e.pointerId); pinch = null; drag = null; };
+  const wheel = (e) => { e.preventDefault(); api.zoomBy(e.deltaY > 0 ? 1.1 : 0.9); };
+  el.addEventListener('wheel', wheel, { passive: false });
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointermove', move);
   el.addEventListener('pointerup', up);
@@ -60,7 +74,8 @@ export function createStage(container, { count = 1, labels = [] } = {}) {
     // 横が狭いときは引いて全部入るように
     const need = (count * gap) / 2 + 1.2;
     const dist = Math.max(3.6, need / Math.tan((camera.fov * Math.PI) / 360) / Math.max(0.6, camera.aspect));
-    camera.position.set(0, 1.5 + dist * 0.12, dist);
+    baseDist = dist;
+    camera.position.set(0, 1.5 + dist * zoom * 0.12, dist * zoom);
     camera.updateProjectionMatrix();
   };
   const ro = new ResizeObserver(resize);
@@ -104,6 +119,8 @@ export function createStage(container, { count = 1, labels = [] } = {}) {
       if (obj) { obj.position.set(0, 0, 0); obj.rotation.set(0, 0, 0); s.holder.add(fit(obj, height)); }
     },
     flash(i) { slots[i].flash = 1; },
+    // 拡大・縮小（k < 1 で寄る）
+    zoomBy(k) { zoom = Math.max(0.35, Math.min(1.6, zoom * k)); camera.position.set(0, 1.5 + baseDist * zoom * 0.12, baseDist * zoom); look.y = 0.75 + (1 - zoom) * 0.3; },
     // パーツが切り替わる演出：光ってから入れ替わる
     async swap(i, obj, opts) {
       const s = slots[i];
@@ -136,6 +153,7 @@ export function createStage(container, { count = 1, labels = [] } = {}) {
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointermove', move);
       el.removeEventListener('pointerup', up);
+      el.removeEventListener('wheel', wheel);
       el.remove();
     },
   };
