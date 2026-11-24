@@ -28,12 +28,12 @@ jobs:
         run: |
           mkdir -p _site
           cp -r index.html css js models assets .nojekyll _site/
-      # ブラウザが古いファイルを使い続けないように、公開のたびに読み込むファイル名に版番号を付ける
+      # キャッシュ対策：index.html の JS・CSS には ?v=日付時刻 が付いている（tools/bump-version.sh で更新）。
+      # JS の中から読み込むファイルにも、公開のたびにコミット番号の版番号を付ける
       - name: Cache busting
         run: |
           V=${GITHUB_SHA::8}
           find _site/js -name '*.js' -not -path '*/lib/*' -exec sed -i -E "s#((from|import) *\(?'\.{1,2}/[^']+\.js)'#\1?v=$V'#g" {} +
-          sed -i -E "s#(src=\"js/main\.js)\"#\1?v=$V\"#; s#(href=\"css/style\.css)\"#\1?v=$V\"#" _site/index.html
           grep -n "main.js\|style.css" _site/index.html
           grep -rn "?v=" _site/js/main.js | head -3
       - uses: actions/configure-pages@v5
