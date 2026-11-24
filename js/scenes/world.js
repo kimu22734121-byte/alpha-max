@@ -6,7 +6,7 @@ import { ui, esc } from '../core/ui.js';
 import { hud } from '../core/hud.js';
 import { audio } from '../core/audio.js';
 import { tween, Ease, wait, randInt } from '../core/tween.js';
-import { getModel, disposeObject } from '../core/assets.js';
+import { getModel, disposeObject, setOpacity } from '../core/assets.js';
 import { createMapView, heightAt } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { MAPS } from '../data/maps.js';
@@ -18,7 +18,7 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop } from './menus.js';
+import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor } from './menus.js';
 import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
@@ -26,7 +26,7 @@ const MACHINE_SCALE = 0.72;
 const ENC_RATE = { sand: 0.2, rock: 0.27, metal: 0.25, road: 0, ship: 0.24 };
 const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が出ない歩数
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
-const TOWN_GATE = { town1: [15, 18], town2: [14, 18], town3: [14, 18] };
+const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
 const CHAR_SCALE = 0.9;
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -152,6 +152,9 @@ export class WorldScene {
     const fl = (G.flags.taken ||= {});
     this.props = addProps(this.scene, map, (pr) => !!fl[`${map.id}:${pr.id}`]);
     for (const pr of this.props) {
+      if (pr.obj && map.type !== 'interior') pr.obj.position.y += heightAt(map, pr.x, pr.z);
+      // 開発者の部屋の扉：このプレイ中に開けていたら上がったまま
+      if (pr.data.devDoor && devDoorOpen() && pr.obj) pr.obj.position.y = 2.2;
       // 本棚が動いたあと（隠し階段が見えている）
       if (pr.data.secret && G.flags.stairsOpen) { pr.x += 1.1; if (pr.obj) pr.obj.position.x = pr.x; }
     }
@@ -344,6 +347,8 @@ export class WorldScene {
       const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
       h.mesh.material.opacity += ((near ? 0.3 : 1) - h.mesh.material.opacity) * Math.min(1, dt * 6);
     }
+    // 転送台の光の輪がゆっくり回る
+    for (const pr of this.props) if (pr.data.pad && pr.obj) { const r = pr.obj.getObjectByName('padRing'); if (r) r.rotation.y = t * 0.8; const c = pr.obj.getObjectByName('padCore'); if (c?.material.emissive) c.material.emissiveIntensity = 1.2 + Math.sin(t * 3) * 0.6; }
     // ガレージで整備中のマシンから火花
     if (this.map.maintenance && this.extras[0] && Math.random() < dt * 6) this.spark(this.extras[0].position, 0xffc060);
     for (const s of this.sparkles) {
@@ -538,7 +543,7 @@ export class WorldScene {
   // ダンジョンの地図用に、歩いた場所（まわり3マス）を記録する
   markExplored() {
     const map = this.map;
-    if (map.type === 'town' || map.type === 'interior') return;
+    if (map.type === 'town' || map.type === 'interior' || map.noMap) return;
     const ex = (G.explored ||= {});
     let row = ex[map.id];
     if (!row || row.length !== map.width * map.height) row = '0'.repeat(map.width * map.height);
@@ -554,7 +559,7 @@ export class WorldScene {
   async warp(w) {
     this.lock(true);
     // 鍵が必要な入口
-    if (w.require && !G.flags[w.require]) {
+    if ((w.require && !G.flags[w.require]) || (w.requireDev && !devDoorOpen())) {
       await ui.say(w.lockedText || 'ここはまだ通れないようだ。');
       const p = G.pos;
       p.y += 1; // 一歩下がる
@@ -592,32 +597,68 @@ export class WorldScene {
     this.lock(false);
   }
 
-  // ---------------------------------------------------------------- 転送（ガレージの転送装置・ワープユニット）
-  async teleport(to, { garage = false, from = null } = {}) {
+  // ---------------------------------------------------------------- 転送（ガレージの転送台・ワープユニット）
+  // 体が光に包まれて消え、行き先の町の転送台（ワープユニットは町の入口）に光とともに現れる
+  async teleport(to, { pad = false, from = null } = {}) {
     this.lock(true);
+    audio.sfx('charge');
+    await this.beam(false);
     audio.sfx('warp');
-    await ui.fade(true, 0.45, '#cfe8ff');
-    // 乗っているマシンと、転送装置を使ったガレージのマシンは行き先のガレージへ
+    await ui.fade(true, 0.25, '#e8f6ff');
+    // 乗っているマシンと、転送台を使ったガレージのマシンは行き先のガレージへ
     for (const mc of Object.values(G.machines)) {
       if (!mc.owned) continue;
-      if (mc.loc.type === 'party' || (garage && mc.loc.type === 'garage' && mc.loc.town === from)) mc.loc = { type: 'garage', town: to };
+      if (mc.loc.type === 'party' || (pad && mc.loc.type === 'garage' && mc.loc.town === from)) mc.loc = { type: 'garage', town: to };
     }
     const gid = `${to}_garage`;
-    if (garage && MAPS[gid]) {
-      const [x, y] = MAPS[gid].arrive;
-      G.pos = { map: gid, x: x + 0.5, y: y - 0.5, dir: Math.PI };
-    } else {
-      const [x, y] = TOWN_GATE[to];
-      G.pos = { map: to, x: x + 0.5, y: y + 0.5, dir: Math.PI };
-    }
+    const tp = MAPS[gid]?.props?.find((q) => q.pad);
+    if (pad && tp) G.pos = { map: gid, x: tp.x, y: tp.y, dir: 0 };
+    else { const [x, y] = TOWN_GATE[to]; G.pos = { map: to, x: x + 0.5, y: y + 0.5, dir: Math.PI }; }
     G.lastTown = to; (G.flags.visited ||= {})[to] = true;
     autosave();
     this.build();
     audio.playSong(MAPS[G.pos.map].bgm);
-    await ui.fade(false, 0.5);
+    for (const a of this.avatars) setOpacity(a.obj, 0);
+    await ui.fade(false, 0.3);
+    audio.sfx('heal');
+    await this.beam(true);
     ui.banner(esc(MAPS[to].name), '転送完了');
     hud.update(true);
     this.lock(false);
+  }
+
+  // 光の柱（appear=false：光に包まれて消える／true：光の中から現れる）
+  async beam(appear) {
+    const p = G.pos;
+    const gy = heightAt(this.map, p.x, p.y);
+    const tex = getGlowTex();
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 3.6, 24, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    col.position.set(p.x, gy + 1.8, p.y);
+    this.scene.add(col);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.4, 1.2, 32), new THREE.MeshBasicMaterial({ color: 0xcff4ff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(p.x, gy + 0.05, p.y);
+    this.scene.add(ring);
+    const objs = this.avatars.map((a) => a.obj);
+    const sparks = [];
+    await tween(1.1, (k) => {
+      const glow = Math.sin(k * Math.PI);
+      col.material.opacity = glow * 0.38;
+      const w = appear ? 0.5 + k * 0.5 : 1 - k * 0.5;
+      col.scale.set(w, 1, w);
+      ring.material.opacity = glow;
+      ring.scale.setScalar(1 + k * 1.5);
+      const vis = appear ? Math.min(1, Math.max(0, (k - 0.35) / 0.4)) : 1 - Math.min(1, Math.max(0, (k - 0.25) / 0.45));
+      for (const o of objs) { setOpacity(o, vis); o.scale.y = o.userData.sy0 ?? (o.userData.sy0 = o.scale.x); o.scale.y = o.userData.sy0 * (0.6 + vis * 0.4 + (1 - vis) * 0.8); }
+      if (Math.random() < 0.6) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, color: 0xbff0ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+        sp.position.set(p.x + (Math.random() - 0.5) * 1.4, gy + Math.random() * 2.4, p.y + (Math.random() - 0.5) * 1.4);
+        sp.scale.setScalar(0.15 + Math.random() * 0.15);
+        this.scene.add(sp); sparks.push(sp);
+      }
+      for (const sp of sparks) sp.position.y += 0.05;
+    }, Ease.linear);
+    for (const o of objs) { o.scale.y = o.userData.sy0 ?? o.scale.x; if (appear) setOpacity(o, 1); }
+    for (const m of [col, ring, ...sparks]) { this.scene.remove(m); m.geometry?.dispose?.(); m.material.dispose(); }
   }
 
   // ---------------------------------------------------------------- 戦闘へ
@@ -767,6 +808,28 @@ export class WorldScene {
   }
 
   async propEvent(name, pr) {
+    if (name === 'teleport') {
+      // 転送台：上に乗ってから行き先を選ぶ
+      const p = G.pos;
+      if (Math.hypot(p.x - pr.x, p.y - pr.z) > 0.5) {
+        await tween(0.3, (k) => { p.x += (pr.x - p.x) * k; p.y += (pr.z - p.y) * k; });
+      }
+      await ui.say('転送台が青白く光っている。行ったことのある町の転送台へ、一瞬で移動できるらしい。');
+      await teleportMenu(this, true);
+      return;
+    }
+    if (name === 'keypad') {
+      if (devDoorOpen()) { await ui.say('扉はもう開いている。'); return; }
+      await ui.say('扉の横のキーパネル。8桁の暗証番号を入れると開くようだ。');
+      if (!(await keypad())) return;
+      openDevDoor();
+      audio.sfx('hatch');
+      const door = this.props.find((d) => d.data.devDoor);
+      if (door?.obj) await tween(1.0, (k) => { door.obj.position.y = k * 2.2; }, Ease.inOut);
+      await ui.say('ピッ……ゴゴゴゴ。重い扉がゆっくりと上がっていった。');
+      return;
+    }
+    if (name === 'gearMachine') { await gearMachine(); return; }
     if (name === 'rest') await restAtHome();
     else if (name === 'alpha') await runEvent('alphaRepair', this);
     else if (name === 'wanted') await bountyList();
@@ -849,7 +912,7 @@ export class WorldScene {
       const p0 = G.pos;
       this.avatars[0].obj.rotation.y = Math.atan2(n.x - p0.x, n.z - p0.y);
       const mapBefore = G.pos.map;
-      await openFacility(n.data.facility, this);
+      await openFacility(n.data.facility, this, n.data.shop);
       if (G.pos.map !== mapBefore) return;
       hud.update(true);
       return;

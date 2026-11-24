@@ -1,11 +1,11 @@
 // 町ごとのお店の品ぞろえ。町を進むほど強いものが売られる
 export const SHOPS = {
-  // 町1：辺境の町ラストヘイヴン
+  // 町1：辺境の町ラストヘイヴン（武器屋はなく、ジャンク屋が中古の武器を少しだけ売っている）
   town1: {
-    weapon: {
-      keeper: '武器屋のダッジ',
-      greet: 'いらっしゃい！ 荒野を生き抜くなら火力だぜ。',
-      machine: ['mg7', 'gt1', 'sc1', 'c75', 'rpod', 'hm1', 'flm1', 'hblade', 'hammer1'],
+    junk: {
+      keeper: 'ジャンク屋のネジ',
+      greet: 'ボルツじいちゃんが拾ってきた中古品だよ。ちゃんと動くって！ ……たぶん。',
+      machine: ['mg7', 'sc1', 'c75', 'hblade'],
       foot: ['handgun', 'vest'],
     },
     parts: {
@@ -26,13 +26,19 @@ export const SHOPS = {
     weapon: {
       keeper: '武器屋のボーグ',
       greet: '掘り出し物ばかりだ。……鉱山だけにな。',
-      machine: ['gt1', 'lm1', 'c75', 'rg1', 'hm1', 'cm1', 'emp1', 'tsl1', 'lzblade', 'hammer1', 'pile1'],
+      machine: ['gt1', 'lm1', 'c75', 'rg1', 'rpod', 'hm1', 'cm1', 'flm1', 'emp1', 'tsl1', 'lzblade', 'hammer1', 'pile1'],
       foot: ['shotgun', 'rifle', 'pilotsuit'],
     },
+    // グレイロックはパーツが充実：パーツ屋（頭・腕・脚）とフレーム工房（ボディ・エンジン・脚）の2軒
     parts: {
       keeper: 'パーツ屋のドク',
       greet: '採掘マシン用の頑丈なパーツならまかせとけ。',
-      parts: ['head_radar', 'head_sharp', 'arm_heavy', 'arm_power', 'arm_sharp', 'legs_quad', 'legs_tread', 'legs_wheel', 'body_balance', 'body_sharp', 'eng_turbo'],
+      parts: ['head_sensor', 'head_radar', 'head_sharp', 'head_heavy', 'arm_std', 'arm_light', 'arm_heavy', 'arm_power', 'arm_sharp', 'legs_quad', 'legs_tread', 'legs_wheel'],
+    },
+    frame: {
+      keeper: 'フレーム工房の親方ガンツ',
+      greet: '骨組みとエンジンは機体の命だ。ここのは鉱山仕込みで頑丈だぜ。',
+      parts: ['body_balance', 'body_sharp', 'body_heavy', 'eng_v6', 'eng_turbo', 'eng_heavy', 'legs_biped', 'legs_hover'],
     },
     item: {
       keeper: '道具屋のピコ',
@@ -58,8 +64,19 @@ export const SHOPS = {
     item: {
       keeper: '補給係のモモ',
       greet: '上位の救急キットも修理キットもあるよ。',
+      items: ['kitM', 'repM', 'batM', 'maint', 'revive', 'warpunit'],
+    },
+    // 交易マーケット（大きな店）と広場の屋台
+    market: {
+      keeper: 'マーケットの支配人ルゥ',
+      greet: '宇宙港から届いた上物ばかり。ボス戦の準備ならここで全部そろうよ。',
       items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
     },
+    stall_food: { keeper: '屋台のおやじ', greet: '安いよ安いよ！ 旅のおともにどうだい！', items: ['kitS', 'repS', 'batS', 'warpunit'] },
+    stall_food2: { keeper: '果物売りの娘', greet: 'となりの星の果物でつくった薬よ。よく効くんだから。', items: ['kitS', 'kitM', 'revive'] },
+    stall_arms: { keeper: '流れ者の武器商', greet: '……出どころは聞かないでくれ。性能はたしかだ。', machine: ['gt1', 'rpod', 'flm1', 'hammer1', 'sc1'], foot: ['shotgun', 'vest'] },
+    stall_parts: { keeper: '中古パーツ屋', greet: '中古だけど、ちゃんと整備してあるよ。', parts: ['arm_light', 'legs_wheel', 'head_sensor', 'eng_v6'] },
+    stall_parts2: { keeper: 'がらくた拾い', greet: '墜落船のまわりで拾ったんだ。見ていってよ。', parts: ['arm_std', 'legs_biped', 'legs_quad'] },
     inn: { pricePerMember: 40, keeper: '宿の主人' },
     garage: { keeper: '整備長カイ', repairPerArmor: 1, repairPerEn: 1, towFee: 300 },
   },

@@ -43,7 +43,7 @@ export class TitleScene {
     this.el.innerHTML = `
       <div class="title-logo"></div>
       <div class="title-press">タップしてスタート</div>
-      <div class="title-foot">v0.4 第1章「土」の惑星 ／ © Alpha Max project</div>`;
+      <div class="title-foot">v0.5 第1章「土」の惑星 ／ © Alpha Max project</div>`;
     this.el.querySelector('.title-logo').appendChild(makeLogo());
     document.body.appendChild(this.el);
     this.el.addEventListener('click', () => this.start());
