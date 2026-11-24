@@ -5,11 +5,13 @@
 // 座標は (x, y) = (列, 行)。3D空間では x → X、y → Z に対応する。
 // 第1章「土」の惑星：町3つ（ラストヘイヴン・グレイロック・ウェイポイント）＋ダンジョン3つ（坑道・墜落した宇宙船・廃工場）
 import { parseRows } from './tiles.js';
+import { addInteriors } from './interiors.js';
 
 export const MAPS = {
   // ================================================================ 町1
   town1: {
     id: 'town1',
+    buildings3d: true, // 地面は2Dタイル、建物はローポリ3D
     name: 'ラストヘイヴン',
     subtitle: '辺境コロニー 第7居住区（ドーム）',
     type: 'town',
@@ -58,7 +60,7 @@ export const MAPS = {
       { id: 'junk', name: 'ジャンク屋のボルツ', model: 'npc_b', x: 12, y: 7, lines: [
         'わしはジャンク屋のボルツ。がらくたの目利きなら町一番じゃ。',
         'ところでレンや……夜になると、おまえさんの修理屋の下のほうから、ゴウン、ゴウンと変な音がするんじゃ。',
-        '地下に何かあるのかのう？ 自分の部屋を一度よーく調べてみるといい。',
+        '地下に何かあるのかのう？ 古い家には、本棚の裏に隠し部屋があったりするもんじゃが……。',
       ] },
       { id: 'kid', name: '子ども', model: 'npc_a', x: 8, y: 9, colors: { primary: 0x4a8ad0 }, lines: [
         'レン兄ちゃん、あの白いロボット、まだ動かないの？',
@@ -96,6 +98,7 @@ export const MAPS = {
   // ================================================================ 町2
   town2: {
     id: 'town2',
+    buildings3d: true, // 地面は2Dタイル、建物はローポリ3D
     name: 'グレイロック',
     subtitle: '鉱山町',
     type: 'town',
@@ -167,6 +170,7 @@ export const MAPS = {
   // ================================================================ 町3
   town3: {
     id: 'town3',
+    buildings3d: true, // 地面は2Dタイル、建物はローポリ3D
     name: 'ウェイポイント',
     subtitle: '中継ステーション',
     type: 'town',
@@ -258,7 +262,7 @@ export const MAPS = {
       '44b4444444444444',
     ],
     warps: [
-      { x: 2, y: 11, to: 'town1', tx: 5, ty: 6, dir: 'down' },
+      { x: 2, y: 11, to: 'town1_shop', tx: 9, ty: 2, dir: 'down' },
     ],
   },
 
@@ -424,10 +428,18 @@ export const MAPS = {
       'oooooooooo1111o1p1ooooo1p1ooooo1p11111p1oooo',
       'oooooooooo1111o1p1111111p1ooooo1ppppppp1oooo',
       'oooooooooo1111o1ppppppppp1ooooo111111111oooo',
-      'ooooooooooooooo11111111111oooooooooooooooooo',
+      'ooooooooooooooo11111111111ooooooooouoooooooo',
+      'oooooooooooooooooooooooooooooooooo111ooooooo',
+      'oooooooooooooooooooooooooooooooooo111ooooooo',
       'oooooooooooooooooooooooooooooooooooooooooooo',
-      'oooooooooooooooooooooooooooooooooooooooooooo',
-      'oooooooooooooooooooooooooooooooooooooooooooo',
+    ],
+    // 宝箱（行き止まり・奥・ボスの手前の大きな宝箱・隠し通路の先の限定パーツ）
+    chests: [
+      { id: 'm1', x: 17, y: 1, contents: [{ mat: 'alloy', n: 2 }] },
+      { id: 'm2', x: 11, y: 13, contents: [{ weapon: 'pile1' }] },
+      { id: 'm3', x: 28, y: 9, contents: [{ item: 'repM', n: 2 }] },
+      { id: 'm4', x: 40, y: 10, contents: [{ gear: 600 }, { mat: 'cell', n: 1 }] },
+      { id: 'mSecret', x: 35, y: 16, secret: true, contents: [{ part: 'head_oracle' }] },
     ],
     warps: [
       { x: 1, y: 9, to: 'field1', tx: 54, ty: 9, dir: 'down' },
@@ -469,8 +481,8 @@ export const MAPS = {
       'rrrrqqrrrrrrrrrrqqrrrrrrrrrrqqrrrr',
       'rrrrqqqqqqqqqqqqqqqqqqqqqqqqqqrrrr',
       'rrrrrqffqqqqqqqqqqqqqqqqfqqqqrrrrr',
-      'rrrrrqqqqqqqqqqqqqqqqqqqqqqqqrrrrr',
-      'rrrrrqqqqfqqqqqqqqqqqqqqqqffqrrrrr',
+      'rqqqvqqqqqqqqqqqqqqqqqqqqqqqqrrrrr',
+      'rqqqrqqqqfqqqqqqqqqqqqqqqqffqrrrrr',
       'rrrrrqqqqqqqqqqqqqqqqqqqqqqqqrrrrr',
       'rrrrrrrrrrrrrrrrqqrrrrrrrrrrrrrrrr',
       'rrrrrrrrrrrrrrrrqqrrrrrrrrrrrrrrrr',
@@ -478,6 +490,13 @@ export const MAPS = {
       'rrrrrrrrrrrrrrrrqqrrrrrrrrrrrrrrrr',
       'rrrrrrrrrrrrrrrrqqrrrrrrrrrrrrrrrr',
       'rrrrrrrrrrrrrrrrbbrrrrrrrrrrrrrrrr',
+    ],
+    // 宝箱（行き止まり・奥・ボスの手前の大きな宝箱・隠し通路の先の限定パーツ）
+    chests: [
+      { id: 's1', x: 2, y: 3, contents: [{ item: 'kitM', n: 2 }] },
+      { id: 's2', x: 31, y: 3, contents: [{ mat: 'cell', n: 2 }, { item: 'revive', n: 1 }] },
+      { id: 'sBig', x: 19, y: 9, big: true, contents: [{ foot: 'lblade' }, { item: 'megaheal', n: 1 }] },
+      { id: 'sSecret', x: 1, y: 12, secret: true, contents: [{ part: 'arm_titan' }] },
     ],
     warps: [
       { x: 16, y: 19, to: 'field1', tx: 70, ty: 53, dir: 'down' },
@@ -518,10 +537,10 @@ export const MAPS = {
       '4hhfhhhhhhhhhhhhhhhhhhhhhhhhfhhhhhh4',
       '4hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh4',
       '444444444444444444444444444444422444',
-      '42222222222222222g2222g2222222222224',
-      '42222222ff2222222g2222g2222222222224',
-      '42222222ff222222222222g222fff2222224',
-      '42222222ff2222cccccc22g222fff2222224',
+      '44444222222222222g2222g2222222222224',
+      '42224222ff2222222g2222g2222222222224',
+      '4222w222ff222222222222g222fff2222224',
+      '44442222ff2222cccccc22g222fff2222224',
       '42222222ff2222222222222222fff2gggg24',
       '422222222222fff222222222222222222224',
       '422222222222fff222222222222222222224',
@@ -538,6 +557,14 @@ export const MAPS = {
       '422222222888222222222222222222222224',
       '422222222222222222222222222222222224',
       '444444444444444444444444444444bb4444',
+    ],
+    // 宝箱（行き止まり・奥・ボスの手前の大きな宝箱・隠し通路の先の限定パーツ）
+    chests: [
+      { id: 'f1', x: 1, y: 26, contents: [{ item: 'repM', n: 2 }] },
+      { id: 'f2', x: 34, y: 17, contents: [{ mat: 'alloy', n: 2 }, { mat: 'cell', n: 1 }] },
+      { id: 'f3', x: 33, y: 13, contents: [{ weapon: 'v20' }] },
+      { id: 'fBig', x: 34, y: 9, big: true, contents: [{ weapon: 'cm2' }, { item: 'megaheal', n: 1 }] },
+      { id: 'fSecret', x: 1, y: 9, secret: true, contents: [{ part: 'legs_jet' }] },
     ],
     warps: [
       { x: 30, y: 27, to: 'field1', tx: 92, ty: 53, dir: 'down' },
@@ -565,3 +592,6 @@ for (const m of Object.values(MAPS)) {
   m.width = m.grid[0].length;
   m.height = m.grid.length;
 }
+
+// 町の建物の中（小さな部屋のマップ）を足す
+addInteriors(MAPS);

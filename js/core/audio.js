@@ -516,6 +516,7 @@ export const audio = {
       case 'levelup': [0, 4, 7, 12, 16].forEach((s, i) => tone('pulse25', 523 * Math.pow(2, s / 12), 523 * Math.pow(2, s / 12), 0.2, 0.12, i * 0.08, 0.3)); break;
       case 'encounter': for (let i = 0; i < 6; i++) tone('square', 300 + i * 150, 300 + i * 150, 0.06, 0.12, i * 0.05); noise('highpass', 2000, 0.4, 0.2, 0.3); break;
       case 'hatch': noise('bandpass', 500, 0.35, 0.3, 0, 2, 1500); tone('square', 120, 90, 0.2, 0.08, 0.3); break;
+      case 'door': noise('bandpass', 700, 0.18, 0.25, 0, 2, 300); tone('triangle', 220, 180, 0.12, 0.08, 0.12); break;
       case 'warp': tone('sine', 300, 1200, 0.35, 0.12, 0, 0.4); break;
       case 'charge': tone('sawtooth', 100, 1600, 1.0, 0.1, 0, 0.4); tone('square', 200, 3200, 1.0, 0.05, 0, 0.4); break;
       case 'flee': [0, 1, 2].forEach((i) => tone('pulse25', 600 - i * 120, 500 - i * 120, 0.08, 0.1, i * 0.08)); break;

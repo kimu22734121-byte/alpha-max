@@ -6,6 +6,7 @@ import { getModel, setGlow, disposeObject } from '../core/assets.js';
 import { buildMachineModel, animateChar } from '../models/mech.js';
 import { MACHINES } from '../data/machines.js';
 import { input } from '../core/input.js';
+import { makeLogo } from '../core/logo.js';
 
 function planetTexture() {
   const c = document.createElement('canvas'); c.width = 1024; c.height = 512;
@@ -41,12 +42,12 @@ export class OpeningScene {
     document.body.appendChild(this.skip);
     this.offKey = input.on('action', () => this.finish());
     this.offTap = input.on('tap', () => { if ((this.t || 0) > 1) this.finish(); });
-    audio.playSong('title', { restart: true });
+    audio.playSong('opening', { restart: true });
     this.play();
   }
 
   async exit() {
-    this.sub.remove(); this.skip.remove(); this.offKey?.(); this.offTap?.();
+    this.sub.remove(); this.skip.remove(); this.logoEl?.remove(); this.offKey?.(); this.offTap?.();
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
   }
 
@@ -160,7 +161,17 @@ export class OpeningScene {
     if (this.done) return;
     await tween(1.2, (k) => { this.camera.position.set(2.5 - k * 1.5, 2.2 + k * 2, 5 + k * 5); this.look.set(0, 1.6, -3); }, Ease.inOut);
     if (this.done) return;
-    await wait(0.6);
+    await wait(0.4);
+    if (this.done) return;
+    // 最後にタイトルロゴとサブタイトル
+    this.sub.classList.remove('in');
+    this.logoEl = document.createElement('div');
+    this.logoEl.className = 'op-logo';
+    this.logoEl.appendChild(makeLogo());
+    document.body.appendChild(this.logoEl);
+    audio.sfx('seal');
+    requestAnimationFrame(() => this.logoEl.classList.add('in'));
+    await wait(3.6);
     this.finish();
   }
 }

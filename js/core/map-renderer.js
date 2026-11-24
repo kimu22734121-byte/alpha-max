@@ -94,9 +94,28 @@ const DRAW = {
 };
 DRAW[6] = (g, px, py) => { g.fillStyle = '#555'; g.fillRect(px, py, TS, TS); };
 DRAW[19] = DRAW[0];
+// 隠し通路は周りの壁と同じ見た目（よく見ると細いひびがある）
+const crack = (base) => (g, px, py, x, y) => { base(g, px, py, x, y); g.strokeStyle = 'rgba(255,240,200,0.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(px + 12, py + 6); g.lineTo(px + 17, py + 14); g.lineTo(px + 13, py + 24); g.stroke(); };
 DRAW[20] = DRAW[0];
 DRAW[22] = DRAW[0];
 DRAW[23] = DRAW[1];
+// 建物の中：木の床と壁
+DRAW[28] = (g, px, py, x, y) => {
+  g.fillStyle = '#8a6440'; g.fillRect(px, py, TS, TS);
+  g.fillStyle = '#7a5636'; for (let i = 0; i < 4; i++) g.fillRect(px, py + i * 8 + 7, TS, 1);
+  g.fillStyle = '#9a7450'; g.fillRect(px + ((x * 11 + y * 7) % 24), py + 2, 6, 3);
+  g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(px + (y % 2 ? 0 : 16), py, 1, TS);
+};
+DRAW[29] = (g, px, py) => {
+  g.fillStyle = '#5a4a3e'; g.fillRect(px, py, TS, TS);
+  g.fillStyle = '#6e5c4c'; g.fillRect(px + 1, py + 1, TS - 2, TS / 2 - 2);
+  g.fillStyle = '#463a30'; g.fillRect(px, py + TS - 5, TS, 5);
+};
+// 地下への階段
+DRAW[33] = (g, px, py) => {
+  g.fillStyle = '#1a1612'; g.fillRect(px, py, TS, TS);
+  g.fillStyle = '#6a5a4a'; for (let i = 0; i < 5; i++) g.fillRect(px + 3, py + 3 + i * 6, TS - 6, 3 - i * 0.3);
+};
 // 坑道の壁
 DRAW[24] = (g, px, py, x, y) => {
   g.fillStyle = '#2a221c'; g.fillRect(px, py, TS, TS);
@@ -122,6 +141,20 @@ DRAW[27] = (g, px, py, x, y) => {
   g.fillStyle = '#2c3040'; g.fillRect(px + 2, py + 2, TS - 4, TS / 2 - 3); g.fillRect(px + 2, py + TS / 2 + 1, TS - 4, TS / 2 - 3);
   if (rng(x, y) < 0.1) { g.fillStyle = '#5a6aff'; g.fillRect(px + 6, py + 6, 4, 2); }
 };
+DRAW[30] = crack(DRAW[24]);
+DRAW[31] = crack(DRAW[27]);
+DRAW[32] = crack(DRAW[4]);
+
+// 3Dの建物の下に描く土台と入口の石段
+function drawFoundation(g, b) {
+  const x = b.x * TS, y = b.y * TS, w = b.w * TS, h = b.h * TS;
+  g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(x - 3, y - 3, w + 6, h + 6);
+  g.fillStyle = '#6a645c'; g.fillRect(x, y, w, h);
+  g.fillStyle = '#7a746a'; for (let i = 0; i < b.w; i++) for (let j = 0; j < b.h; j++) g.fillRect(x + i * TS + 2, y + j * TS + 2, TS - 4, TS - 4);
+  const dx = b.door[0] * TS, dy = b.door[1] * TS;
+  g.fillStyle = '#b0a898'; g.fillRect(dx + 3, dy + 6, TS - 6, TS - 6);
+  g.fillStyle = '#ffd98a'; g.fillRect(dx + 6, dy + TS - 5, TS - 12, 2);
+}
 
 function drawBuilding(g, b) {
   const x = b.x * TS, y = b.y * TS, w = b.w * TS, h = b.h * TS;
@@ -195,7 +228,7 @@ export function drawMapCanvas(map) {
     const t = map.grid[y][x];
     (DRAW[t] || DRAW[0])(g, x * TS, y * TS, x, y);
   }
-  for (const b of map.buildings || []) drawBuilding(g, b);
+  for (const b of map.buildings || []) (map.buildings3d ? drawFoundation : drawBuilding)(g, b);
   for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
     const t = map.grid[y][x];
     if (t === 19) drawIcon(g, x * TS + TS / 2, y * TS + TS / 2, 'town');

@@ -8,6 +8,7 @@ import { setGlow, disposeObject } from '../core/assets.js';
 import { buildMachineModel, animateMachine } from '../models/mech.js';
 import { MACHINES } from '../data/machines.js';
 import { rand } from '../core/tween.js';
+import { makeLogo } from '../core/logo.js';
 
 export class TitleScene {
   constructor() {
@@ -27,22 +28,23 @@ export class TitleScene {
     starGeo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
     s.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 2, sizeAttenuation: false })));
     s.add(new THREE.HemisphereLight(0x8090c0, 0x201810, 0.6));
-    const key = new THREE.DirectionalLight(0xffd8a0, 2.4); key.position.set(-4, 6, 6); s.add(key);
+    const key = new THREE.DirectionalLight(0xffffff, 2.6); key.position.set(-4, 6, 6); s.add(key);
     const rim = new THREE.DirectionalLight(0x60c0ff, 2.5); rim.position.set(5, 3, -6); s.add(rim);
     const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 48), new THREE.MeshStandardMaterial({ color: 0x2a2620, roughness: 0.6, metalness: 0.4 }));
     floor.rotation.x = -Math.PI / 2; s.add(floor);
     const def = MACHINES.alpha;
     this.alpha = buildMachineModel({ parts: def.parts, colors: def.colors, weapons: [{ id: 'lm1' }, { id: 'lzblade', plus: 5 }, { id: 'rg1' }, { id: 'hm1' }, { id: 'hm1' }], glow: 1.8 });
     s.add(this.alpha);
-    this.camera.position.set(0, 1.6, 6.5);
-    this.camera.lookAt(0, 1.4, 0);
+    this.camera.position.set(0, 1.8, 7.2);
+    this.camera.lookAt(0, 2.3, 0);
 
     this.el = document.createElement('div');
     this.el.className = 'title-screen';
     this.el.innerHTML = `
-      <div class="title-logo"><div class="title-jp">アルファマックス</div><div class="title-en">ALPHA MAX</div></div>
+      <div class="title-logo"></div>
       <div class="title-press">タップしてスタート</div>
-      <div class="title-foot">v0.2 第1章「土」の惑星 ／ © Alpha Max project</div>`;
+      <div class="title-foot">v0.3 第1章「土」の惑星 ／ © Alpha Max project</div>`;
+    this.el.querySelector('.title-logo').appendChild(makeLogo());
     document.body.appendChild(this.el);
     this.el.addEventListener('click', () => this.start());
     this.offKey = input.on('action', () => this.start());

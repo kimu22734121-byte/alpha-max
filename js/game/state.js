@@ -20,7 +20,7 @@ export function newGame(names) {
     machines: {},
     inv: { items: { kitS: 3, repS: 2, batS: 1 }, mats: {}, weapons: [], parts: {}, foot: {} },
     uid: 1,
-    pos: { map: 'town1', x: 5.5, y: 6.5, dir: 0 },
+    pos: { map: 'town1_shop', x: 6.5, y: 7.3, dir: Math.PI }, // レンの修理屋の中、アルファのそばから始まる
     lastTown: 'town1',
     flags: {},
     bounties: {},
@@ -253,4 +253,16 @@ export function machinesInGarage(town) {
 
 export function locationLabel() {
   return G.pos.map;
+}
+
+// 宝箱・家具の中身を受け取る。受け取った物の名前を返す
+// c: { gear } / { item, n } / { mat, n } / { weapon } / { part } / { foot }
+export function giveLoot(c) {
+  if (c.gear) { addGear(c.gear); return `${c.gear.toLocaleString()} ギア`; }
+  if (c.item) { addItem(c.item, c.n || 1); return `${ITEMS[c.item].name}${(c.n || 1) > 1 ? `×${c.n}` : ''}`; }
+  if (c.mat) { addMat(c.mat, c.n || 1); return `${MATERIALS[c.mat].name}${(c.n || 1) > 1 ? `×${c.n}` : ''}`; }
+  if (c.weapon) { addWeapon(c.weapon); return WEAPONS[c.weapon].name; }
+  if (c.part) { addPart(c.part); return PARTS[c.part].name; }
+  if (c.foot) { addFoot(c.foot); return FOOT_GEAR[c.foot].name; }
+  return '';
 }

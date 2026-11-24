@@ -4,13 +4,14 @@
 // head: hit（命中）, scan（索敵） / arm: atkMul（攻撃倍率）, hit, eva, power（重い腕武器を持てる）
 // legs: eva（回避）, spd（素早さ・フィールドの移動速度）, legType / engine: cap（積める重さ）, en（エネルギー）
 // body: mtype（マシンのタイプ）, slots（武器スロットの初期値）, maxSlots
-// only: その機体専用（alpha / omega）
+// only: その機体専用（alpha / omega） / limited: 隠し通路の宝箱でしか手に入らない限定パーツ
 export const PARTS = {
   // ---- 頭（レーダー・センサー） ----
   head_sensor: { name: 'センサーヘッドS1', slot: 'head', model: 'head_sensor', armor: 18, def: 3, wt: 3, hit: 4, scan: 2, price: 600 },
   head_radar: { name: 'レーダーヘッドR1', slot: 'head', model: 'head_radar', armor: 16, def: 2, wt: 4, hit: 12, scan: 8, price: 1800 },
   head_heavy: { name: '重装ヘッドH1', slot: 'head', model: 'head_heavy', armor: 40, def: 7, wt: 6, hit: 0, scan: 0, price: 1500 },
   head_sharp: { name: 'シャープヘッドX1', slot: 'head', model: 'head_sharp', armor: 14, def: 2, wt: 2, hit: 9, scan: 4, price: 1400 },
+  head_oracle: { name: 'オラクルアイ【限定】', slot: 'head', model: 'head_radar', armor: 30, def: 5, wt: 3, hit: 22, scan: 14, price: 0, limited: true },
   head_alpha: { name: 'アルファヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 14, scan: 8, price: 0, only: 'alpha' },
   head_omega: { name: 'オメガヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 12, scan: 8, price: 0, only: 'omega' },
 
@@ -27,6 +28,7 @@ export const PARTS = {
   arm_light: { name: 'ライトアームLA', slot: 'arm', model: 'arm_light', armor: 16, def: 2, wt: 2, atkMul: 0.9, hit: 8, eva: 5, price: 1400 },
   arm_power: { name: 'パワーアームPA', slot: 'arm', model: 'arm_power', armor: 30, def: 4, wt: 8, atkMul: 1.1, hit: -2, eva: -1, power: true, price: 2600 },
   arm_sharp: { name: 'シャープアームSA', slot: 'arm', model: 'arm_sharp', armor: 18, def: 2, wt: 2, atkMul: 1.0, hit: 6, eva: 6, price: 1800 },
+  arm_titan: { name: 'タイタンアーム【限定】', slot: 'arm', model: 'arm_power', armor: 48, def: 7, wt: 7, atkMul: 1.35, hit: 2, eva: 0, power: true, price: 0, limited: true },
   arm_alpha: { name: 'アルファアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 10, eva: 8, power: true, price: 0, only: 'alpha' },
   arm_omega: { name: 'オメガアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 8, eva: 8, power: true, price: 0, only: 'omega' },
 
@@ -37,6 +39,7 @@ export const PARTS = {
   legs_wheel: { name: 'タイヤW1（バイク型）', slot: 'legs', model: 'legs_wheel', legType: 'wheel', armor: 34, def: 3, wt: 7, eva: 10, spd: 4, price: 2400 },
   legs_hover: { name: 'ホバーユニットH1', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 30, def: 3, wt: 6, eva: 14, spd: 3, price: 3000 },
   legs_sharp: { name: 'シャープレッグSL', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 36, def: 4, wt: 5, eva: 12, spd: 3, price: 2800 },
+  legs_jet: { name: 'ジェットホバー【限定】', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 55, def: 6, wt: 6, eva: 20, spd: 6, price: 0, limited: true },
   legs_alpha: { name: 'アルファレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 16, spd: 5, price: 0, only: 'alpha' },
   legs_omega: { name: 'オメガレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 14, spd: 5, price: 0, only: 'omega' },
 
@@ -54,7 +57,7 @@ export const PARTS = {
 export const MACHINE_TYPES = {
   heavy: { name: '重厚', desc: '装甲が厚く遅い。重い主砲・ミサイルが得意（威力+15%・重さ-20%）', boost: { cannon: 1.15, missile: 1.15 }, wtCats: ['cannon', 'missile'], wtRate: 0.8, spd: -2, eva: -3 },
   balance: { name: 'バランス', desc: '平均的。どの武器も標準', boost: {}, spd: 0, eva: 0 },
-  sharp: { name: 'シャープ', desc: '軽くて速いが打たれ弱い。軽いレーザー（電気）と近接武器が得意（威力+20%）', boost: { elec: 1.2, blade: 1.2 }, spd: 3, eva: 5 },
+  sharp: { name: 'シャープ', desc: '軽くて速いが打たれ弱い。軽いレーザー（電気）と近接武器が得意（威力+20%）', boost: { elec: 1.2, melee: 1.2 }, spd: 3, eva: 5 },
   legend: { name: '伝説', desc: '欠点のない別格の機体。どの武器も威力+10%', boost: { all: 1.1 }, spd: 3, eva: 4 },
 };
 

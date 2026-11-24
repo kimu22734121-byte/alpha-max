@@ -21,7 +21,11 @@ import { flow } from '../game/flow.js';
 export const settings = audio.settings;
 settings.mapMode ||= '2d';
 
-const shopOf = () => SHOPS[G.pos.map] || SHOPS[G.lastTown] || SHOPS.town1;
+// いまいる町（建物の中なら、その建物がある町）
+export const currentTown = () => MAPS[G.pos.map]?.town || G.pos.map;
+const shopOf = () => SHOPS[currentTown()] || SHOPS[G.lastTown] || SHOPS.town1;
+// アルファがまだ修理屋の中にいるか（封印中）
+export const alphaInShop = () => G.machines.alpha?.loc.type === 'shop';
 const ren = () => G.members.ren;
 
 export function autosave() {
@@ -38,7 +42,7 @@ async function saveMenu() {
   if (!v) return false;
   if (save.loadSlot(v) && !(await ui.confirm(`セーブ${v}に上書きしますか？`))) return false;
   const lead = partyMembers()[0];
-  G.lastTown = MAPS[G.pos.map].type === 'town' ? G.pos.map : G.lastTown;
+  G.lastTown = MAPS[currentTown()]?.type === 'town' ? currentTown() : G.lastTown;
   const ok = save.slot(v, G, `${MAPS[G.pos.map].name}　${lead.name} Lv${lead.lv}`);
   autosave();
   audio.sfx(ok ? 'save' : 'error');
@@ -152,15 +156,22 @@ async function bar() {
       'マスター「廃工場の奥は、マシンに乗ったまま入れる。生身じゃとても無理だろうな」',
       'マスター「全員まとめて治せるメガリカバリー、ボス戦の前に持っていきな」',
     ],
-  }[G.pos.map] || ['マスター「いらっしゃい」'];
-  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート' }[G.pos.map] || '酒場';
+  }[currentTown()] || ['マスター「いらっしゃい」'];
+  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート' }[currentTown()] || '酒場';
   for (;;) {
     const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
     if (!v) return;
-    const k = `hint_${G.pos.map}`;
+    const k = `hint_${currentTown()}`;
     G.flags[k] = ((G.flags[k] ?? -1) + 1) % hints.length;
     await ui.say(hints[G.flags[k]]);
   }
+}
+
+// レンの家のベッド：休む（無料）とセーブ
+export async function restAtHome() {
+  const v = await ui.menu({ title: '自分のベッド', items: [{ label: '休む（無料）', value: 'rest' }, { label: 'セーブ', value: 'save' }, { label: 'やめる', value: null }] });
+  if (v === 'rest') { await ui.fade(true, 0.5); healParty(); await ui.fade(false, 0.5); audio.sfx('heal'); await ui.say('ぐっすり眠った。みんなの体力が回復した！'); if (await ui.confirm('セーブしますか？')) await saveMenu(); }
+  if (v === 'save') await saveMenu();
 }
 
 // 仲間の加入（新しい仲間はレンのレベルに合わせる）
@@ -185,6 +196,18 @@ function join(id, machineId) {
 // NPCから始まるイベント（world.js から呼ばれる）
 export async function runEvent(name, world) {
   const r = ren().name;
+  if (name === 'alphaRepair') {
+    if (G.seal < 1) {
+      audio.sfx('repair');
+      await ui.say([
+        '作業場の真ん中で、白い機体が眠っている。がらくたの山から運んできた伝説の機体「アルファ」だ。',
+        { name: r, text: '装甲はほとんど直した。関節も、配線も、ぜんぶ組み直したのに……。' },
+        { name: r, text: 'コアの「封印」だけは、どうやっても開かないんだ。これが解けない限り、アルファは動かない。' },
+        '胸のコアの奥で、青白い光がかすかに……ほんの一瞬だけ、またたいた気がした。',
+      ]);
+    } else await ui.say({ name: r, text: 'アルファはガレージで待ってる。封印がひとつ解けて、やっと動けるようになったんだ！' });
+    return;
+  }
   if (name === 'joinShion') {
     const s = G.members.shion.name;
     await ui.say([
@@ -373,7 +396,7 @@ async function sellMenu() {
 
 // ---------------- ガレージ ----------------
 async function garage(world) {
-  const town = G.pos.map;
+  const town = currentTown();
   const shop = shopOf().garage;
   if (!G.flags.garageIntro) {
     G.flags.garageIntro = true;
@@ -446,8 +469,8 @@ async function depart(world, here) {
     if (over) { await ui.say(`${machineName(over)}は重量オーバーで動けない。武器かパーツを軽くしよう。`); return false; }
   }
   for (const mc of go) mc.loc = { type: 'party' };
-  const map = MAPS[G.pos.map];
-  const gate = map.warps[0];
+  const map = MAPS[currentTown()];
+  const gate = map.warps[0]; // 町の出口（ガレージの中から出発しても町の外へ）
   ui.closeAll();
   await world.warp(gate);
   return true;
