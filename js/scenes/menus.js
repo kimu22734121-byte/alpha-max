@@ -177,8 +177,27 @@ async function bar() {
       'マスター「傭兵の墓場って知ってるか？ 背丈ほどの大剣が眠ってるそうだ。光の惑星の“古代の結晶”で、もっと化けるって噂もある」',
       'マスター「白い機体と黒い機体……それに“赤い巨人”の話もある。風の吹く星の大地の底で、深紅の重装機が眠ってるんだと。乗りこなせるのは、よっぽど腕っぷしの強いやつだけだろうな」',
     ],
+    // 第2章「風」の惑星
+    town4: [
+      'マスター「風の星へようこそ。ここの風車は、宇宙生物が来てから回り方がおかしいんだ」',
+      'マスター「西の空にでかい鳥がいる。ウィンドラプターって呼ばれてる賞金首さ。火で焼いてやれ」',
+      'マスター「北の浮島へは、つり橋を渡っていくんだ。足もとに気をつけな。落ちたら雲の海だ」',
+      'マスター「大地の底で眠る赤い巨人の話、聞いたことあるか？ 高原の南西、崩れた岩の奥から地鳴りがするって、羊飼いが言ってたぞ」',
+    ],
+    town5: [
+      'マスター「この島は浮遊装置で浮いてる。昔の研究所の技術らしい」',
+      'マスター「東の浮遊研究所は、マシンじゃ入れない。中で何を作ってたのか……誰も知らない」',
+      'マスター「北の浮島の上を、空賊の砲艦がうろついてる。今は宇宙生物の巣だ。主砲で装甲をはがせ」',
+      'マスター「レンって言ったか？ 白い機体の話をしてやろう。昔、この星の空を、白と黒の機体が並んで飛んでいったんだと」',
+    ],
+    town6: [
+      'マスター「北東の嵐の塔は、風の制御コアがある場所さ。あそこが狂ってから、この星の風は止まらない」',
+      'マスター「塔に入るには、研究所の起動キーがいるらしい」',
+      'マスター「メガリカバリーは持ったか？ 塔の番人は1ターンに2回動くぞ」',
+      'マスター「南西の崩れた岩の奥に、古い格納庫があるって噂だ。赤い機体が眠ってるとか……」',
+    ],
   }[currentTown()] || ['マスター「いらっしゃい」'];
-  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート' }[currentTown()] || '酒場';
+  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム' }[currentTown()] || '酒場';
   for (;;) {
     const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
     if (!v) return;
@@ -261,6 +280,73 @@ export async function runEvent(name, world) {
     ]);
     join('gina', 'goliath');
     await ui.say(`重厚タイプのマシン「ゴライアス」がガレージに入った。（${g}が乗ります）`);
+  }
+  // 宇宙船の船長キール：ウェイポイント（土の惑星）とブリーズヒル（風の惑星）を行き来する
+  if (name === 'shuttleCaptain') {
+    const cap = '船長キール';
+    const here = currentTown();
+    if (here === 'town3') {
+      if (G.seal < 1) {
+        await ui.say([
+          { name: cap, text: 'おれの船は星と星を結ぶ定期便……だったんだが、今は飛ばしてない。' },
+          { name: cap, text: '行き先の星図がないんだ。宇宙生物のせいで航路がめちゃくちゃでな。' },
+        ]);
+        return;
+      }
+      if (!G.flags.ch2Talk) {
+        G.flags.ch2Talk = true;
+        await ui.say([
+          { name: r, text: '船長さん！ アルファのモニターに、この星図が出たんだ。' },
+          { name: cap, text: 'どれどれ……こいつは驚いた。「風の惑星」への航路じゃないか。空に島が浮かぶ、風の強い星だ。' },
+          { name: cap, text: 'いいだろう、乗せてってやる。マシンも貨物室に積んでいけるぞ。' },
+        ]);
+      }
+      const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「どこへ飛ぶ？」`, items: [{ label: '風の惑星へ飛ぶ', value: 'go' }, { label: 'やめる', value: null }] });
+      if (v !== 'go') return;
+      const first = !G.flags.ch2Started;
+      await flow.flyTo({
+        to: 'town4', at: [24.5, 8.5], from: 'earth', planet: 'wind',
+        lines: ['宇宙船は土の惑星を飛び立った。', '星図が示すのは、風の吹く惑星――。', '雲の海に浮かぶ島々が、近づいてくる。'],
+        after: first ? async () => {
+          G.flags.ch2Started = true;
+          const s2 = G.members.shion.name, g = G.members.gina.name;
+          await ui.say([
+            { name: cap, text: '着いたぞ。ここが風の惑星、風車の丘の町ブリーズヒルだ。' },
+            { name: r, text: 'うわあ……空に島が浮いてる！ 地面の下は、ぜんぶ雲の海だ！' },
+            { name: s2, text: '……風が強い。アルファの星図は、この星の北東を指している。' },
+            { name: g, text: 'まずはハンターオフィスで手配書だね。稼ぎながら進もうじゃないか！' },
+            { name: '', text: '（仲間のマシンはブリーズヒルのガレージに運ばれた。転送台で第1章の町にも戻れます）' },
+          ]);
+          ui.banner('第2章「風」の惑星', '空に浮かぶ島々と、止まらない風の星');
+        } : null,
+      });
+      return;
+    }
+    if (here === 'town4') {
+      const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「土の惑星へ戻るかい？ 転送台でも行けるがな」`, items: [{ label: '土の惑星へ飛ぶ（ウェイポイント）', value: 'go' }, { label: 'やめる', value: null }] });
+      if (v !== 'go') return;
+      await flow.flyTo({ to: 'town3', at: [24.5, 26.5], from: 'wind', planet: 'earth', lines: ['宇宙船は風の惑星を飛び立った。', '目指すは、なつかしい土の惑星――。'] });
+      return;
+    }
+  }
+  // 空港の整備長ハヤテ：偵察機スパロウを譲ってくれる
+  if (name === 'sparrowGift') {
+    const h = '整備長ハヤテ';
+    if (!G.flags.sparrowGot) {
+      await ui.say([
+        { name: h, text: 'あんたたち、土の星から来たメカニック一行だろ？ うわさは聞いてるよ。' },
+        { name: h, text: '空港で使ってた偵察機があるんだが、乗り手がいなくてね。軽くて速いシャープ型さ。' },
+        { name: r, text: 'えっ、いいの!? ちゃんと整備して大事にするよ！' },
+      ]);
+      createMachine('sparrow', { loc: { type: 'garage', town: 'town6' } });
+      G.flags.sparrowGot = true;
+      audio.sfx('levelup');
+      ui.banner('スパロウを手に入れた！', 'ゲイルポートのガレージに入った（シャープタイプ）');
+      autosave();
+      return;
+    }
+    await ui.say({ name: h, text: 'スパロウの調子はどうだい？ 嵐の塔の乱気流には気をつけな。' });
+    return;
   }
   void world;
 }

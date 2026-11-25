@@ -15,6 +15,10 @@ export const PARTS = {
   head_alpha: { name: 'アルファヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 14, scan: 8, price: 0, only: 'alpha' },
   head_gaia: { name: 'ガイアヘッド', slot: 'head', model: 'head_heavy', armor: 60, def: 12, wt: 6, hit: 6, scan: 4, price: 0, only: 'gaia' },
   head_omega: { name: 'オメガヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 12, scan: 8, price: 0, only: 'omega' },
+  // 第2章（風の惑星）のお店
+  head_gale: { name: 'ゲイルヘッドR2', slot: 'head', model: 'head_radar', armor: 24, def: 4, wt: 3, hit: 16, scan: 10, price: 6200 },
+  head_heavy2: { name: '重装ヘッドH2', slot: 'head', model: 'head_heavy', armor: 62, def: 11, wt: 7, hit: 2, scan: 1, price: 5600 },
+  head_sharp2: { name: 'シャープヘッドX2', slot: 'head', model: 'head_sharp', armor: 22, def: 4, wt: 2, hit: 13, scan: 6, price: 5400 },
 
   // ---- ボディ（フレーム）。マシンのタイプはボディで決まる ----
   body_balance: { name: 'バランスフレームB1', slot: 'body', mtype: 'balance', model: 'body_std', armor: 130, def: 7, wt: 14, slots: 3, maxSlots: 6, price: 3000 },
@@ -31,6 +35,10 @@ export const PARTS = {
     ] },
   body_gaia: { name: 'ガイアフレーム', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 380, def: 20, wt: 18, slots: 5, maxSlots: 6, price: 0, only: 'gaia' },
   body_omega: { name: 'オメガフレーム', slot: 'body', mtype: 'legend', model: 'body_legend', armor: 300, def: 14, wt: 10, slots: 6, maxSlots: 6, price: 0, only: 'omega' },
+  // 第2章（風の惑星）のお店
+  body_balance2: { name: 'バランスフレームB2', slot: 'body', mtype: 'balance', model: 'body_std', armor: 190, def: 10, wt: 14, slots: 3, maxSlots: 6, price: 9800 },
+  body_heavy2: { name: '重装フレームH2', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 270, def: 15, wt: 20, slots: 3, maxSlots: 6, price: 12500 },
+  body_sharp2: { name: 'シャープフレームS2', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 140, def: 6, wt: 9, slots: 3, maxSlots: 6, price: 11000 },
 
   // ---- 腕（右と左を別々に装備） ----
   arm_std: { name: '標準アーム', slot: 'arm', model: 'arm_std', armor: 22, def: 3, wt: 4, atkMul: 1.0, hit: 0, eva: 0, price: 500 },
@@ -42,6 +50,10 @@ export const PARTS = {
   arm_alpha: { name: 'アルファアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 10, eva: 8, power: true, price: 0, only: 'alpha' },
   arm_gaia: { name: 'ガイアアーム', slot: 'arm', model: 'arm_power', armor: 70, def: 9, wt: 7, atkMul: 1.3, hit: 0, eva: -1, power: true, price: 0, only: 'gaia' },
   arm_omega: { name: 'オメガアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 8, eva: 8, power: true, price: 0, only: 'omega' },
+  // 第2章（風の惑星）のお店
+  arm_gale: { name: 'ゲイルアーム', slot: 'arm', model: 'arm_light', armor: 28, def: 3, wt: 3, atkMul: 1.1, hit: 8, eva: 8, price: 6400 },
+  arm_heavy2: { name: 'ヘビーアームHA2', slot: 'arm', model: 'arm_heavy', armor: 50, def: 7, wt: 7, atkMul: 1.3, hit: -6, eva: -2, price: 6200 },
+  arm_power2: { name: 'パワーアームPA2', slot: 'arm', model: 'arm_power', armor: 44, def: 6, wt: 8, atkMul: 1.2, hit: 0, eva: -1, power: true, price: 7800 },
 
   // ---- 脚（左右セットで1パーツ。脚で乗り物の形が変わる） ----
   legs_biped: { name: '二脚レッグB1', slot: 'legs', model: 'legs_biped', legType: 'biped', armor: 40, def: 5, wt: 8, eva: 6, spd: 0, price: 900 },
@@ -54,11 +66,17 @@ export const PARTS = {
   legs_alpha: { name: 'アルファレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 16, spd: 5, price: 0, only: 'alpha' },
   legs_gaia: { name: 'ガイアレッグ', slot: 'legs', model: 'legs_biped', legType: 'biped', armor: 140, def: 16, wt: 12, eva: 2, spd: 1, price: 0, only: 'gaia' },
   legs_omega: { name: 'オメガレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 14, spd: 5, price: 0, only: 'omega' },
+  // 第2章（風の惑星）のお店
+  legs_biped2: { name: '二脚レッグB2', slot: 'legs', model: 'legs_biped', legType: 'biped', armor: 62, def: 8, wt: 8, eva: 8, spd: 1, price: 4800 },
+  legs_hover2: { name: 'ホバーユニットH2', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 46, def: 5, wt: 6, eva: 17, spd: 5, price: 8600 },
+  legs_tread2: { name: 'キャタピラT2（戦車型）', slot: 'legs', model: 'legs_tread', legType: 'tread', armor: 110, def: 16, wt: 14, eva: -5, spd: -1, price: 8200 },
 
   // ---- エンジン（中に積む。見た目には出ない） ----
   eng_v6: { name: 'V6ディーゼル', slot: 'engine', cap: 40, en: 60, wt: 0, price: 800 },
   eng_turbo: { name: 'ツインターボTT', slot: 'engine', cap: 50, en: 70, wt: 0, price: 2400 },
   eng_heavy: { name: '重機用エンジンHX', slot: 'engine', cap: 80, en: 60, wt: 0, price: 4500 },
+  eng_jet: { name: 'ジェットタービンJT', slot: 'engine', cap: 64, en: 90, wt: 0, price: 8400 },
+  eng_heavy2: { name: '重機用エンジンHX2', slot: 'engine', cap: 100, en: 80, wt: 0, price: 11000 },
   eng_alpha: { name: 'アルファコア', slot: 'engine', cap: 70, en: 140, wt: 0, price: 0, only: 'alpha' },
   eng_omega: { name: 'オメガコア', slot: 'engine', cap: 85, en: 120, wt: 0, price: 0, only: 'omega' },
   eng_gaia: { name: 'ガイアコア', slot: 'engine', cap: 110, en: 100, wt: 0, price: 0, only: 'gaia' },

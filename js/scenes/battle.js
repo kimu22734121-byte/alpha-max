@@ -77,6 +77,15 @@ export class BattleScene {
       rock: { g: '#8a7660', s: ['#6e5e4c', '#a08a72'], sky: [0xd8a070, 0x6a4a32], fog: 0xb88a60 },
       metal: { g: '#6a7078', s: ['#5a6068', '#7a8088'], sky: [0xc8a080, 0x5a4a40], fog: 0xa89080 },
     }[terrain] || {};
+    // 風の惑星：草原の地面・青空・雲
+    const biome = MAPS[G.pos.map]?.biome;
+    const windy = biome === 'wind';
+    if (windy) Object.assign(pal, {
+      sand: { g: '#78a856', s: ['#5e9040', '#92c06a'], sky: [0xd8ecf8, 0x5a9ad8], fog: 0xc4dcf0 },
+      road: { g: '#b8a478', s: ['#a08c60', '#c8b488'], sky: [0xd8ecf8, 0x5a9ad8], fog: 0xc4dcf0 },
+      rock: { g: '#8a9290', s: ['#727a78', '#a2aaa8'], sky: [0xd0e4f4, 0x4a8ad0], fog: 0xb8d0e8 },
+      metal: { g: '#8a96a2', s: ['#76828e', '#a2aeba'], sky: [0xd0e4f4, 0x4a8ad0], fog: 0xb8d0e8 },
+    }[terrain] || {});
     const dark = dungeon;
     // 地面
     const cv = document.createElement('canvas'); cv.width = cv.height = 512;
@@ -84,6 +93,7 @@ export class BattleScene {
     g.fillStyle = dark ? '#3a3c42' : pal.g; g.fillRect(0, 0, 512, 512);
     for (let i = 0; i < 1800; i++) { g.fillStyle = dark ? (i % 2 ? '#2e3036' : '#474a50') : pal.s[i % 2]; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
     if (dark || terrain === 'metal') { g.strokeStyle = dark ? '#2a2c30' : '#5a6068'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
+    if (dark && biome === 'lab') { g.fillStyle = '#c8d2d8'; g.fillRect(0, 0, 512, 512); g.strokeStyle = '#7ad8d8'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
     if (dark && veins) { g.strokeStyle = 'rgba(180,70,220,0.5)'; g.lineWidth = 4; for (let i = 0; i < 10; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512); g.stroke(); } }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 6);
     const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
@@ -100,13 +110,24 @@ export class BattleScene {
     this.scene.fog = new THREE.Fog(dark ? 0x16161c : pal.fog, 25, 90);
     this.scene.background = null;
     // 遠くの景色・小物
-    const rockMat = new THREE.MeshStandardMaterial({ color: dark ? 0x3a3e44 : 0x8a6a4a, flatShading: true, roughness: 1 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: dark ? (biome === 'lab' ? 0xa8b4bc : windy ? 0x34404c : 0x3a3e44) : windy ? 0x7a8a7c : 0x8a6a4a, flatShading: true, roughness: 1 });
     if (!dark) {
       for (let i = 0; i < 14; i++) {
         const a = (i / 14) * Math.PI * 2 + rand(-0.1, 0.1);
         const m = new THREE.Mesh(new THREE.CylinderGeometry(rand(2, 4), rand(5, 8), rand(6, 14), 6), rockMat);
         m.position.set(Math.cos(a) * rand(45, 60), 3, Math.sin(a) * rand(45, 60));
         this.scene.add(m);
+      }
+      // 風の惑星：空に浮かぶ岩の島と雲
+      if (windy) for (let i = 0; i < 7; i++) {
+        const a = rand(0, Math.PI * 2), r = rand(50, 75);
+        const isle = new THREE.Group();
+        const top = new THREE.Mesh(new THREE.CylinderGeometry(rand(3, 6), rand(2.5, 5), 1.2, 7), new THREE.MeshStandardMaterial({ color: 0x6aa04a, flatShading: true }));
+        const under = new THREE.Mesh(new THREE.ConeGeometry(4, 7, 7), new THREE.MeshStandardMaterial({ color: 0x7a7268, flatShading: true }));
+        under.rotation.x = Math.PI; under.position.y = -4;
+        isle.add(top, under);
+        isle.position.set(Math.cos(a) * r, rand(16, 34), Math.sin(a) * r);
+        this.scene.add(isle);
       }
       // 空に浮かぶ大きな月（宇宙っぽさ）
       const moon = new THREE.Mesh(new THREE.SphereGeometry(10, 24, 16), new THREE.MeshBasicMaterial({ color: 0xf0e0c8, fog: false }));

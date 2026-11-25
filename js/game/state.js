@@ -356,6 +356,8 @@ export function giveLoot(c) {
   if (c.weapon) { addWeapon(c.weapon); return WEAPONS[c.weapon].name; }
   if (c.part) { addPart(c.part); return PARTS[c.part].name; }
   if (c.foot) { addFoot(c.foot); return FOOT_GEAR[c.foot].name; }
+  // マシンが丸ごと入った大きな宝箱（いちばん近い町のガレージに運ばれる）
+  if (c.machine) { const mc = createMachine(c.machine, { loc: { type: 'garage', town: G.lastTown || 'town1' } }); return `マシン「${machineName(mc)}」（${MAPS[G.lastTown]?.name || ''}のガレージに運ばれた）`; }
   return '';
 }
 

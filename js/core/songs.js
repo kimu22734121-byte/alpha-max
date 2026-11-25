@@ -64,6 +64,11 @@ const fieldA = ['Dm', 'Bb', 'F', 'C', 'Dm', 'Bb', 'Gm', 'A'];
 const fieldB = ['Bb', 'F', 'C', 'Dm', 'Bb', 'F', 'Gm', 'A'];
 const field = [...fieldA, ...fieldB];
 
+// ---------------------------------------------------------------- 第2章のフィールド（風の惑星：明るく広がりのある長調）
+const windA = ['Dadd9', 'Gmaj7', 'Dadd9', 'Asus4 A', 'Bm7', 'Gmaj7', 'Em7', 'A'];
+const windB = ['Gmaj7', 'A', 'F#m7', 'Bm7', 'Gmaj7', 'Dadd9 A', 'Em7', 'Asus4 A'];
+const wind = [...windA, ...windB];
+
 // ---------------------------------------------------------------- 戦闘
 const battleIntro = ['E5', 'E5'];
 const battleA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'D', 'B'];
@@ -121,6 +126,23 @@ export const SONGS = {
       { inst: 'harp', vol: 0.55, mml: arp(field, 50, [0, 1, 2, 3, 4, 3, 2, 1]) },
       { inst: 'ebass', vol: 0.6, mml: bass(field, { 4: 'R2. F4', 2: 'R2' }, 2) },
       { inst: 'drums', vol: 0.35, mml: '[o4 g2 r4 g8 a8]16' },
+    ],
+  },
+
+  // 第2章「風」の惑星のフィールド
+  field2: {
+    bpm: 92,
+    tracks: [
+      { inst: 'flute', vol: 1.0, mml: `o5 l4
+        d e f+ a | b2. a | f+ e d e | e2. r |
+        f+ a > d c+ < | b2 a g | g f+ e d | e1 |
+        b > d < b a | a2. e | f+ a > c+ < a | b2. a |
+        g b > d e < | > f+2 e2 < | d e g f+ | e2 r2 |` },
+      { inst: 'harp', vol: 0.6, mml: arp(wind, 50, [0, 1, 2, 3, 4, 5, 4, 2]) },
+      { inst: 'strings', vol: 0.45, mml: pad(wind, 57) },
+      { inst: 'warmpad', vol: 0.35, mml: pad(wind, 45) },
+      { inst: 'ebass', vol: 0.6, mml: bass(wind, { 4: 'R2 F4 O4', 2: 'R4 F4' }, 2) },
+      { inst: 'drums', vol: 0.4, mml: '[o4 c4 e8 e8 d4 e8 e8]16' },
     ],
   },
 

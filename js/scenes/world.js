@@ -18,7 +18,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, partyMembers, machineStats, machineName, canPilot, sealOf, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
+  G, partyMembers, machineStats, machineName, canPilot, sealOf, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
@@ -30,6 +30,14 @@ const ENC_RATE = { sand: 0.2, rock: 0.27, metal: 0.25, road: 0, ship: 0.24 };
 const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が出ない歩数
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
 const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
+// 表にない町（第2章以降）は、町の出口（warps の最初）の1マス内側
+const townGate = (id) => {
+  if (TOWN_GATE[id]) return TOWN_GATE[id];
+  const w = MAPS[id]?.warps?.[0];
+  if (!w) return [Math.floor((MAPS[id]?.width || 2) / 2), Math.floor((MAPS[id]?.height || 2) / 2)];
+  const d = { down: [0, -2], up: [0, 2], left: [2, 0], right: [-2, 0] }[w.dir] || [0, -2];
+  return [w.x + d[0], w.y + d[1]];
+};
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
 //  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
@@ -144,11 +152,13 @@ export class WorldScene {
     const map = this.map;
     const dark = !!map.dark;
     const indoor = map.type === 'interior';
-    this.scene.background = new THREE.Color(indoor ? 0x140e0a : dark ? 0x101014 : 0x2a2018);
-    this.scene.fog = indoor ? null : new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
-    const hemi = new THREE.HemisphereLight(indoor ? 0xffe8c8 : dark ? 0x8a90a8 : 0xfff2dc, indoor ? 0x4a3020 : dark ? 0x201820 : 0x6a5038, indoor ? 0.9 : dark ? 0.55 : 1.0);
+    // 風の惑星の外は青空と雲海（遠くまで見えるように霧を薄く）
+    const sky = !indoor && !dark && map.biome === 'wind';
+    this.scene.background = new THREE.Color(indoor ? 0x140e0a : dark ? 0x101014 : sky ? 0x8ec4ee : 0x2a2018);
+    this.scene.fog = indoor ? null : sky ? new THREE.Fog(0xc4dcf0, 26, 62) : new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
+    const hemi = new THREE.HemisphereLight(indoor ? 0xffe8c8 : dark ? 0x8a90a8 : sky ? 0xeaf6ff : 0xfff2dc, indoor ? 0x4a3020 : dark ? 0x201820 : sky ? 0x5a7a5a : 0x6a5038, indoor ? 0.9 : dark ? 0.55 : sky ? 1.15 : 1.0);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(dark ? 0xb0b8ff : 0xfff0d0, dark ? 0.5 : 1.8);
+    const sun = new THREE.DirectionalLight(dark ? 0xb0b8ff : sky ? 0xfff8ec : 0xfff0d0, dark ? 0.5 : 1.8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     const sc = sun.shadow.camera; sc.left = -16; sc.right = 16; sc.top = 16; sc.bottom = -16; sc.near = 1; sc.far = 60;
@@ -254,6 +264,11 @@ export class WorldScene {
 
     // 停めてあるマシン・まだ見つけていないマシン
     this.parked = [];
+    // まだ見つけていない隠しマシン（第2章のガイアなど）：マップの hiddenMachine に置いておく
+    const hm = map.hiddenMachine;
+    if (hm && !G.flags[hm.flag] && !Object.values(G.machines).some((mc) => mc.type === hm.type && !mc.owned && mc.loc.type === 'map')) {
+      createMachine(hm.type, { owned: false, loc: { type: 'map', map: map.id, x: hm.x, y: hm.y } });
+    }
     for (const mc of [...machinesOnMap(map.id), ...hiddenMachinesOnMap(map.id)]) this.addParked(mc);
 
     // パーティ（先頭＋ついてくる仲間）
@@ -263,7 +278,37 @@ export class WorldScene {
     for (let i = 0; i < 80; i++) this.trail.push({ x: p.x - Math.sin(p.dir || 0) * i * 0.05, z: p.y - Math.cos(p.dir || 0) * i * 0.05 });
     this.updateFollowers(0, true);
     this.lastTile = `${Math.floor(p.x)},${Math.floor(p.y)}`;
+    // 風の惑星：風の筋が流れる
+    this.windLines = [];
+    if (sky || (map.wind && !indoor)) {
+      const geo = new THREE.PlaneGeometry(1.6, 0.04);
+      for (let i = 0; i < 26; i++) {
+        const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
+        m.userData.life = Math.random() * 3;
+        this.scene.add(m);
+        this.windLines.push(m);
+      }
+    }
     this.updateCamera(1);
+  }
+
+  // 風の筋：プレイヤーのまわりに生まれて、風下（右手前）へ流れて消える
+  updateWind(dt) {
+    const p = G.pos;
+    for (const m of this.windLines) {
+      const u = m.userData;
+      u.life += dt;
+      if (u.life > u.max || !u.max) {
+        u.life = 0; u.max = 1.4 + Math.random() * 1.6;
+        u.vx = 5 + Math.random() * 4; u.vz = 1.2 + Math.random();
+        m.position.set(p.x - 10 + Math.random() * 12, heightAt(this.map, p.x, p.y) + 0.4 + Math.random() * 3.2, p.y - 7 + Math.random() * 12);
+        m.rotation.set(-Math.PI / 2 + 0.4, 0, -Math.atan2(u.vz, u.vx));
+        m.scale.x = 0.6 + Math.random() * 1.2;
+      }
+      m.position.x += u.vx * dt; m.position.z += u.vz * dt;
+      const k = u.life / u.max;
+      m.material.opacity = Math.sin(k * Math.PI) * 0.45;
+    }
   }
 
   addSparkle(ref, x, z, y) {
@@ -378,6 +423,7 @@ export class WorldScene {
     for (const o of this.extras) animateMachine(o, t, 0);
     updateBuildings(this.buildings, p.x, p.y, t);
     updateStructures(this.structures, t, dt, this.scene, getGlowTex());
+    if (this.windLines.length) this.updateWind(dt);
     // 隠し通路の壁は近づくと透ける
     for (const h of this.mapView.hidden || []) {
       const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
@@ -702,7 +748,7 @@ export class WorldScene {
     const gid = `${to}_garage`;
     const tp = MAPS[gid]?.props?.find((q) => q.pad);
     if (pad && tp) G.pos = { map: gid, x: tp.x, y: tp.y, dir: 0 };
-    else { const [x, y] = TOWN_GATE[to]; G.pos = { map: to, x: x + 0.5, y: y + 0.5, dir: Math.PI }; }
+    else { const [x, y] = townGate(to); G.pos = { map: to, x: x + 0.5, y: y + 0.5, dir: Math.PI }; }
     G.lastTown = to; (G.flags.visited ||= {})[to] = true;
     autosave();
     this.build();
@@ -1135,6 +1181,7 @@ export class WorldScene {
     const mc = pk.mc;
     const def = MACHINES[mc.type];
     const r = G.members.ren.name;
+    if (mc.type === 'gaia') { await this.discoverGaia(pk); return; }
     await ui.say([
       { name: '', text: '格納庫の奥で、漆黒の機体が静かに眠っている。赤いラインが、呼吸するように明滅している……。' },
       { name: r, text: 'うそだろ……うちの地下に、こんなものが……！？' },
@@ -1156,6 +1203,38 @@ export class WorldScene {
     mc.loc = { type: 'garage', town: 'town1' };
     ui.banner(`${esc(def.name)}を手に入れた！`, '制限なしで誰でも乗れる最強クラスのシークレットマシン');
     await ui.say('オメガは格納庫のリフトで、ラストヘイヴンのガレージへ運ばれた。（ガレージの「乗る人を決める」で乗りかえられます）');
+    autosave();
+  }
+
+  // 第2章：風の惑星の大地の底に眠る深紅の重装機ガイア（ジーナの最強機）
+  async discoverGaia(pk) {
+    const mc = pk.mc;
+    const r = G.members.ren.name, g = G.members.gina.name;
+    const gj = G.members.gina.joined;
+    await ui.say([
+      { name: '', text: '崩れた岩の奥の古い格納庫。その真ん中で、深紅の巨人がひざをついて眠っている。' },
+      { name: r, text: 'でっかい……！ 装甲の厚さ、ゴライアスの倍はあるぞ。' },
+      { name: '', text: '胸の装甲に、土ぼこりにまみれた文字が刻まれている。「GAIA」――。' },
+      ...(gj ? [
+        { name: g, text: '……なんだい、この感じ。こいつが、あたしを呼んでる気がする。' },
+        { name: '', text: `${g}が操縦席に手をかけると、機体の目に赤い光がともった。` },
+        { name: g, text: 'ははっ、動いた！ 決まりだね。こいつはあたしの相棒だ！' },
+        { name: r, text: 'アルファとオメガに似た作りだ……。三機目の兄弟機、なのかな。' },
+      ] : [{ name: r, text: 'アルファやオメガと同じ作りだ……。三機目の兄弟機、なのかも。' }]),
+    ]);
+    mc.owned = true;
+    G.flags.gaiaFound = true;
+    const st = machineStats(mc);
+    mc.armor = st.maxArmor; mc.en = st.maxEn;
+    audio.sfx('seal');
+    pk.obj.userData.entity = null;
+    await tween(1.2, (k) => { pk.obj.position.y = k * 4; });
+    this.scene.remove(pk.obj);
+    this.parked = this.parked.filter((p) => p !== pk);
+    const town = G.lastTown && MAPS[G.lastTown] ? G.lastTown : 'town4';
+    mc.loc = { type: 'garage', town };
+    ui.banner('ガイアを手に入れた！', '深紅の重装機。ジーナとレンが乗れる');
+    await ui.say(`ガイアは格納庫のリフトで、${MAPS[town].name}のガレージへ運ばれた。（ガレージの「乗る人を決める」で${gj ? g : 'ジーナ'}を乗せられます）`);
     autosave();
   }
 

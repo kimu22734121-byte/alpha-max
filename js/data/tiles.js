@@ -36,6 +36,7 @@ export const TILES = {
   32: { name: '壁？', walk: true, enc: 'metal', hidden: true }, // w（見た目は工場の壁。隠し通路）
   33: { name: '地下への階段', walk: true, step: 'warp' }, // x
   34: { name: '建造物', walk: false }, // y（フィールドの町・ダンジョン入口の3D建造物の下。見た目は地面）
+  35: { name: '空', walk: false }, // z（風の惑星の雲海。浮かぶ島のまわり。陸に接するところは崖）
 };
 
 export function tileAt(map, x, y) {
