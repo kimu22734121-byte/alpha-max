@@ -7,7 +7,7 @@ import { hud } from '../core/hud.js';
 import { audio } from '../core/audio.js';
 import { tween, Ease, wait, randInt } from '../core/tween.js';
 import { getModel, disposeObject, setOpacity } from '../core/assets.js';
-import { createMapView, heightAt } from '../core/map-renderer.js';
+import { createMapView, heightAt, cutawayWalls } from '../core/map-renderer.js';
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { buildCharModel } from '../models/char-look.js';
 import { devStore, robotStation, charStation, showcaseModel } from './devroom.js';
@@ -284,6 +284,7 @@ export class WorldScene {
     // 風の惑星：風の筋が流れる
     this.windLines = [];
     this.diveHint = false;
+    this.cutKey = null;
     // 水の惑星の海の底・水没した都市：泡が立ちのぼる
     this.bubbles = [];
     if (deep || map.bubbles) {
@@ -588,13 +589,33 @@ export class WorldScene {
       this.camera.position.lerp(want, k);
     }
     this.camera.lookAt(this.camLook);
+    if (this.map.type === 'dungeon') this.updateCutaway();
     this.sun.position.set(p.x - 9, 20, p.y + 7);
     this.sun.target.position.set(p.x, 0, p.y);
     if (this.lamp) this.lamp.position.set(p.x, 2.5, p.y + 0.5);
   }
 
   // カメラを回せるマップ：フィールドと町の中（v0.12〜）。建物の中・ダンジョンは固定
-  canRotate() { return this.map?.type === 'field' || this.map?.type === 'town'; }
+  canRotate() { const t = this.map?.type; return t === 'field' || t === 'town' || t === 'dungeon'; }
+
+  // ダンジョン：キャラとカメラの間にある壁を低く縮める（カメラを回しても中が見えるように）
+  updateCutaway() {
+    const view = this.mapView;
+    if (!view?.cut) return;
+    const p = G.pos, c = this.camera.position;
+    const dx = c.x - p.x, dz = c.z - p.y, len = Math.hypot(dx, dz) || 1;
+    const cy = c.y - heightAt(this.map, p.x, p.y);
+    const reach = Math.min(len, 8, (2.2 * len) / Math.max(cy, 0.5)) + 0.6;
+    const key = `${Math.round(p.x * 4)},${Math.round(p.y * 4)},${Math.round(dx * 4)},${Math.round(dz * 4)},${Math.round(reach * 4)}`;
+    if (key === this.cutKey) return;
+    this.cutKey = key;
+    const cells = new Set();
+    for (let i = 0; i <= 20; i++) {
+      const d = (i / 20) * reach, x = p.x + (dx / len) * d, z = p.y + (dz / len) * d;
+      for (const [ox, oz] of [[0, 0], [0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.45]]) cells.add(`${Math.floor(x + ox)},${Math.floor(z + oz)}`);
+    }
+    cutawayWalls(view, cells);
+  }
 
   // 海の底（タイル8）に入れるか：水中仕様のマップで、水中ユニットがあり、マシンに乗っているとき
   canDive(x, z) {
