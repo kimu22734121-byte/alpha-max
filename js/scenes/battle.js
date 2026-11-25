@@ -8,6 +8,7 @@ import { getModel, flashModel, resetFlash, setGlow, setOpacity, disposeObject } 
 import { buildMachineModel, animateMachine, animateChar, animateEnemy } from '../models/mech.js';
 import { BattleFX } from './battle-fx.js';
 import { ENEMIES, BOUNTIES, ELEMENT_RATE, WEAKNESS } from '../data/enemies.js';
+import { addClimaxBattle } from './climax-fx.js';
 import { MAPS } from '../data/maps.js';
 import { WEAPONS, WEAPON_CATS } from '../data/weapons.js';
 import { SLOT_INFO } from '../data/parts.js';
@@ -101,8 +102,8 @@ export class BattleScene {
     // 第4〜7章の惑星：地面・空・霧の色（どの地形でも同じ）
     const ARENA = {
       fire: { g: '#5a4a44', s: ['#3a3236', '#7a5a4a'], sky: [0xff7a3a, 0x2a0804], fog: 0x6a2a14, rock: 0x3a2228 },
-      light: { g: '#e8dcb8', s: ['#dccfa8', '#fff4d8'], sky: [0xffffff, 0xd8c890], fog: 0xfff0d8, rock: 0xd8e4f0 },
-      dark: { g: '#3a3448', s: ['#2a2636', '#4e4860'], sky: [0x2a2040, 0x05040a], fog: 0x14101e, rock: 0x2a2434 },
+      light: { g: '#e4d8e8', s: ['#d8cce0', '#f0e0c0'], sky: [0xffd8a0, 0x14205a], fog: 0xc8a0c8, rock: 0xd0cce0 },
+      dark: { g: '#3a3038', s: ['#2a2028', '#4e3a44'], sky: [0x8a0a1a, 0x030106], fog: 0x2a060e, rock: 0x1e1418 },
       core: { g: '#4a2a3e', s: ['#3a1e30', '#6a2a4a'], sky: [0x8a2a6a, 0x14040e], fog: 0x2a0820, rock: 0x3a1430 },
     }[biome];
     if (ARENA) Object.assign(pal, ARENA);
@@ -127,7 +128,8 @@ export class BattleScene {
     const pos = skyGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) { const k = clamp(pos.getY(i) / 150, 0, 1); const c = bot.clone().lerp(top, Math.pow(k, 0.6)); cols.push(c.r, c.g, c.b); }
     skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    this.scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })));
+    const climaxSky = !dark && (biome === 'light' || biome === 'dark'); // 光と闇の空は climax-fx.js が描く
+    if (!climaxSky) this.scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })));
     this.scene.fog = new THREE.Fog(dark ? 0x16161c : pal.fog, 25, 90);
     this.scene.background = null;
     // 遠くの景色・小物
@@ -165,7 +167,7 @@ export class BattleScene {
       // 空に浮かぶ大きな月（宇宙っぽさ）
       const moon = new THREE.Mesh(new THREE.SphereGeometry(10, 24, 16), new THREE.MeshBasicMaterial({ color: 0xf0e0c8, fog: false }));
       moon.position.set(-40, 45, -110);
-      this.scene.add(moon);
+      if (!climaxSky) this.scene.add(moon);
     } else {
       for (let i = 0; i < 10; i++) {
         const a = (i / 10) * Math.PI * 2;
@@ -182,15 +184,20 @@ export class BattleScene {
       this.scene.add(m);
     }
     // ライト
-    this.scene.add(new THREE.HemisphereLight(dark ? 0x9098b8 : 0xfff0d8, dark ? 0x201820 : 0x6a5038, dark ? 0.7 : 1.0));
+    const hemi = new THREE.HemisphereLight(dark ? 0x9098b8 : 0xfff0d8, dark ? 0x201820 : 0x6a5038, dark ? 0.7 : 1.0);
+    this.scene.add(hemi);
     const sun = new THREE.DirectionalLight(dark ? 0xc0c8ff : 0xfff0d0, dark ? 1.0 : 2.0);
+    // 光＝黄昏の金色の光、闇＝赤い日食の光
+    if (biome === 'light') { hemi.color.setHex(0xb0a0ff); hemi.groundColor.setHex(0xd88a50); hemi.intensity = 0.95; sun.color.setHex(0xffb070); sun.intensity = dark ? 1.2 : 2.5; }
+    if (biome === 'dark') { hemi.color.setHex(0xc04a6a); hemi.groundColor.setHex(0x0a0204); hemi.intensity = 0.8; sun.color.setHex(0xff5a4a); sun.intensity = dark ? 0.8 : 1.1; }
     sun.position.set(-8, 16, 8);
     sun.castShadow = true;
     sun.shadow.mapSize.set(1024, 1024);
     Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 });
     sun.shadow.bias = -0.0015;
     this.scene.add(sun);
-    if (dark || biome === 'dark' || biome === 'core') { const pl = new THREE.PointLight({ deep: 0x4ad8ff, fire: 0xff7a2a, light: 0xfff0c0, dark: 0x9a7aff, core: 0xff4ad0 }[biome] || 0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
+    this.climax = addClimaxBattle(this.scene, biome, { indoor: dark, hemi, sun });
+    if (dark || biome === 'dark' || biome === 'core') { const pl = new THREE.PointLight({ deep: 0x4ad8ff, fire: 0xff7a2a, light: 0xfff0c0, dark: 0xff3a4a, core: 0xff4ad0 }[biome] || 0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
   }
 
   makePartyObj(u) {
@@ -324,6 +331,7 @@ export class BattleScene {
   // ---------------------------------------------------------------- 毎フレーム
   update(dt) {
     this.t += dt;
+    this.climax?.update(dt, this.t, this.camera);
     this.party.forEach((u, i) => {
       if (u.mc) animateMachine(u.obj, this.t, 0); else if (!u.m.ko) animateChar(u.obj, this.t, 0);
       // 待機中もゆらゆら（ホバーは大きく浮き沈み）

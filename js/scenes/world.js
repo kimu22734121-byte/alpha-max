@@ -13,6 +13,7 @@ import { buildCharModel } from '../models/char-look.js';
 import { devStore, robotStation, charStation, showcaseModel } from './devroom.js';
 import { hangarList, machineViewer } from './hangar.js';
 import { MAPS } from '../data/maps.js';
+import { addClimaxWorld } from './climax-fx.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
 import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
@@ -45,13 +46,15 @@ const BIOME_LOOK = {
     out: { bg: 0x2a1008, fog: 0x5a2a14, near: 20, far: 52, sky: 0xffb080, ground: 0x3a1a0a, hemi: 0.95, sun: 0xff9a5a, sunK: 1.5 },
     in: { bg: 0x140604, fog: 0x2a0c06, near: 14, far: 36, sky: 0xff8a5a, ground: 0x200804, hemi: 0.6, sun: 0xff8a5a, sunK: 0.5, lamp: 0xffa060 },
   },
+  // 光＝天上の聖域：黄昏の金色の光と、群青・紫の空（空と光の柱などは climax-fx.js）
   light: {
-    out: { bg: 0xfff0d0, fog: 0xfff0d8, near: 30, far: 72, sky: 0xffffff, ground: 0xd8c890, hemi: 1.3, sun: 0xfff8e0, sunK: 2.0 },
-    in: { bg: 0x2a2418, fog: 0x3a3020, near: 16, far: 40, sky: 0xfff0c8, ground: 0x3a3020, hemi: 0.75, sun: 0xfff0c8, sunK: 0.6, lamp: 0xfff0c0 },
+    out: { bg: 0x2a2a6a, fog: 0xc8a0c8, near: 26, far: 78, sky: 0xb0a0ff, ground: 0xd88a50, hemi: 0.95, sun: 0xffb070, sunK: 2.6 },
+    in: { bg: 0x10142e, fog: 0x2a2450, near: 16, far: 42, sky: 0xd8c8ff, ground: 0x3a2a40, hemi: 0.8, sun: 0xffd898, sunK: 0.7, lamp: 0xfff0c0, lampK: 24 },
   },
+  // 闇＝終焉の夜：赤い日食の光・血の色の霧・赤い稲妻
   dark: {
-    out: { bg: 0x07060e, fog: 0x0e0a1a, near: 12, far: 34, sky: 0x6a5a9a, ground: 0x0a0810, hemi: 0.5, sun: 0x8a8aff, sunK: 0.4, lamp: 0xc8b8ff, lampK: 26 },
-    in: { bg: 0x050408, fog: 0x0a0812, near: 10, far: 30, sky: 0x5a4a8a, ground: 0x08060c, hemi: 0.45, sun: 0x8a8aff, sunK: 0.3, lamp: 0xc8b8ff, lampK: 26 },
+    out: { bg: 0x1a0408, fog: 0x2a060e, near: 14, far: 42, sky: 0xc04a6a, ground: 0x0a0204, hemi: 0.7, sun: 0xff5a4a, sunK: 0.9, lamp: 0xffb878, lampK: 24 },
+    in: { bg: 0x0a0206, fog: 0x18040a, near: 10, far: 30, sky: 0x8a3a5a, ground: 0x060104, hemi: 0.5, sun: 0xff5a4a, sunK: 0.4, lamp: 0xffb878, lampK: 26 },
   },
   core: {
     out: { bg: 0x14040e, fog: 0x2a0820, near: 14, far: 40, sky: 0xd86ab0, ground: 0x1a0414, hemi: 0.65, sun: 0xff6ad0, sunK: 0.7, lamp: 0xff9ae0, lampK: 22 },
@@ -59,7 +62,7 @@ const BIOME_LOOK = {
   },
 };
 // 漂う粒（泡・火の粉・光の粒・闇の粒・胞子）：色と昇る速さ
-const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 }, light: { color: 0xfff0a0, up: 0.35 }, dark: { color: 0x9a7aff, up: 0.3 }, core: { color: 0xff6ad0, up: 0.5 } };
+const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 }, core: { color: 0xff6ad0, up: 0.5 } };
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
 //  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
@@ -202,6 +205,8 @@ export class WorldScene {
       sun.color.setHex(look.sun); sun.intensity = look.sunK;
       if (look.lamp) { if (!this.lamp) { this.lamp = new THREE.PointLight(look.lamp, look.lampK || 20, 10, 1.6); this.scene.add(this.lamp); } else this.lamp.color.setHex(look.lamp); }
     }
+    // 光と闇の惑星：空・光の柱・水晶／日食・稲妻・灰（climax-fx.js）
+    this.climax = addClimaxWorld(this.scene, map, { indoor, dark, hemi, sun });
     if (indoor) {
       sun.intensity = 1.0;
       // 町ごと・お店ごとの照明の色（宿屋は暖かく、パーツ屋は白っぽく、酒場は紫がかって……）
@@ -467,6 +472,7 @@ export class WorldScene {
     updateBuildings(this.buildings, p.x, p.y, this.camera.position.x, this.camera.position.z, this.camera.position.y - heightAt(this.map, p.x, p.y));
     updateStructures(this.structures, t, dt, this.scene, getGlowTex());
     if (this.windLines.length) this.updateWind(dt);
+    this.climax?.update(dt, t, p, this.camera);
     // 水面の波がゆっくり流れる・泡がのぼる
     if (this.mapView.water) { const o = this.mapView.water.material.map.offset; o.x += dt * 0.03; o.y += dt * 0.012; this.mapView.water.position.y = -0.12 + Math.sin(t * 1.2) * 0.03; }
     for (const b of this.bubbles) {
