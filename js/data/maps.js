@@ -7,6 +7,7 @@
 // 第1章「土」の惑星：町3つ（ラストヘイヴン・グレイロック・ウェイポイント）＋ダンジョン3つ（坑道・墜落した宇宙船・廃工場）
 import { parseRows } from './tiles.js';
 import { addInteriors, addDevRoom } from './interiors.js';
+import { MAPS2 } from './maps2.js';
 
 export const MAPS = {
   // ================================================================ 町1
@@ -295,6 +296,7 @@ export const MAPS = {
         '北の遺跡の空を飛ぶのは命がけさ。スカイレイスに何機も落とされた。',
         'あいつは回避が高い。ミサイルかレーダーヘッドで命中を上げていきな。',
       ] },
+      { id: 'captain', name: '宇宙船の船長キール', model: 'npc_clerk', x: 25, y: 24, colors: { primary: 0x2a4a6a }, event: 'shuttleCaptain', lines: [] },
       { id: 'mechanic3', name: '修理工のおばさん', model: 'npc_b', x: 8, y: 20, colors: { primary: 0x8a5a3a }, lines: [
         'あんた、メカニックかい？ 重装フレームは装甲が厚い分、遅くなるからね。',
         'シャープなやつは打たれ弱い。仲間ごとに得意なマシンを選ぶといいよ。',
@@ -748,6 +750,9 @@ export const MAPS = {
     ],
   },
 };
+
+// 第2章「風」の惑星のマップ（maps2.js）
+Object.assign(MAPS, MAPS2);
 
 for (const m of Object.values(MAPS)) {
   m.grid = parseRows(m.rows);

@@ -18,44 +18,98 @@ function speckle(g, px, py, x, y, colors, n, size = 2) {
   }
 }
 
+// 惑星（章）ごとの色合い。マップの biome で切り替える（earth＝土の惑星、wind＝風の惑星、lab＝白い研究施設）
+// 同じタイルIDのまま、見た目だけを惑星らしく変える（タイルの種類を増やさずに済む）
+export const PALETTES = {
+  earth: {
+    sand: '#c8a46a', sandSp: ['#b89458', '#d6b47a', '#bf9a60'],
+    rock: '#8f7a62', rockSp: ['#7a6650', '#a08a70'], stoneD: '#6e6458', stoneL: '#a59a8a',
+    metal: '#7c838b', metalD: '#6a7078', metalL: '#9aa1a8', metalB: '#5a6068',
+    mount: ['#6f5034', '#5a3e26', '#9a7650', '#c8a070'],
+    wall: ['#3c4148', '#4d535b', '#2a2e33'],
+    road: '#a88c60', roadSp: ['#977b52', '#b69a6c'],
+    grass: '#7f7030',
+    caveWall: ['#2a221c', '#3e3228', '#4a3c30'],
+  },
+  wind: {
+    sand: '#7fae5a', sandSp: ['#6c9a4a', '#93c06a', '#88b860', '#a8cc78'],
+    rock: '#8e9692', rockSp: ['#7a827e', '#a2aaa6'], stoneD: '#6a7270', stoneL: '#b4bcb8',
+    metal: '#8a96a2', metalD: '#76828e', metalL: '#aab6c2', metalB: '#5a6672',
+    mount: ['#6a7a6c', '#56665a', '#8a9a8a', '#e8eef0'],
+    wall: ['#4a5a68', '#5a6c7c', '#34404c'],
+    road: '#c2ae80', roadSp: ['#b09a6a', '#d0bc90'],
+    grass: '#4a7a2a', flowers: ['#f0e060', '#ffffff', '#e888c8', '#8ac8ff'],
+    caveWall: ['#2a3038', '#38424c', '#46505c'],
+  },
+  lab: {
+    sand: '#a8b4b8', sandSp: ['#98a4a8', '#b8c4c8'],
+    rock: '#8a949a', rockSp: ['#7a848a', '#9aa4aa'], stoneD: '#6a7478', stoneL: '#aab4b8',
+    metal: '#d0d8dc', metalD: '#b4bec4', metalL: '#eef4f6', metalB: '#7ac8d0',
+    mount: ['#6a7a6c', '#56665a', '#8a9a8a', '#e8eef0'],
+    wall: ['#8a98a2', '#a8b6c0', '#5a6872'],
+    road: '#c2ae80', roadSp: ['#b09a6a', '#d0bc90'],
+    grass: '#4a7a2a',
+    caveWall: ['#2a3038', '#38424c', '#46505c'],
+  },
+};
+let P = PALETTES.earth;
+let MAP = null;
+const isSky = (x, y) => MAP && y >= 0 && y < MAP.height && x >= 0 && x < MAP.width && MAP.grid[y][x] === 35;
 const DRAW = {
-  0(g, px, py, x, y) { g.fillStyle = '#c8a46a'; g.fillRect(px, py, TS, TS); speckle(g, px, py, x, y, ['#b89458', '#d6b47a', '#bf9a60'], 10); },
+  0(g, px, py, x, y) { g.fillStyle = P.sand; g.fillRect(px, py, TS, TS); speckle(g, px, py, x, y, P.sandSp, 10); },
   1(g, px, py, x, y) {
-    g.fillStyle = '#8f7a62'; g.fillRect(px, py, TS, TS);
-    speckle(g, px, py, x, y, ['#7a6650', '#a08a70'], 8, 3);
+    g.fillStyle = P.rock; g.fillRect(px, py, TS, TS);
+    speckle(g, px, py, x, y, P.rockSp, 8, 3);
     for (let i = 0; i < 2; i++) {
       const cx = px + 6 + rng(x, y, i + 7) * 20, cy = py + 6 + rng(x, y, i + 9) * 20, r = 3 + rng(x, y, i) * 4;
-      g.fillStyle = '#6e6458'; g.beginPath(); g.ellipse(cx, cy + 1, r, r * 0.7, 0, 0, 7); g.fill();
-      g.fillStyle = '#a59a8a'; g.beginPath(); g.ellipse(cx - 1, cy - 1, r * 0.8, r * 0.55, 0, 0, 7); g.fill();
+      g.fillStyle = P.stoneD; g.beginPath(); g.ellipse(cx, cy + 1, r, r * 0.7, 0, 0, 7); g.fill();
+      g.fillStyle = P.stoneL; g.beginPath(); g.ellipse(cx - 1, cy - 1, r * 0.8, r * 0.55, 0, 0, 7); g.fill();
     }
   },
   2(g, px, py, x, y) {
-    g.fillStyle = '#7c838b'; g.fillRect(px, py, TS, TS);
-    g.fillStyle = '#6a7078'; g.fillRect(px, py + TS - 2, TS, 2); g.fillRect(px + TS - 2, py, 2, TS);
-    g.fillStyle = '#9aa1a8'; g.fillRect(px, py, TS, 1); g.fillRect(px, py, 1, TS);
-    g.fillStyle = '#5a6068'; for (const [a, b] of [[4, 4], [TS - 6, 4], [4, TS - 6], [TS - 6, TS - 6]]) g.fillRect(px + a, py + b, 2, 2);
-    if (rng(x, y) < 0.15) { g.fillStyle = 'rgba(120,70,40,0.35)'; g.fillRect(px + 8, py + 10, 12, 8); }
+    g.fillStyle = P.metal; g.fillRect(px, py, TS, TS);
+    g.fillStyle = P.metalD; g.fillRect(px, py + TS - 2, TS, 2); g.fillRect(px + TS - 2, py, 2, TS);
+    g.fillStyle = P.metalL; g.fillRect(px, py, TS, 1); g.fillRect(px, py, 1, TS);
+    g.fillStyle = P.metalB; for (const [a, b] of [[4, 4], [TS - 6, 4], [4, TS - 6], [TS - 6, TS - 6]]) g.fillRect(px + a, py + b, 2, 2);
+    if (rng(x, y) < 0.15 && P === PALETTES.earth) { g.fillStyle = 'rgba(120,70,40,0.35)'; g.fillRect(px + 8, py + 10, 12, 8); }
   },
   3(g, px, py, x, y) {
-    g.fillStyle = '#6f5034'; g.fillRect(px, py, TS, TS);
+    const [c0, c1, c2, c3] = P.mount;
+    g.fillStyle = c0; g.fillRect(px, py, TS, TS);
     const ox = (rng(x, y) - 0.5) * 6;
-    g.fillStyle = '#5a3e26'; g.beginPath(); g.moveTo(px + 1, py + TS); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS - 1, py + TS); g.fill();
-    g.fillStyle = '#9a7650'; g.beginPath(); g.moveTo(px + 1, py + TS); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS / 2 + ox - 2, py + TS); g.fill();
-    g.fillStyle = '#c8a070'; g.beginPath(); g.moveTo(px + TS / 2 + ox - 4, py + 9); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS / 2 + ox + 3, py + 8); g.fill();
+    g.fillStyle = c1; g.beginPath(); g.moveTo(px + 1, py + TS); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS - 1, py + TS); g.fill();
+    g.fillStyle = c2; g.beginPath(); g.moveTo(px + 1, py + TS); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS / 2 + ox - 2, py + TS); g.fill();
+    g.fillStyle = c3; g.beginPath(); g.moveTo(px + TS / 2 + ox - 4, py + 9); g.lineTo(px + TS / 2 + ox, py + 2); g.lineTo(px + TS / 2 + ox + 3, py + 8); g.fill();
   },
   4(g, px, py) {
-    g.fillStyle = '#3c4148'; g.fillRect(px, py, TS, TS);
-    g.fillStyle = '#4d535b'; g.fillRect(px + 2, py + 2, TS - 4, TS / 2 - 3); g.fillRect(px + 2, py + TS / 2 + 1, TS - 4, TS / 2 - 3);
-    g.fillStyle = '#2a2e33'; g.fillRect(px, py + TS / 2 - 1, TS, 2);
+    g.fillStyle = P.wall[0]; g.fillRect(px, py, TS, TS);
+    g.fillStyle = P.wall[1]; g.fillRect(px + 2, py + 2, TS - 4, TS / 2 - 3); g.fillRect(px + 2, py + TS / 2 + 1, TS - 4, TS / 2 - 3);
+    g.fillStyle = P.wall[2]; g.fillRect(px, py + TS / 2 - 1, TS, 2);
   },
-  5(g, px, py, x, y) { g.fillStyle = '#a88c60'; g.fillRect(px, py, TS, TS); speckle(g, px, py, x, y, ['#977b52', '#b69a6c'], 6); g.fillStyle = 'rgba(80,60,40,0.18)'; g.fillRect(px + 7, py, 3, TS); g.fillRect(px + TS - 10, py, 3, TS); },
+  5(g, px, py, x, y) {
+    // 空の上にかかる道は木のつり橋
+    if (isSky(x - 1, y) || isSky(x + 1, y) || isSky(x, y - 1) || isSky(x, y + 1)) {
+      const vert = isSky(x - 1, y) || isSky(x + 1, y);
+      g.fillStyle = '#5a4430'; g.fillRect(px, py, TS, TS);
+      g.fillStyle = '#9a7650';
+      for (let i = 0; i < 4; i++) vert ? g.fillRect(px + 2, py + i * 8 + 1, TS - 4, 6) : g.fillRect(px + i * 8 + 1, py + 2, 6, TS - 4);
+      g.fillStyle = '#c8a070'; for (let i = 0; i < 4; i++) vert ? g.fillRect(px + 2, py + i * 8 + 1, TS - 4, 1) : g.fillRect(px + i * 8 + 1, py + 2, 1, TS - 4);
+      return;
+    }
+    g.fillStyle = P.road; g.fillRect(px, py, TS, TS); speckle(g, px, py, x, y, P.roadSp, 6); g.fillStyle = 'rgba(80,60,40,0.18)'; g.fillRect(px + 7, py, 3, TS); g.fillRect(px + TS - 10, py, 3, TS);
+  },
   7(g, px, py) { g.fillStyle = '#2a2420'; g.fillRect(px + 4, py + 4, TS - 8, TS - 4); g.fillStyle = '#ffcf6a'; g.fillRect(px + 6, py + 6, TS - 12, 3); },
   8(g, px, py, x, y) {
     g.fillStyle = '#3f9a2f'; g.fillRect(px, py, TS, TS);
     g.fillStyle = '#62c843'; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + 5 + rng(x, y, i) * 22, py + 5 + rng(x, y, i + 3) * 22, 2 + rng(x, y, i + 6) * 3, 0, 7); g.fill(); }
     g.fillStyle = 'rgba(200,255,160,0.35)'; g.fillRect(px + 4, py + 8, 10, 2);
   },
-  9(g, px, py, x, y) { DRAW[0](g, px, py, x, y); g.strokeStyle = '#7f7030'; g.lineWidth = 1.5; for (let i = 0; i < 5; i++) { const bx = px + 3 + rng(x, y, i) * 26, by = py + 10 + rng(x, y, i + 5) * 18; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - 3, by - 7); g.moveTo(bx, by); g.lineTo(bx + 2, by - 8); g.stroke(); } },
+  9(g, px, py, x, y) {
+    DRAW[0](g, px, py, x, y); g.strokeStyle = P.grass; g.lineWidth = 1.5;
+    for (let i = 0; i < 5; i++) { const bx = px + 3 + rng(x, y, i) * 26, by = py + 10 + rng(x, y, i + 5) * 18; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx - 3, by - 7); g.moveTo(bx, by); g.lineTo(bx + 2, by - 8); g.stroke(); }
+    // 風の惑星の草むらには小さな花
+    if (P.flowers) for (let i = 0; i < 3; i++) { g.fillStyle = P.flowers[Math.floor(rng(x, y, i + 20) * P.flowers.length)]; g.fillRect(px + 3 + rng(x, y, i + 30) * 26, py + 3 + rng(x, y, i + 40) * 26, 3, 3); }
+  },
   10(g, px, py) {
     g.fillStyle = '#43566a'; g.fillRect(px, py, TS, TS);
     g.fillStyle = '#5d7690'; g.fillRect(px, py + 3, TS, 6);
@@ -133,8 +187,8 @@ DRAW[33] = (g, px, py) => {
 };
 // 坑道の壁
 DRAW[24] = (g, px, py, x, y) => {
-  g.fillStyle = '#2a221c'; g.fillRect(px, py, TS, TS);
-  for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? '#3e3228' : '#4a3c30'; g.beginPath(); g.ellipse(px + 6 + rng(x, y, i) * 20, py + 6 + rng(x, y, i + 4) * 20, 6 + rng(x, y, i + 8) * 5, 4 + rng(x, y, i + 9) * 4, 0, 0, 7); g.fill(); }
+  g.fillStyle = P.caveWall[0]; g.fillRect(px, py, TS, TS);
+  for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? P.caveWall[1] : P.caveWall[2]; g.beginPath(); g.ellipse(px + 6 + rng(x, y, i) * 20, py + 6 + rng(x, y, i + 4) * 20, 6 + rng(x, y, i + 8) * 5, 4 + rng(x, y, i + 9) * 4, 0, 0, 7); g.fill(); }
   if (rng(x, y, 3) < 0.08) { g.fillStyle = '#7ad0ff'; g.fillRect(px + 14, py + 12, 3, 3); }
 };
 // 線路
@@ -155,6 +209,18 @@ DRAW[27] = (g, px, py, x, y) => {
   g.fillStyle = '#1c1e28'; g.fillRect(px, py, TS, TS);
   g.fillStyle = '#2c3040'; g.fillRect(px + 2, py + 2, TS - 4, TS / 2 - 3); g.fillRect(px + 2, py + TS / 2 + 1, TS - 4, TS / 2 - 3);
   if (rng(x, y) < 0.1) { g.fillStyle = '#5a6aff'; g.fillRect(px + 6, py + 6, 4, 2); }
+};
+// 空（雲海）：浮かぶ島のまわり。陸に接しているところは岩の崖
+DRAW[35] = (g, px, py, x, y) => {
+  const edge = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [1, -1], [-1, 1]].some(([dx, dy]) => MAP && x + dx >= 0 && y + dy >= 0 && x + dx < MAP.width && y + dy < MAP.height && MAP.grid[y + dy][x + dx] !== 35);
+  if (edge) {
+    g.fillStyle = '#6a6258'; g.fillRect(px, py, TS, TS);
+    speckle(g, px, py, x, y, ['#5a5248', '#7e7468', '#4a443c'], 10, 3);
+    g.fillStyle = 'rgba(40,30,20,0.35)'; for (let i = 0; i < 3; i++) g.fillRect(px + rng(x, y, i + 60) * 26, py, 2, TS);
+    return;
+  }
+  g.fillStyle = '#d8e8f4'; g.fillRect(px, py, TS, TS);
+  for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? 'rgba(255,255,255,0.8)' : 'rgba(190,212,232,0.7)'; g.beginPath(); g.ellipse(px + rng(x, y, i) * TS, py + rng(x, y, i + 3) * TS, 8 + rng(x, y, i + 6) * 10, 5 + rng(x, y, i + 9) * 5, 0, 0, 7); g.fill(); }
 };
 DRAW[30] = crack(DRAW[24]);
 DRAW[31] = crack(DRAW[27]);
@@ -237,6 +303,8 @@ function drawIcon(g, cx, cy, kind) {
 
 export function drawMapCanvas(map) {
   THEME = map.theme || null;
+  P = PALETTES[map.biome] || PALETTES.earth;
+  MAP = map;
   const cv = document.createElement('canvas');
   cv.width = map.width * TS; cv.height = map.height * TS;
   const g = cv.getContext('2d');
@@ -271,6 +339,8 @@ export function drawMapCanvas(map) {
 // フィールドだけ高低差をつける。山のタイルは高く盛り上がって崖になり、歩ける場所はなだらかな丘と坂になる
 // 角（タイルの四隅）の高さを持っておき、heightAt() で好きな場所の高さを補間して返す
 const BLOCK_TALL = new Set([3]);
+export const SKY_DEPTH = 6; // 空（雲海）の深さ。浮かぶ島のふちは崖になる
+const SKY = 35;
 export function heightField(map) {
   if (map._hf) return map._hf;
   const W = map.width, H = map.height;
@@ -292,6 +362,7 @@ export function heightField(map) {
       if (t === 8) h = -0.12;
       if (BLOCK_TALL.has(t)) h = 1.7 + rng(x, y, 7) * 1.1;
     }
+    if (t === SKY) h = -SKY_DEPTH;
     th[y * W + x] = h;
   }
   const c = new Float32Array((W + 1) * (H + 1));
@@ -302,7 +373,7 @@ export function heightField(map) {
       if (tx < 0 || ty < 0 || tx >= W || ty >= H) continue;
       const v = th[ty * W + tx];
       sa += v; na++;
-      if (!BLOCK_TALL.has(map.grid[ty][tx])) { sw += v; nw++; }
+      if (!BLOCK_TALL.has(map.grid[ty][tx]) && map.grid[ty][tx] !== SKY) { sw += v; nw++; }
     }
     // 歩ける場所に接している角は低い方（歩ける場所の高さ）にそろえる → 山の境目が崖になる
     c[y * (W + 1) + x] = nw ? sw / nw : na ? sa / na : 0;
@@ -353,9 +424,11 @@ export function createMapView(map, mode = '3d', renderer) {
   ground.receiveShadow = true;
   group.add(ground);
   // 周りの外側（マップの外が真っ黒にならないように）
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: map.ground || '#555', roughness: 1 }));
+  // 空のあるマップ（浮かぶ島）は、外側も雲海にする
+  const hasSky = map.grid.some((row) => row.includes(SKY));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: hasSky ? '#d8e8f4' : (map.ground || '#555'), roughness: 1 }));
   outer.rotation.x = -Math.PI / 2;
-  outer.position.set(map.width / 2, -0.05, map.height / 2);
+  outer.position.set(map.width / 2, hasSky ? -SKY_DEPTH - 0.05 : -0.05, map.height / 2);
   outer.receiveShadow = true;
   group.add(outer);
   const disposables = [tex, ground.geometry, ground.material, outer.geometry, outer.material];
@@ -368,14 +441,15 @@ export function createMapView(map, mode = '3d', renderer) {
 function add3D(map, group, disposables, view) {
   const S = (c, extra = {}) => new THREE.MeshStandardMaterial({ color: c, flatShading: true, roughness: 0.95, ...extra });
   const field = map.type === 'field';
+  const wind = map.biome === 'wind';
   const kinds = {
     3: field
-      ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(0x8a6442), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
+      ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(wind ? 0x7a8a7c : 0x8a6442), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
       : { geo: new THREE.ConeGeometry(0.7, 1.5, 6), mat: S(0x7a5a3a), y: 0.75, h: [0.9, 1.4], w: [1, 1.3] },
     21: { geo: new THREE.ConeGeometry(0.7, 1.0, 6), mat: S(0x9a7652), y: 0.5, h: [0.8, 1.0], w: [0.9, 1.0], onTerrain: true },
-    4: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: S(0x4a4f57), y: 0.8, h: [1, 1], w: [1, 1] },
+    4: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: S(map.biome === 'lab' ? 0xb8c4cc : wind ? 0x4e5e6c : 0x4a4f57), y: 0.8, h: [1, 1], w: [1, 1] },
     10: { geo: new THREE.BoxGeometry(1, 1.4, 1), mat: S(0x4a6078, { metalness: 0.4 }), y: 0.7, h: [1, 1], w: [1, 1] },
-    24: { geo: new THREE.DodecahedronGeometry(0.75, 0), mat: S(0x4a3a2c), y: 0.7, h: [1.1, 1.7], w: [1.1, 1.3] },
+    24: { geo: new THREE.DodecahedronGeometry(0.75, 0), mat: S(wind ? 0x3e4a56 : 0x4a3a2c), y: 0.7, h: [1.1, 1.7], w: [1.1, 1.3] },
     27: { geo: new THREE.BoxGeometry(1, 1.7, 1), mat: S(0x2a2e3e, { metalness: 0.5 }), y: 0.85, h: [1, 1], w: [1, 1] },
     15: { geo: new THREE.BoxGeometry(0.9, 1.1, 0.9), mat: S(0x5a5f66, { metalness: 0.4 }), y: 0.55, h: [0.9, 1.3], w: [1, 1] },
     16: { geo: new THREE.CylinderGeometry(0.22, 0.22, 1, 8), mat: S(0x8a7a5a, { metalness: 0.5 }), y: 0.5, h: [1, 1], w: [1, 1], rotZ: true },
@@ -422,6 +496,39 @@ function add3D(map, group, disposables, view) {
     disposables.push(mat);
     (view.hidden ||= []).push({ mesh: inst, cells });
   }
+  // 空のあるマップ：雲海に浮かぶ雲のかたまりと、つり橋の手すり
+  const skyCells = cellsOf([35]);
+  if (skyCells.length) {
+    const clouds = skyCells.filter(([x, y]) => rng(x, y, 71) < 0.05);
+    if (clouds.length) {
+      const cg = new THREE.SphereGeometry(1, 8, 6), cm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.85, flatShading: true });
+      const inst = new THREE.InstancedMesh(cg, cm, clouds.length);
+      clouds.forEach(([x, y], i) => {
+        const k = 1 + rng(x, y, 72) * 2.2;
+        m4.compose(v.set(x + 0.5, -SKY_DEPTH + 0.6 + rng(x, y, 73) * 2.4, y + 0.5), q.setFromEuler(e.set(0, rng(x, y, 74) * 6, 0)), sc.set(k * 1.6, k * 0.45, k));
+        inst.setMatrixAt(i, m4);
+      });
+      group.add(inst);
+      disposables.push(cg, cm);
+    }
+    const bridge = cellsOf([5]).filter(([x, y]) => [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dx, dy]) => map.grid[y + dy]?.[x + dx] === 35));
+    if (bridge.length) {
+      const pg = new THREE.CylinderGeometry(0.05, 0.06, 0.7, 5), pm = S(0x5a4028);
+      const inst = new THREE.InstancedMesh(pg, pm, bridge.length * 2);
+      bridge.forEach(([x, y], i) => {
+        const vert = map.grid[y][x - 1] === 35 || map.grid[y][x + 1] === 35;
+        const gy = heightAt(map, x + 0.5, y + 0.5);
+        for (let b = 0; b < 2; b++) {
+          const o = b ? 0.45 : -0.45;
+          m4.compose(v.set(x + 0.5 + (vert ? o : 0), gy + 0.35, y + 0.5 + (vert ? 0 : o)), q.identity(), sc.set(1, 1, 1));
+          inst.setMatrixAt(i * 2 + b, m4);
+        }
+      });
+      inst.castShadow = true;
+      group.add(inst);
+      disposables.push(pg, pm);
+    }
+  }
   if (!field) return;
   // フィールドの飾り：岩場の岩・枯れ草の枯れ木・山のふもとの岩
   const deco = (ids, rate, geo, mat, yk, hRange, wRange, seed) => {
@@ -434,8 +541,26 @@ function add3D(map, group, disposables, view) {
     group.add(inst);
     disposables.push(geo, mat);
   };
-  deco([1], 0.16, new THREE.DodecahedronGeometry(0.32, 0), S(0x8a7c6a), 0.25, [0.6, 1.4], [0.7, 1.5], 31);
-  deco([0], 0.025, new THREE.DodecahedronGeometry(0.25, 0), S(0xa08a6a), 0.18, [0.5, 1.2], [0.6, 1.4], 41);
+  deco([1], 0.16, new THREE.DodecahedronGeometry(0.32, 0), S(wind ? 0x9aa2a0 : 0x8a7c6a), 0.25, [0.6, 1.4], [0.7, 1.5], 31);
+  deco([0], 0.025, new THREE.DodecahedronGeometry(0.25, 0), S(wind ? 0x8a9290 : 0xa08a6a), 0.18, [0.5, 1.2], [0.6, 1.4], 41);
+  if (wind) {
+    // 風の惑星：草原の低い木（三角の葉っぱ）
+    const tcell = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.16);
+    if (tcell.length) {
+      const trunkG = new THREE.CylinderGeometry(0.06, 0.09, 0.6, 5), trunkM = S(0x6a4a2a);
+      const leafG = new THREE.ConeGeometry(0.42, 1.0, 6), leafM = S(0x3e7a3a);
+      const trunk = new THREE.InstancedMesh(trunkG, trunkM, tcell.length), leaf = new THREE.InstancedMesh(leafG, leafM, tcell.length);
+      tcell.forEach(([x, y], i) => {
+        const gy = heightAt(map, x + 0.5, y + 0.5), hs = 0.8 + rng(x, y, 52) * 0.8, ox = (rng(x, y, 55) - 0.5) * 0.4, oz = (rng(x, y, 56) - 0.5) * 0.4;
+        m4.compose(v.set(x + 0.5 + ox, gy + 0.3 * hs, y + 0.5 + oz), q.identity(), sc.set(1, hs, 1)); trunk.setMatrixAt(i, m4);
+        // 風に吹かれて少し傾いている
+        m4.compose(v.set(x + 0.5 + ox + 0.05, gy + 1.0 * hs, y + 0.5 + oz), q.setFromEuler(e.set(0, 0, -0.12)), sc.set(1, hs, 1)); leaf.setMatrixAt(i, m4);
+      });
+      for (const im of [trunk, leaf]) { im.castShadow = true; im.receiveShadow = true; group.add(im); }
+      disposables.push(trunkG, trunkM, leafG, leafM);
+    }
+    return;
+  }
   // 枯れ木（幹と枝）
   const trees = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.09);
   if (trees.length) {

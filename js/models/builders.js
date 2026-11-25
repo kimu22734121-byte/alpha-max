@@ -1105,6 +1105,30 @@ function buildEnDrone(colors) {
   return root;
 }
 
+// 風の惑星の空の宇宙生物：翼の大きな猛禽。機械の部品が混ざっている（wingL/wingR が羽ばたく）
+function buildEnBird(colors) {
+  const m = makeMats({ primary: 0x6a8aa0, secondary: 0x3a4a5a, organic: 0x4aa0b8, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy', flying: true };
+  const core = grp(root, 'core', 0, 1.0, 0);
+  const body = add(core, Sp(0.32, 1), m('primary'), 0, 0, 0); body.scale.set(0.9, 0.8, 1.5);
+  add(core, Sp(0.2, 1), m('organic'), 0, -0.1, -0.1);
+  const head = add(core, Sp(0.18, 1), m('primary'), 0, 0.16, 0.5); head.scale.set(1, 0.9, 1.2);
+  add(core, Co(0.07, 0.26, 5), m('metal'), 0, 0.12, 0.74, Math.PI / 2, 0, 0);
+  for (const sx of [-1, 1]) add(core, Sp(0.045, 0), m('glow'), 0.09 * sx, 0.22, 0.6);
+  add(core, Bx(0.18, 0.08, 0.2), m('dark'), 0, 0.26, 0.05);
+  for (const [name, sx] of [['wingL', -1], ['wingR', 1]]) {
+    const w = grp(core, name, 0.22 * sx, 0.08, 0);
+    add(w, Bx(0.7, 0.05, 0.42), m('secondary'), 0.38 * sx, 0, 0);
+    add(w, Bx(0.55, 0.04, 0.3), m('primary'), 0.9 * sx, 0, -0.08, 0, 0.2 * sx, 0);
+    add(w, Bx(0.3, 0.035, 0.2), m('organic'), 1.22 * sx, 0, -0.14, 0, 0.4 * sx, 0);
+    add(w, Bx(0.6, 0.03, 0.04), m('glow'), 0.6 * sx, 0.03, 0.16);
+  }
+  const tail = add(core, Bx(0.3, 0.04, 0.42), m('secondary'), 0, 0.02, -0.6); tail.rotation.x = -0.15;
+  for (const sx of [-1, 1]) add(core, Co(0.04, 0.22, 4), m('dark'), 0.1 * sx, -0.32, 0.1, Math.PI, 0, 0);
+  return root;
+}
+
 function buildEnCrawler(colors) {
   const m = makeMats({ organic: 0xa04a6a, primary: 0x7a3a50, ...colors });
   const root = grp(null, 'enemy');
@@ -1351,6 +1375,7 @@ export const MODEL_BUILDERS = {
   boss_driller: buildBossDriller,
   boss_skywraith: buildBossSkyWraith,
   boss_titan: buildBossTitan,
+  en_bird: buildEnBird,
 };
 
 export function buildModel(id, colors) {

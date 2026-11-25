@@ -172,6 +172,147 @@ export const ENEMIES = {
     drops: [['core', 1, 2], ['alloy', 1, 3]], loot: [['titanfinger', 1], ['pc1', 1]],
     desc: '廃工場の奥で宇宙生物に乗っ取られた巨大な工業用ロボット',
   },
+
+  // ================================================================ 第2章「風」の惑星
+  // ---------------- 疾風高原（フィールド, 6種類＋浮島・北の強い版） ----------------
+  galehawk: {
+    name: 'ゲイルホーク', model: 'en_bird', type: 'bio', flying: true,
+    hp: 92, atk: 23, def: 9, hit: 86, eva: 18, spd: 16, exp: 40, gear: 22, fx: 'claw',
+    drops: [['bio', 0.6, 1]],
+    desc: '強風に乗って急降下する、翼に機械を取りこんだ鳥の宇宙生物',
+  },
+  kitedrone: {
+    name: 'カイトドローン', model: 'en_drone', type: 'machine', flying: true, colors: { primary: 0xe8ecf0, secondary: 0x3a8a9a, glow: 0x6ae8ff },
+    hp: 80, atk: 21, def: 10, hit: 86, eva: 16, spd: 15, exp: 30, gear: 70, fx: 'laser',
+    drops: [['scrap', 0.6, 1], ['cell', 0.12, 1]],
+    desc: '風を測っていた観測ドローン。今は寄生されて人を襲う',
+  },
+  grassworm: {
+    name: 'グラスクローラー', model: 'en_crawler', type: 'bio', colors: { primary: 0x4a8a3a, organic: 0x7ac04a, organicGlow: 0x2a5a1a },
+    hp: 110, atk: 24, def: 10, hit: 86, eva: 6, spd: 9, exp: 44, gear: 16, fx: 'bite', scale: 1.2,
+    drops: [['bio', 0.6, 1]],
+    desc: '草原の地面の下を泳ぐ、緑色の大きな虫',
+  },
+  skypirate: {
+    name: '空賊の斬り込み隊', model: 'npc_pirate', type: 'pirate', colors: { primary: 0x2a6a7a, accent: 0xe8e0c8 },
+    hp: 120, atk: 26, def: 12, hit: 86, eva: 10, spd: 11, exp: 46, gear: 110, fx: 'shot',
+    drops: [['scrap', 0.4, 1]], loot: [['railpistol', 0.03], ['kitM', 0.25]],
+    desc: '飛行船から降りてくる空賊の下っ端',
+  },
+  millbot: {
+    name: 'ミルボット', model: 'en_bot', type: 'machine', colors: { primary: 0xe8e0cc, secondary: 0xb84a32, organic: 0x4a9ab8 },
+    hp: 140, atk: 27, def: 15, hit: 82, eva: 3, spd: 7, exp: 52, gear: 120, fx: 'claw', scale: 1.1,
+    drops: [['scrap', 0.8, 2], ['alloy', 0.15, 1]], loot: [['arm_gale', 0.02]],
+    desc: '風車の整備ロボットに宇宙生物が取りついたもの',
+  },
+  cloudspider: {
+    name: 'クラウドスパイダー', model: 'en_spider', type: 'bio', colors: { primary: 0xd8dce4, organic: 0x8ab8e8, glow: 0x6ae8ff },
+    hp: 100, atk: 25, def: 10, hit: 88, eva: 12, spd: 12, exp: 48, gear: 14, fx: 'bite',
+    drops: [['bio', 0.6, 1]],
+    desc: '雲のような白い糸を張って、風に乗って飛んでくる',
+  },
+  stormhawk: {
+    name: 'ストームホーク', model: 'en_bird', type: 'bio', flying: true, colors: { primary: 0x3a4a6a, secondary: 0x1a2232, organic: 0x8a6ae8, glow: 0xffe060 },
+    hp: 150, atk: 32, def: 12, hit: 88, eva: 20, spd: 18, exp: 70, gear: 30, fx: 'claw', scale: 1.15,
+    drops: [['bio', 0.7, 1], ['cell', 0.08, 1]],
+    desc: '嵐の中を飛ぶ、ゲイルホークの強い群れ',
+  },
+  millbot2: {
+    name: 'ミルボットII', model: 'en_bot', type: 'machine', colors: { primary: 0x6a7a8a, secondary: 0x2a3440, organic: 0x8a6ae8 },
+    hp: 210, atk: 34, def: 19, hit: 84, eva: 3, spd: 8, exp: 78, gear: 170, fx: 'claw', scale: 1.25,
+    drops: [['scrap', 0.8, 2], ['alloy', 0.25, 1]],
+    desc: '発電塔の警備ロボットの成れの果て',
+  },
+
+  // ---------------- 風鳴りの洞窟（マシンで進む, 3種類＋クラウドスパイダー） ----------------
+  howlbat: {
+    name: 'ハウルバット', model: 'en_bird', type: 'bio', flying: true, colors: { primary: 0x3a3440, secondary: 0x1a161e, organic: 0x9a4ac8, glow: 0xff6a6a },
+    hp: 120, atk: 28, def: 10, hit: 88, eva: 18, spd: 17, exp: 54, gear: 16, fx: 'bite', scale: 0.8,
+    drops: [['bio', 0.6, 1]],
+    desc: '洞窟の風の音にまぎれて飛ぶ、こうもりのような宇宙生物',
+  },
+  echobot: {
+    name: 'エコーボット', model: 'en_bot', type: 'machine', colors: { primary: 0x4a6a8a, secondary: 0x2a3a4a, organic: 0x6ad8ff },
+    hp: 170, atk: 30, def: 17, hit: 84, eva: 2, spd: 6, exp: 60, gear: 140, fx: 'claw', scale: 1.15,
+    drops: [['scrap', 0.8, 2], ['cell', 0.15, 1]],
+    desc: '風の音を測っていた調査ロボット',
+  },
+  crystalworm: {
+    name: 'クリスタルワーム', model: 'en_crawler', type: 'bio', colors: { primary: 0x6ab8e8, organic: 0xbfe8ff, organicGlow: 0x2a6aa0 },
+    hp: 150, atk: 29, def: 14, hit: 86, eva: 6, spd: 8, exp: 62, gear: 20, fx: 'bite', scale: 1.2,
+    drops: [['bio', 0.6, 1], ['relic', 0.04, 1]],
+    desc: '洞窟の水晶を食べて体が透きとおった虫',
+  },
+
+  // ---------------- 浮遊研究所（生身専用, 3種類＋小ボス） ----------------
+  labslime: {
+    name: 'ラボスライム', model: 'en_blob', type: 'bio', colors: { organic: 0x4ae0c0, organicGlow: 0x0a5040 },
+    hp: 150, atk: 22, def: 9, hit: 86, eva: 4, spd: 6, exp: 58, gear: 20, fx: 'bite', scale: 0.8,
+    drops: [['bio', 0.6, 1], ['cell', 0.1, 1]],
+    desc: '実験槽から逃げ出した不定形の生物',
+  },
+  secdrone: {
+    name: '警備ドローン', model: 'en_drone', type: 'machine', flying: true, colors: { primary: 0xd8e0e4, secondary: 0x4a5462, glow: 0xff4a4a },
+    hp: 120, atk: 24, def: 11, hit: 88, eva: 16, spd: 15, exp: 50, gear: 90, fx: 'laser',
+    drops: [['scrap', 0.6, 1], ['cell', 0.15, 1]], loot: [['kitM', 0.2]],
+    desc: '研究所を守っていた警備ドローン。侵入者を撃つ',
+  },
+  testchimera: {
+    name: '実験体キメラ', model: 'en_spider', type: 'bio', colors: { primary: 0x8a9aa8, organic: 0x4ae0c0, glow: 0xff6ab0 },
+    hp: 180, atk: 26, def: 11, hit: 87, eva: 10, spd: 12, exp: 66, gear: 24, fx: 'claw', scale: 0.9,
+    drops: [['bio', 0.7, 1]],
+    desc: '宇宙生物と機械をつなぎ合わせた実験の失敗作',
+  },
+  galechimera: {
+    name: 'ゲイルキメラ', model: 'en_bird', type: 'bio', boss: true, flag: 'labBoss', flying: true, colors: { primary: 0xd8e0e4, secondary: 0x3a8a9a, organic: 0x4ae0c0, glow: 0xff4ae0 },
+    hp: 1400, atk: 30, def: 13, hit: 90, eva: 12, spd: 15, exp: 1400, gear: 1200, fx: 'claw', scale: 1.8,
+    skills: [{ name: '烈風のつばさ', mul: 0.85, target: 'all', chance: 0.3, fx: 'beam' }, { name: 'かぎ爪の急降下', mul: 1.7, target: 'one', chance: 0.25, fx: 'drill' }],
+    drops: [['core', 1, 2], ['bio', 1, 3]], loot: [['galefeather', 1], ['megaheal', 1]],
+    desc: '浮遊研究所で作られた、風をあやつる合成生物（生身で戦う小ボス）',
+  },
+
+  // ---------------- 嵐の塔（最後のダンジョン, 3種類＋ストームホーク） ----------------
+  turbinegolem: {
+    name: 'タービンゴーレム', model: 'en_bot', type: 'machine', colors: { primary: 0x5a6a7a, secondary: 0x2a3440, organic: 0x6ad8ff, glow: 0x9ae8ff },
+    hp: 260, atk: 38, def: 22, hit: 84, eva: 2, spd: 7, exp: 96, gear: 220, fx: 'press', scale: 1.4,
+    drops: [['scrap', 0.9, 2], ['alloy', 0.3, 1]],
+    desc: '塔の風力タービンを守る巨大な作業ロボット',
+  },
+  stormturret: {
+    name: 'ストームタレット', model: 'en_turret', type: 'machine', colors: { primary: 0x4a5a6a, glow: 0x9ae8ff },
+    hp: 240, atk: 40, def: 24, hit: 90, eva: 0, spd: 8, exp: 90, gear: 240, fx: 'laser',
+    drops: [['scrap', 0.7, 2], ['cell', 0.3, 1]], loot: [['lm2', 0.03]],
+    desc: '雷を撃つ防衛タレットに宇宙生物が根を張ったもの',
+  },
+  cycloneslime: {
+    name: 'サイクロンスライム', model: 'en_blob', type: 'bio', colors: { organic: 0x8a9ae8, organicGlow: 0x2a3a8a },
+    hp: 200, atk: 34, def: 12, hit: 87, eva: 8, spd: 9, exp: 92, gear: 30, fx: 'bite',
+    drops: [['bio', 0.7, 2]],
+    desc: '渦を巻いて動く、雲のような宇宙生物',
+  },
+
+  // ---------------- 第2章の賞金首 ----------------
+  windraptor: {
+    name: 'ウィンドラプター', model: 'en_bird', type: 'bio', boss: true, bounty: 'windraptor', flying: true, colors: { primary: 0x8a5a3a, secondary: 0x4a2e1e, organic: 0xe8a04a, glow: 0xffe060 },
+    hp: 1900, atk: 30, def: 14, hit: 88, eva: 16, spd: 16, exp: 1300, gear: 900, fx: 'claw', scale: 2.2,
+    skills: [{ name: '竜巻おこし', mul: 0.9, target: 'all', chance: 0.25, fx: 'beam' }, { name: '急降下', mul: 1.7, target: 'one', chance: 0.3, fx: 'drill' }],
+    drops: [['core', 1, 1], ['bio', 1, 4]], loot: [['raptortalon', 1]],
+    desc: '疾風高原の空を支配する巨大な猛禽。宇宙生物に体を作り変えられている',
+  },
+  aerofort: {
+    name: 'エアロフォートレス', model: 'boss_skywraith', type: 'machine', boss: true, bounty: 'aerofort', flying: true, colors: { primary: 0x6a5a4a, secondary: 0x3a2e24, organic: 0x9a3ac8, glow: 0xff8a3a },
+    hp: 3000, atk: 36, def: 18, hit: 88, eva: 12, spd: 12, exp: 2200, gear: 1600, fx: 'missile', scale: 1.0,
+    skills: [{ name: '一斉砲撃', mul: 1.0, target: 'all', chance: 0.3, fx: 'missile' }, { name: '主砲', mul: 1.9, target: 'one', chance: 0.2, fx: 'beam' }],
+    drops: [['core', 1, 2], ['alloy', 1, 3]], loot: [['sm1', 1]],
+    desc: '空賊の砲艦が宇宙生物に乗っ取られ、空の要塞になったもの',
+  },
+  coreguardian: {
+    name: 'コアガーディアン', model: 'boss_titan', type: 'machine', boss: true, bounty: 'coreguardian', final: true, colors: { primary: 0x6a7a8a, secondary: 0x2a3440, organic: 0x6a3ac8, glow: 0x9ae8ff },
+    hp: 5200, atk: 44, def: 26, hit: 90, eva: 2, spd: 9, exp: 4200, gear: 2600, fx: 'press', acts: 2, scale: 0.9,
+    skills: [{ name: 'テンペストプレス', mul: 1.0, target: 'all', chance: 0.25, fx: 'press' }, { name: '雷撃コア', mul: 1.9, target: 'one', chance: 0.2, fx: 'beam' }, { name: '暴風壁', mul: 0.7, target: 'all', chance: 0.15, fx: 'beam' }],
+    drops: [['core', 1, 3], ['relic', 1, 1]], loot: [['stormcore', 1], ['rg2', 1]],
+    desc: '嵐の塔の中枢「風の制御コア」を守る番人。1ターンに2回動く',
+  },
 };
 
 // 賞金首（ハンターオフィスの手配書）
@@ -179,6 +320,10 @@ export const BOUNTIES = {
   rustdriller: { enemy: 'rustdriller', reward: 2000, where: 'ガラン荒野 北の岩場', rank: 'C', note: '一番弱い賞金首。採掘マシンが乗っ取られたもの。電気がよく効く' },
   skywraith: { enemy: 'skywraith', reward: 3500, where: 'ガラン荒野 東の遺跡（空）', rank: 'B', note: '輸送ドローンの群れのリーダー。素早いのでミサイルで狙え' },
   grindtitan: { enemy: 'grindtitan', reward: 8000, where: '廃工場 最奥', rank: 'A', note: '巨大な工業用ロボット。1ターンに2回動く。回復アイテムを多めに' },
+  // 第2章「風」の惑星
+  windraptor: { enemy: 'windraptor', reward: 9000, where: '疾風高原 風車の丘の西の空', rank: 'B', chapter: 2, note: '巨大な猛禽の宇宙生物。火がよく効く。全体攻撃に注意' },
+  aerofort: { enemy: 'aerofort', reward: 14000, where: '疾風高原 北のがけの上空', rank: 'A', chapter: 2, note: '空賊の砲艦の成れの果て。電気がよく効く。装甲が厚いので主砲で' },
+  coreguardian: { enemy: 'coreguardian', reward: 24000, where: '嵐の塔 最上階', rank: 'S', chapter: 2, note: '風の制御コアの番人。1ターンに2回動く。回復アイテムを多めに' },
 };
 
 export const ELEMENT_RATE = 1.6; // 弱点属性のダメージ倍率

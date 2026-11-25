@@ -20,7 +20,7 @@ const BUILDING_STYLE = {
   market: { style: 'twostory', colors: { primary: 0xd8c890, secondary: 0x8a3a2a, accent: 0xe8c040 } },
 };
 // 町ごとに少し色合いを変える
-const TOWN_TINT = { town1: 1.0, town2: 0.85, town3: 0.95 };
+const TOWN_TINT = { town1: 1.0, town2: 0.85, town3: 0.95, town4: 1.15, town5: 1.1, town6: 1.0 };
 
 // ---------------- 建物の上に浮かぶアイコン ----------------
 const iconCache = {};
@@ -274,6 +274,145 @@ const STRUCT = {
     box(g, 0.16, 0.16, 0.16, GLOW(0xb04aff, 2), 0, 1.6, -0.5).userData.blink = true;
     return g;
   },
+  // ---------------- 第2章「風」の惑星 ----------------
+  // 町4：丘の上の風車の町（白い壁・赤い屋根・回る風車）
+  windmill() {
+    const g = new THREE.Group();
+    const wall = M(0xe8e0cc), roof = M(0xb84a32), win = GLOW(0xffe0a0, 1.3), wood = M(0x7a5a3a), lamp = GLOW(0xffd070, 2);
+    for (let i = -5; i <= 5; i++) { if (Math.abs(i) <= 1) continue; const ang = (i / 5) * Math.PI * 0.95; box(g, 0.5, 0.5, 0.18, M(0xb8b0a0), Math.sin(ang) * 2.8, 0.25, -1.9 + Math.cos(ang) * 1.9, ang); }
+    house(g, 0.9, 0.8, 0.8, -1.4, -1.3, wall, roof, win, 'gable');
+    house(g, 0.8, 1.0, 0.8, 1.3, -1.2, wall, roof, win, 'gable');
+    house(g, 1.1, 0.7, 0.8, 0.0, -2.6, M(0xd8d0bc), roof, win, 'gable');
+    for (const [x, z, k] of [[-1.6, -2.8, 1.0], [1.7, -2.6, 0.85], [0.2, -3.6, 1.2]]) g.add(windmillObj(k, x, z));
+    gate(g, wood, lamp, 1.5, 1.3);
+    return g;
+  },
+  // 町5：浮遊島の町（岩の島の上の家・下にぶら下がる岩と鎖・浮遊装置の青い光）
+  anchor() {
+    const g = new THREE.Group();
+    const rock = M(0x7a7268), grass = M(0x6aa04a), wall = M(0xd8d4c8), roof = M(0x3a6a9a), win = GLOW(0xbfe8ff, 1.5), glow = GLOW(0x6ad8ff, 2.2);
+    const top = cyl(g, 2.6, 2.2, 0.5, 9, grass, 0, 0.1, -1.9);
+    void top;
+    const under = new THREE.Mesh(new THREE.ConeGeometry(2.3, 2.6, 9), rock); under.rotation.x = Math.PI; under.position.set(0, -1.45, -1.9); g.add(under);
+    house(g, 0.9, 0.9, 0.8, -1.1, -1.4, wall, roof, win, 'gable');
+    house(g, 0.8, 1.2, 0.8, 1.0, -1.6, wall, roof, win);
+    house(g, 0.9, 0.7, 0.7, 0.0, -2.9, wall, roof, win, 'gable');
+    // 浮遊装置（島の下で光る輪）と、つなぎとめる鎖
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.08, 6, 20), glow); ring.rotation.x = Math.PI / 2; ring.position.set(0, -2.4, -1.9); g.add(ring); ring.userData.blink = true;
+    for (const s2 of [-1, 1]) { const ch = cyl(g, 0.04, 0.04, 2.4, 4, M(0x5a5e66, { metalness: 0.7 }), s2 * 1.8, 1.2, -2.2, 0, s2 * 0.25); void ch; }
+    cyl(g, 0.12, 0.16, 2.6, 6, M(0x6a6e76, { metalness: 0.6 }), 1.6, 1.3, -2.4); box(g, 0.14, 0.14, 0.14, glow, 1.6, 2.7, -2.4).userData.blink = true;
+    gate(g, M(0x6a5a4a), glow, 1.4, 1.2);
+    g.userData.bob = 0.06;
+    return g;
+  },
+  // 町6：空港の町（滑走路・管制塔・つながれた飛行船）
+  airport() {
+    const g = new THREE.Group();
+    const metal = M(0xb8c0c8, { metalness: 0.5, roughness: 0.5 }), dark = M(0x4a5462, { metalness: 0.5 }), win = GLOW(0xbfe8ff, 1.5), lamp = GLOW(0xff8a3a, 2.2), stripe = M(0xe8e8e0);
+    box(g, 5.6, 0.06, 1.2, M(0x5a5e66), 0, 0.03, -3.2);
+    for (let i = 0; i < 7; i++) box(g, 0.4, 0.07, 0.08, stripe, -2.4 + i * 0.8, 0.05, -3.2);
+    house(g, 1.4, 0.9, 0.9, -1.3, -1.4, metal, dark, win);
+    house(g, 0.9, 0.7, 0.8, 0.9, -1.3, M(0xd8c8a8), M(0x8a3a2a), win, 'gable');
+    // 管制塔
+    cyl(g, 0.2, 0.3, 2.8, 8, metal, 1.9, 1.4, -2.2); cyl(g, 0.45, 0.35, 0.4, 8, win, 1.9, 2.9, -2.2); box(g, 0.14, 0.14, 0.14, lamp, 1.9, 3.25, -2.2).userData.blink = true;
+    // つながれた飛行船
+    const blimp = new THREE.Group();
+    const env = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), M(0xe8dcc0)); env.scale.set(1.7, 0.6, 0.6); blimp.add(env);
+    const gond = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.25, 0.3), dark); gond.position.y = -0.65; blimp.add(gond);
+    for (const s2 of [-1, 1]) { const fin = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.05, 0.5), M(0xb84a32)); fin.position.set(-1.6, 0, s2 * 0.25); blimp.add(fin); }
+    const prop = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.6, 0.08), dark); prop.position.set(-1.85, 0, 0); prop.userData.spinX = true; blimp.add(prop);
+    blimp.position.set(-0.6, 3.0, -3.4); g.add(blimp); blimp.userData.bobObj = true;
+    cyl(g, 0.02, 0.02, 2.0, 4, M(0x5a5e66), -0.6, 1.6, -3.3);
+    gate(g, metal, lamp, 1.5, 1.4);
+    return g;
+  },
+  // 着陸した宇宙船（第1章から第2章へ乗ってきた船。白い船体に青い窓）
+  shuttle() {
+    const g = new THREE.Group();
+    const hull = M(0xe8ecf0, { metalness: 0.5, roughness: 0.4 }), dark = M(0x3a4250, { metalness: 0.6 }), win = GLOW(0x9fdcff, 1.6), fire = GLOW(0xff9a4a, 2);
+    const body = cyl(g, 0.9, 1.1, 4.2, 10, hull, 0, 1.3, -1.6, Math.PI / 2, 0); void body;
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.4, 10), hull); nose.rotation.x = Math.PI / 2; nose.position.set(0, 1.3, 1.2); g.add(nose);
+    box(g, 1.0, 0.25, 0.5, win, 0, 1.75, 0.6, 0, 0, -0.3);
+    for (const s2 of [-1, 1]) {
+      box(g, 1.6, 0.12, 1.2, hull, s2 * 1.3, 1.0, -2.4, 0, s2 * -0.2);
+      box(g, 0.12, 1.0, 0.8, dark, s2 * 0.5, 2.2, -3.4, 0, s2 * 0.3);
+      cyl(g, 0.08, 0.1, 1.0, 5, dark, s2 * 0.7, 0.45, -1.0);
+      cyl(g, 0.08, 0.1, 1.0, 5, dark, s2 * 0.7, 0.45, -2.6);
+    }
+    cyl(g, 0.45, 0.55, 0.5, 10, dark, 0, 1.3, -3.9, Math.PI / 2, 0);
+    const flame = cyl(g, 0.3, 0.05, 0.5, 8, fire, 0, 1.3, -4.3, Math.PI / 2, 0); flame.userData.blink = true;
+    box(g, 0.7, 0.06, 1.2, dark, 0, 0.35, 0.2, 0, 0, -0.45);
+    for (let i = 0; i < 4; i++) box(g, 0.2, 0.12, 0.05, win, -0.5 + i * 0.33, 1.6, -1.6 + 1.0, 0, 0);
+    return g;
+  },
+  // 空港の飛行船（ゆっくり上下・プロペラが回る）
+  blimp() {
+    const g = new THREE.Group();
+    const dark = M(0x4a5462, { metalness: 0.5 });
+    const ship = new THREE.Group();
+    const env = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), M(0xe8dcc0)); env.scale.set(3.2, 1.1, 1.1); ship.add(env);
+    for (let i = -2; i <= 2; i++) { const band = new THREE.Mesh(new THREE.TorusGeometry(1.02, 0.03, 4, 18), M(0xb84a32)); band.rotation.y = Math.PI / 2; band.scale.set(1, 1.08, 1.08); band.position.x = i * 1.1; ship.add(band); }
+    const gond = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 0.6), M(0x7a5a3a)); gond.position.y = -1.25; ship.add(gond);
+    for (let i = 0; i < 4; i++) { const w = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.03), GLOW(0xffd88a, 1.4)); w.position.set(-0.6 + i * 0.4, -1.2, 0.31); ship.add(w); }
+    for (const s2 of [-1, 1]) { const fin = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.06, 0.9), M(0xb84a32)); fin.position.set(-3.0, 0, s2 * 0.45); ship.add(fin); }
+    const fin2 = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.06), M(0xb84a32)); fin2.position.set(-3.0, 0.45, 0); ship.add(fin2);
+    const prop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.0, 0.12), dark); prop.position.set(-3.5, 0, 0); prop.userData.spinX = true; ship.add(prop);
+    ship.position.y = 3.2; ship.userData.bobObj = true;
+    g.add(ship);
+    cyl(g, 0.05, 0.05, 2.0, 5, dark, 0.8, 1.0, 0); cyl(g, 0.25, 0.3, 0.3, 8, dark, 0.8, 0.15, 0);
+    return g;
+  },
+  // 浮遊島の町の真ん中の浮遊装置（光る輪が回る）
+  beacon() {
+    const g = new THREE.Group();
+    const metal = M(0x8a96a2, { metalness: 0.6 }), glow = GLOW(0x6ad8ff, 2.2);
+    cyl(g, 0.6, 0.8, 0.4, 10, metal, 0, 0.2, 0);
+    cyl(g, 0.18, 0.25, 2.4, 8, metal, 0, 1.4, 0);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.32, 12, 8), glow); orb.position.y = 2.8; g.add(orb); orb.userData.blink = true;
+    const rg = new THREE.Group(); rg.position.y = 1.8; rg.userData.spinY = true; g.add(rg);
+    for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.8 + i * 0.25, 0.03, 4, 24), glow); r.rotation.x = Math.PI / 2 + i * 0.4; rg.add(r); }
+    return g;
+  },
+  // 1本だけの風車（フィールドの飾り）
+  mill() { const g = new THREE.Group(); g.add(windmillObj(1.3, 0, 0)); return g; },
+  // 嵐の塔：らせんの塔のまわりを雲と稲妻が回る
+  tower() {
+    const g = new THREE.Group();
+    const stone = M(0x5a6470, { metalness: 0.3 }), dark = M(0x2a323c), glow = GLOW(0x9ad8ff, 2.4), bolt = GLOW(0xe8f4ff, 3);
+    for (let i = 0; i < 6; i++) cyl(g, 1.3 - i * 0.16, 1.4 - i * 0.16, 1.1, 8, i % 2 ? stone : dark, 0, 0.55 + i * 1.05, -2.0);
+    const top = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.2, 8), stone); top.position.set(0, 7.0, -2.0); g.add(top);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 8), glow); orb.position.set(0, 7.8, -2.0); g.add(orb); orb.userData.blink = true;
+    const ringG = new THREE.Group(); ringG.position.set(0, 4.2, -2.0); g.add(ringG); ringG.userData.spinY = true;
+    for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; const c = new THREE.Mesh(new THREE.SphereGeometry(0.5, 7, 5), M(0x6a7480, { transparent: true, opacity: 0.85 })); c.scale.set(1.4, 0.5, 1); c.position.set(Math.cos(a) * 2.0, Math.sin(i) * 0.4, Math.sin(a) * 2.0); ringG.add(c); }
+    for (let i = 0; i < 3; i++) { const b = box(g, 0.06, 1.6, 0.06, bolt, -1.6 + i * 1.5, 5.2 - i * 0.6, -1.0, 0, 0.5 - i * 0.4); b.userData.blink = true; }
+    box(g, 1.2, 1.2, 0.1, M(0x0a0c10), 0, 0.6, -0.65);
+    gate(g, stone, glow, 1.6, 1.4);
+    return g;
+  },
+  // 浮遊研究施設：白い円盤の建物が浮いている（入口へは光の橋）
+  lab() {
+    const g = new THREE.Group();
+    const white = M(0xe0e6ea, { metalness: 0.4, roughness: 0.4 }), teal = GLOW(0x4ae0d0, 1.8), dark = M(0x3a4450);
+    const disk = cyl(g, 2.2, 1.6, 0.6, 14, white, 0, 2.0, -2.0); void disk;
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.2, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(0xaad8e0, { transparent: true, opacity: 0.5, metalness: 0.6 })); dome.position.set(0, 2.3, -2.0); g.add(dome);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(2.2, 0.06, 6, 28), teal); ring.rotation.x = Math.PI / 2; ring.position.set(0, 2.0, -2.0); g.add(ring);
+    const under = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 10), dark); under.rotation.x = Math.PI; under.position.set(0, 1.1, -2.0); g.add(under);
+    box(g, 0.6, 0.06, 1.6, teal, 0, 0.9, -0.5, 0, 0, -0.55);
+    box(g, 0.8, 0.9, 0.08, M(0x0a0c10), 0, 2.0, -0.75);
+    g.userData.bob = 0.12;
+    return g;
+  },
+  // 空に浮かぶ岩（フィールドの飾り。ゆっくり上下する）
+  floatrock(small) {
+    const g = new THREE.Group();
+    const k = small ? 0.6 : 1.2;
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(1.2 * k, 1.0 * k, 0.3 * k, 7), M(0x6aa04a)); g.add(top);
+    const under = new THREE.Mesh(new THREE.ConeGeometry(1.0 * k, 1.8 * k, 7), M(0x7a7268)); under.rotation.x = Math.PI; under.position.y = -1.0 * k; g.add(under);
+    const tr = new THREE.Mesh(new THREE.ConeGeometry(0.35 * k, 0.9 * k, 6), M(0x3e7a3a)); tr.position.set(0.3 * k, 0.6 * k, 0); g.add(tr);
+    const outer = new THREE.Group(); outer.add(g);
+    outer.userData.bob = 0.3;
+    return outer;
+  },
   // 廃墟：傾いた建物と瓦礫
   ruin(small) {
     const g = new THREE.Group();
@@ -286,6 +425,16 @@ const STRUCT = {
     return g;
   },
 };
+// 風車（塔と4枚の羽。羽は spin で回る）
+function windmillObj(k, x, z) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28 * k, 0.45 * k, 2.2 * k, 8), M(0xeae4d4)); body.position.y = 1.1 * k; g.add(body);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.4 * k, 0.5 * k, 8), M(0xb84a32)); cap.position.y = 2.45 * k; g.add(cap);
+  const hub = new THREE.Group(); hub.position.set(0, 2.0 * k, 0.42 * k); hub.userData.spin = true; g.add(hub);
+  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.18 * k, 1.3 * k, 0.03), M(0xf4f0e6)); b.position.y = 0.65 * k; const arm = new THREE.Group(); arm.rotation.z = (i / 4) * Math.PI * 2; arm.add(b); hub.add(arm); }
+  g.position.set(x, 0, z);
+  return g;
+}
 export function addStructures(scene, map, heightAt) {
   const list = [];
   for (const st of map.structures || []) {
@@ -294,12 +443,16 @@ export function addStructures(scene, map, heightAt) {
     const obj = fn(st.small);
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const x = st.x + 0.5, z = st.y + 0.5;
-    obj.position.set(x, heightAt(map, x, z) - 0.05, z);
+    obj.position.set(x, heightAt(map, x, z) - 0.05 + (st.lift || 0), z);
     if (st.rot) obj.rotation.y = st.rot;
     scene.add(obj);
-    const blink = [], spin = [];
-    obj.traverse((o) => { if (o.userData.blink) blink.push(o); if (o.userData.spin) spin.push(o); });
-    list.push({ data: st, obj, x, z, blink, spin, smoke: obj.userData.smoke || [], smokeT: 0 });
+    const blink = [], spin = [], spinY = [], spinX = [], bobs = [];
+    obj.traverse((o) => { if (o.userData.blink) blink.push(o); if (o.userData.spin) spin.push(o); if (o.userData.spinY) spinY.push(o); if (o.userData.spinX) spinX.push(o); if (o.userData.bobObj) bobs.push({ o, y: o.position.y }); });
+    // 浮かぶ物（浮遊島の町・研究施設・浮かぶ岩）はゆっくり上下する
+    const fl = obj.children.length === 1 && obj.children[0].userData.bob ? obj.children[0] : null;
+    if (obj.userData.bob) bobs.push({ o: obj, y: obj.position.y, k: obj.userData.bob });
+    if (fl) bobs.push({ o: fl, y: fl.position.y, k: fl.userData.bob });
+    list.push({ data: st, obj, x, z, blink, spin, spinY, spinX, bobs, smoke: obj.userData.smoke || [], smokeT: 0 });
   }
   return list;
 }
@@ -307,6 +460,9 @@ export function updateStructures(list, t, dt, scene, tex) {
   for (const s of list) {
     for (const b of s.blink) b.visible = Math.sin(t * 3 + s.x) > -0.3;
     for (const w of s.spin) w.rotation.z = t * 1.5;
+    for (const w of s.spinY) w.rotation.y = t * 0.5;
+    for (const w of s.spinX) w.rotation.x = t * 12;
+    for (const b of s.bobs) b.o.position.y = b.y + Math.sin(t * 0.9 + s.x) * (b.k ?? 0.15);
     // 煙突・残骸の煙
     s.smokeT += dt;
     if (s.smoke.length && s.smokeT > 0.35) {
@@ -367,3 +523,6 @@ export function makeSparkle(tex, color = 0xffe08a) {
   sp.scale.setScalar(0.45);
   return sp;
 }
+
+// 建造物を1つだけ組み立てる（宇宙船で星から星へ飛ぶ演出などで使う）
+export const buildStruct = (kind, arg) => STRUCT[kind]?.(arg) || null;

@@ -14,6 +14,7 @@ import { OpeningScene } from './scenes/opening.js';
 import { TitleScene } from './scenes/title.js';
 import { WorldScene } from './scenes/world.js';
 import { BattleScene } from './scenes/battle.js';
+import { FlightScene } from './scenes/flight.js';
 import { autosave } from './scenes/menus.js';
 import { applyTuning } from './game/tuning.js';
 // 開発者の部屋で調整した数値（ブラウザに保存）を、お店や戦闘で使う表に反映する
@@ -31,6 +32,7 @@ const scenes = {
   title: new TitleScene(),
   world: new WorldScene(),
   battle: new BattleScene(),
+  flight: new FlightScene(),
 };
 flow.scenes = scenes;
 
@@ -49,6 +51,27 @@ flow.toWorld = async (opts = {}) => {
   await engine.setScene(scenes.world, { after: opts.after });
   await ui.fade(false, 0.4);
   autosave();
+};
+
+// 宇宙船で別の惑星へ（第1章 → 第2章など）。仲間が使っているマシンも貨物室で一緒に運ぶ
+// to：着く町 / at：着く場所 / from・planet：演出の惑星（flight.js の PLANET_LOOK）/ lines：字幕 / after：着いた後の話
+flow.flyTo = async ({ to, at, from, planet, lines, after }) => {
+  ui.closeAll();
+  await ui.fade(true, 0.6);
+  for (const m of partyMembers()) {
+    const mc = m.machine && G.machines[m.machine];
+    if (mc?.owned && (mc.loc.type === 'garage' || mc.loc.type === 'party')) mc.loc = { type: 'garage', town: to };
+  }
+  G.pos = { map: to, x: at[0], y: at[1], dir: 0 };
+  G.lastTown = to; (G.flags.visited ||= {})[to] = true;
+  await engine.setScene(scenes.flight, {
+    from, to: planet, lines,
+    onDone: async () => {
+      await engine.setScene(scenes.world, { banner: true, after });
+      await ui.fade(false, 0.6);
+      autosave();
+    },
+  });
 };
 
 // 全滅：最後にセーブした町に戻され、所持ギアが半分になる
@@ -98,8 +121,62 @@ flow.onBossDefeated = async (def) => {
     ui.banner('セキュリティキーを手に入れた', '廃工場のゲートが開けられるようになった');
   } else if (def.bounty === 'grindtitan') {
     await endingChapter1();
+  } else if (def.bounty === 'windraptor') {
+    await ui.say([
+      { name: r, text: 'でっかい鳥も、これでおとなしくなった！' },
+      { name: '', text: 'ウィンドラプターの羽の下から、紫に光る「寄生コア」が転がり落ちた。土の惑星のものと同じだ。' },
+      { name: G.members.shion.name, text: '……どの星でも、同じものがマシンや生き物に取りついている。' },
+    ]);
+  } else if (def.bounty === 'aerofort') {
+    await ui.say([
+      { name: r, text: '空の要塞を撃ち落としたぞ！' },
+      { name: '', text: '砲艦の残骸から航海日誌が見つかった。最後のページに「研究所の連中は“マザー”と呼んでいた」と書かれている。' },
+    ]);
+  } else if (def.flag === 'labBoss') {
+    G.flags.towerKey = true;
+    audio.sfx('levelup');
+    await ui.say([
+      { name: '', text: 'ゲイルキメラが崩れ落ちると、研究室の奥の端末が息を吹き返した。' },
+      { name: '', text: '「……研究記録 第88号。寄生体の親個体を“マザーコア”と呼称。三機の兄弟機は、それに対抗するために――」' },
+      { name: r, text: '三機の兄弟機……！ アルファとオメガ、それに……。' },
+      { name: '', text: '記録はそこでとぎれた。端末の横から「嵐の塔 起動キー」を手に入れた！' },
+      { name: G.members.gina.name, text: 'これで北東の嵐の塔に入れるね。行こうじゃないか！' },
+    ]);
+    ui.banner('嵐の塔 起動キーを手に入れた', '嵐の塔のゲートが開けられるようになった');
+  } else if (def.bounty === 'coreguardian') {
+    await endingChapter2();
   }
 };
+
+async function endingChapter2() {
+  const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
+  G.seal = Math.max(G.seal, 2);
+  audio.sfx('seal');
+  await ui.say([
+    { name: '', text: 'コアガーディアンが崩れ落ちると、塔の中枢で暴れていた風の制御コアが、静かに青い光を取り戻した。' },
+    { name: '', text: '荒れ狂っていた風がやみ、窓の外の雲の海に、何年ぶりかのやわらかな風が吹きわたる。' },
+    { name: '', text: '――そのとき。アルファの胸のコアが、制御コアの光に呼ばれるように強く脈打った。' },
+    { name: '', text: '二つ目の封印がはじけ飛ぶ。白い装甲が白金に輝き、背中の翼から光の粒子があふれ出した。' },
+  ]);
+  ui.banner('アルファ 第二封印 解放', '白金の外装・ステラ・ブレイカーが強くなった');
+  await wait(2.6);
+  await ui.say([
+    { name: '', text: '制御コアの記録装置に、古い映像が残っていた。白・黒・赤の三機の機体が、並んで空を飛んでいく。' },
+    { name: '', text: '「アルファ、オメガ、ガイア。三機がそろうとき、マザーコアへの道が開く」――映像の声はそう告げて、消えた。' },
+    { name: r, text: '三機の兄弟機……。やっぱり、アルファたちは宇宙生物と戦うために作られたんだ。' },
+    { name: s, text: '……マザーコア。すべての寄生体の親。そこまで、たどり着く。' },
+    { name: g, text: 'へっ、上等じゃないか。次の星でも、あたしたちが暴れてやろうよ！' },
+    { name: '', text: 'アルファのモニターに、新しい星図が浮かび上がった。青い海に覆われた惑星――。' },
+  ]);
+  audio.playSong('title', { restart: true });
+  await ui.panel(`<div class="ending">
+    <div class="ending-big">第2章「風」の惑星　クリア！</div>
+    <p>アルファは二つ目の封印を取り戻し、白金の輝きをまとった。</p>
+    <p>三機の兄弟機と「マザーコア」の謎を追い、旅は次の惑星へ――</p>
+    <p class="note">To be continued…　（このまま第2章を遊び続けられます。転送台で第1章の町にも行けます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+  audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
+  autosave();
+}
 
 async function endingChapter1() {
   const r = G.members.ren.name;
@@ -135,6 +212,7 @@ async function endingChapter1() {
     <div class="ending-big">第1章「土」の惑星　クリア！</div>
     <p>伝説の機体アルファは、封印のひとつを取り戻して目を覚ました。</p>
     <p>（アルファはラストヘイヴンのガレージにいます。「乗る人を決める」でレンが乗れます）</p>
+    <p>（ウェイポイントの宇宙船の船長に話すと、次の惑星へ飛べます）</p>
     <p>宇宙生物「マザーコア」の謎を追い、旅は次の惑星へ――</p>
     <p class="note">To be continued…　（このまま第1章を遊び続けられます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });

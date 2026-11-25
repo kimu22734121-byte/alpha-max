@@ -84,4 +84,85 @@ export const SHOPS = {
     inn: { pricePerMember: 40, keeper: '宿の主人' },
     garage: { keeper: '整備長カイ', repairPerArmor: 1, repairPerEn: 1, towFee: 300 },
   },
+
+  // ================================================================ 第2章「風」の惑星
+  // 町4：風車の町ブリーズヒル（宇宙船の発着場がある、最初に着く町）
+  town4: {
+    weapon: {
+      keeper: '武器屋のトルネ',
+      greet: '風の星へようこそ！ 空を飛ぶ敵には、ミサイルとガトリングが効くよ。',
+      machine: ['c105', 'gt2', 'hm2', 'cm2', 'flm2', 'lm1', 'haxe'],
+      foot: ['railpistol', 'aerorifle', 'windcutter', 'aerohelm', 'glidegloves'],
+    },
+    parts: {
+      keeper: 'パーツ屋のフウ',
+      greet: '風の強い星だから、軽くて速いパーツがよく売れるの。',
+      parts: ['head_gale', 'head_sharp2', 'arm_gale', 'legs_biped2', 'legs_hover2', 'eng_jet'],
+    },
+    item: {
+      keeper: '道具屋のミルおばあさん',
+      greet: '風車で作った電気で、バッテリーはいつも満タンさ。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      foot: ['windmuffler'],
+    },
+    inn: { pricePerMember: 60, keeper: '宿屋のソヨ' },
+    garage: { keeper: 'ガレージ長のボルト', repairPerArmor: 1, repairPerEn: 1, towFee: 400 },
+  },
+  // 町5：浮遊島の町スカイアンカー（パーツ屋＋風読み工房の2軒）
+  town5: {
+    weapon: {
+      keeper: '武器屋のカザミ',
+      greet: '島の上は狭いけど、品ぞろえは負けないよ。',
+      machine: ['rg2', 'lm2', 'cm2', 'emp2', 'flm2', 'pzblade', 'haxe'],
+      foot: ['shockrod', 'gustlauncher', 'windcutter', 'skyjacket', 'windboots'],
+    },
+    parts: {
+      keeper: 'パーツ屋のアンカ',
+      greet: '浮遊装置の部品もあるけど……マシンには付かないね。',
+      parts: ['head_gale', 'head_heavy2', 'arm_heavy2', 'arm_power2', 'arm_gale', 'legs_hover2'],
+    },
+    frame: {
+      keeper: '風読み工房の親方ゼフ',
+      greet: 'フレームは風を読んで組むんだ。島の上の工房をなめるなよ。',
+      parts: ['body_balance2', 'body_sharp2', 'body_heavy2', 'eng_jet', 'eng_heavy2', 'legs_tread2', 'legs_biped2'],
+    },
+    item: {
+      keeper: '道具屋のハネ',
+      greet: '研究所に行くなら、救急キットは多めにね。生身だと危ないから。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      foot: ['stormcharm', 'windmuffler'],
+    },
+    inn: { pricePerMember: 70, keeper: '宿屋のクモイ' },
+    garage: { keeper: '整備士のアオ', repairPerArmor: 1, repairPerEn: 1, towFee: 450 },
+  },
+  // 町6：空港の町ゲイルポート（いちばん広い。交易所と屋台）
+  town6: {
+    weapon: {
+      keeper: '武器商人ガスト',
+      greet: '飛行船で運ばれてきた最新型だ。嵐の塔に挑むなら、これくらいは積んでいきな。',
+      machine: ['rg2', 'sm1', 'lm2', 'emp2', 'pzblade', 'v30', 'gigahammer'],
+      foot: ['railpistol', 'shockrod', 'aerorifle', 'gustlauncher', 'aerohelm', 'skyjacket', 'glidegloves', 'windboots'],
+    },
+    parts: {
+      keeper: 'パーツ屋のプロペ',
+      greet: '空港のパーツ屋だよ。フレームもエンジンもなんでもござれ。',
+      parts: ['head_gale', 'head_heavy2', 'head_sharp2', 'body_balance2', 'body_heavy2', 'body_sharp2', 'arm_gale', 'arm_heavy2', 'arm_power2', 'legs_biped2', 'legs_hover2', 'legs_tread2', 'eng_jet', 'eng_heavy2'],
+    },
+    item: {
+      keeper: '補給係のエアリ',
+      greet: '空港の補給品よ。旅の前にまとめてどうぞ。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+    },
+    market: {
+      keeper: '交易所の主人バロウ',
+      greet: '星の外から届いた上物ばかりさ。嵐の塔の準備なら、ここで全部そろう。',
+      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      foot: ['stormcharm', 'windmuffler', 'medpack', 'reflexchip'],
+    },
+    stall_wind1: { keeper: '風船売りの子', greet: 'いらっしゃい！ 空港名物の救急セットだよ。', items: ['kitM', 'repM', 'batM', 'warpunit'] },
+    stall_wind2: { keeper: '空賊あがりの武器商', greet: '……元空賊さ。いまは足を洗った。品物は本物だぜ。', machine: ['gt2', 'cm2', 'haxe', 'flm2'], foot: ['windcutter', 'aerorifle'] },
+    stall_wind3: { keeper: 'ジャンクパーツ屋', greet: '飛行船の解体で出た部品だよ。', parts: ['arm_gale', 'legs_biped2', 'head_sharp2'] },
+    inn: { pricePerMember: 80, keeper: '空港ホテルの支配人' },
+    garage: { keeper: '整備長ハヤテ', repairPerArmor: 1, repairPerEn: 1, towFee: 500 },
+  },
 };

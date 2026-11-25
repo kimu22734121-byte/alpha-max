@@ -50,6 +50,9 @@ export const FOOT_GEAR = {
   // ---- 第2章以降（お店に並ぶのは先の章から）
   railpistol: { name: 'レールピストル', slot: 'weapon', cat: 'handgun', atk: 42, hit: 10, elem: 'elec', price: 9000, tier: 4, desc: '電磁加速の拳銃' },
   shockrod: { name: 'ショックロッドII', slot: 'weapon', cat: 'rod', atk: 38, hit: 8, elem: 'elec', target: 'group', price: 8800, tier: 4, desc: '放電で周りの敵をしびれさせる' },
+  windcutter: { name: 'ウィンドカッター', slot: 'weapon', cat: 'blade', atk: 40, hit: 6, target: 'group', price: 8200, tier: 4, desc: '風を切る薄い刃。周りの敵をまとめて斬る' },
+  aerorifle: { name: 'エアロライフル', slot: 'weapon', cat: 'rifle', atk: 40, hit: 8, price: 7600, tier: 4, desc: '風の影響を計算する照準つきの小銃' },
+  gustlauncher: { name: 'ガストランチャー', slot: 'weapon', cat: 'bomb', atk: 30, hit: 4, target: 'all', price: 8600, tier: 4, desc: '圧縮空気の弾で敵全体を吹き飛ばす' },
   plasmarifle: { name: 'プラズマライフル', slot: 'weapon', cat: 'laser', atk: 52, hit: 8, elem: 'fire', price: 14000, tier: 5, desc: '高熱のプラズマ弾。宇宙生物に効く' },
   stormgat: { name: 'ストームガトリング', slot: 'weapon', cat: 'heavy', atk: 50, hit: 0, target: 'group', price: 15000, tier: 5, desc: '嵐のような連射' },
   antimat: { name: '対物スナイパー', slot: 'weapon', cat: 'sniper', atk: 72, hit: 24, price: 21000, tier: 6, desc: 'マシンの装甲も貫く大型ライフル' },
@@ -58,6 +61,7 @@ export const FOOT_GEAR = {
   drillknuckle: { name: 'ドリルナックル', slot: 'weapon', cat: 'rod', atk: 20, hit: 2, price: 0, sell: 900, tier: 2, limited: true, from: 'ラストドリラーのドロップ', desc: 'ラストドリラーの破片から作った拳。回転するドリルで殴る' },
   queenfang: { name: 'クイーンファング', slot: 'weapon', cat: 'blade', atk: 30, hit: 6, elem: 'fire', target: 'group', price: 0, sell: 1800, tier: 3, limited: true, from: '墜落した宇宙船（ネストクイーン）', desc: 'ネストクイーンの牙の刃。熱を帯び、周りをなぎ払う' },
   titanfinger: { name: 'タイタンフィンガー', slot: 'weapon', cat: 'bomb', atk: 30, hit: 4, target: 'all', price: 0, sell: 2400, tier: 3, limited: true, from: 'グラインドタイタンのドロップ', desc: '巨大ロボの指を改造した小型砲。敵全体を撃つ' },
+  raptortalon: { name: 'ラプタータロン', slot: 'weapon', cat: 'blade', atk: 44, hit: 6, crit: 6, target: 'group', price: 0, sell: 3200, tier: 4, limited: true, from: 'ウィンドラプターのドロップ', desc: 'ウィンドラプターのかぎ爪の刃。周りをなぎ払う' },
   oldrevolver: { name: '古いリボルバー', slot: 'weapon', cat: 'handgun', atk: 19, hit: 14, crit: 8, price: 0, sell: 700, tier: 2, limited: true, from: 'フィールドの宝箱', desc: '誰かの形見らしい古い銃。不思議とよく当たる' },
 
   // ================================================================ 頭（5＋限定）
@@ -65,6 +69,7 @@ export const FOOT_GEAR = {
   helmet: { name: 'ヘルメット', slot: 'head', def: 3, price: 500, tier: 1, desc: '頭を守る基本の防具' },
   combathelm: { name: 'コンバットヘルム', slot: 'head', def: 5, hit: 2, price: 1500, tier: 2, desc: '照準補助つきのヘルメット' },
   visorhelm: { name: 'バイザーヘルム', slot: 'head', def: 7, hit: 4, eva: 2, price: 3400, tier: 3, desc: '暗視バイザーつき' },
+  aerohelm: { name: 'エアロヘルム', slot: 'head', look: { kind: 'visor', color: 0xe8ecf0, glow: 0x6ae8ff }, def: 9, hit: 4, eva: 3, price: 6000, tier: 4, desc: '風よけのバイザーつきヘルメット' },
   nanohelm: { name: 'ナノヘルム', slot: 'head', def: 12, hit: 5, eva: 4, price: 9500, tier: 5, desc: 'ナノ素材の軽いヘルメット' },
   piratehat: { name: '海賊の三角帽', slot: 'head', def: 4, eva: 4, crit: 3, price: 0, sell: 600, tier: 2, limited: true, from: '墜落した宇宙船の宝箱', desc: '宇宙海賊の船長の帽子' },
   // ================================================================ 体（6）
@@ -73,18 +78,21 @@ export const FOOT_GEAR = {
   pilotsuit: { name: 'パイロットスーツ', slot: 'body', def: 5, eva: 6, price: 1200, tier: 2, desc: '動きやすい耐圧スーツ' },
   heavyarmor: { name: 'ヘビーアーマー', slot: 'body', def: 12, eva: -3, price: 2400, tier: 2, desc: '重いが頑丈な鎧' },
   compvest: { name: '複合装甲ベスト', slot: 'body', def: 16, eva: 1, price: 4600, tier: 3, desc: 'セラミックと合金の板を重ねたベスト' },
+  skyjacket: { name: 'スカイジャケット', slot: 'body', look: { kind: 'suit', color: 0x3a6a8a }, def: 20, eva: 4, price: 7800, tier: 4, desc: '空賊から伝わる、風を通さない飛行服' },
   nanosuit: { name: 'ナノスーツ', slot: 'body', def: 26, eva: 6, hp: 20, price: 13000, tier: 5, desc: '体の動きに合わせて硬くなるスーツ' },
   // ================================================================ 手（5）
   gloves: { name: '革手袋', slot: 'hands', def: 1, hit: 1, price: 150, tier: 1, desc: '滑り止めの手袋' },
   tacgloves: { name: 'タクティカルグローブ', slot: 'hands', def: 2, hit: 3, price: 900, tier: 2, desc: '射撃用の手袋' },
   gauntlet: { name: 'ガントレット', slot: 'hands', def: 5, atk: 2, price: 2200, tier: 2, desc: '金属の籠手' },
   powergloves: { name: 'パワーグローブ', slot: 'hands', def: 4, atk: 5, price: 4200, tier: 3, desc: '握力を増す機械仕掛けの手袋' },
+  glidegloves: { name: 'グライドグローブ', slot: 'hands', def: 5, atk: 6, hit: 3, price: 6400, tier: 4, desc: 'つり橋のロープもしっかりつかめる手袋' },
   nanogloves: { name: 'ナノグローブ', slot: 'hands', def: 7, atk: 8, hit: 5, price: 10500, tier: 5, desc: 'ナノ素材の手袋' },
   // ================================================================ 足（5）
   boots: { name: '作業ブーツ', slot: 'feet', def: 1, price: 0, tier: 1, desc: '安全靴' },
   runshoes: { name: 'ランニングシューズ', slot: 'feet', eva: 3, spd: 2, price: 600, tier: 1, desc: '軽い靴' },
   combatboots: { name: 'コンバットブーツ', slot: 'feet', def: 4, eva: 1, price: 1500, tier: 2, desc: '戦闘用の頑丈な靴' },
   jetboots: { name: 'ジェットブーツ', slot: 'feet', def: 3, eva: 6, spd: 4, price: 3900, tier: 3, desc: '小さな噴射口で身軽に動ける' },
+  windboots: { name: 'ウィンドブーツ', slot: 'feet', def: 5, eva: 7, spd: 5, price: 6800, tier: 4, desc: '追い風を受けて走れる軽い靴' },
   gravboots: { name: 'グラビティブーツ', slot: 'feet', def: 8, eva: 8, spd: 6, price: 11000, tier: 5, desc: '重力を操る靴' },
   // ================================================================ アクセサリー（10）
   charm: { name: 'お守り', slot: 'acc', look: { kind: 'badge' }, hp: 10, price: 300, tier: 1, desc: '最大体力+10' },
@@ -97,6 +105,10 @@ export const FOOT_GEAR = {
   medpack: { name: '自動救急パック', slot: 'acc', look: { kind: 'pack', color: 0xe8e8e0 }, regen: 0.1, price: 3000, tier: 3, desc: '戦闘のあと体力が最大の10%回復する' },
   cape: { name: '旅人のマント', slot: 'acc', look: { kind: 'cape', color: 0x8a3a2a }, def: 2, eva: 3, price: 1600, tier: 2, desc: '砂ぼこりをよけるマント。防御+2・回避+3' },
   scarf: { name: 'レッドスカーフ', slot: 'acc', look: { kind: 'scarf', color: 0xc8302a }, hit: 2, spd: 2, price: 1100, tier: 1, desc: '風になびく赤いスカーフ。命中+2・素早さ+2' },
+  windmuffler: { name: '風切りのマフラー', slot: 'acc', look: { kind: 'scarf', color: 0xe8ecf0 }, eva: 4, spd: 4, price: 3600, tier: 4, desc: '長い白いマフラー。回避+4・素早さ+4' },
+  stormcharm: { name: '嵐の護符', slot: 'acc', look: { kind: 'badge', glow: 0x9ae8ff }, def: 8, hp: 20, price: 4200, tier: 4, desc: '雷よけのお守り。防御+8・最大体力+20' },
+  galefeather: { name: '疾風の羽', slot: 'acc', look: { kind: 'badge', glow: 0x4ae0c0 }, spd: 10, eva: 6, price: 0, sell: 3000, tier: 4, limited: true, from: '浮遊研究所（ゲイルキメラ）', desc: 'ゲイルキメラの羽。素早さ+10・回避+6' },
+  stormcore: { name: '嵐のコア', slot: 'acc', look: { kind: 'pack', color: 0x6a7a8a, glow: 0x9ae8ff }, atk: 8, hit: 6, spd: 4, price: 0, sell: 4000, tier: 4, limited: true, from: 'コアガーディアンのドロップ', desc: '風の制御コアのかけら。攻撃+8・命中+6・素早さ+4' },
   beetlehorn: { name: 'ビートルホーン', slot: 'acc', look: { kind: 'badge', glow: 0xc0c8d0 }, spd: 8, eva: 8, price: 0, sell: 2500, tier: 3, limited: true, from: 'メタルビートルのドロップ', desc: 'メタルビートルの角。素早さ+8・回避+8' },
   gearmagnet: { name: 'ギアマグネット', slot: 'acc', look: { kind: 'pack', color: 0xd8a030 }, gearUp: 0.2, price: 0, sell: 2500, tier: 3, limited: true, from: 'ゴールドドローンのドロップ', desc: '戦闘で手に入るギアが20%増える' },
 

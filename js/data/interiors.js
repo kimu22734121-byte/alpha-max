@@ -31,6 +31,9 @@ const TOWN_THEME = {
   town1: { floor: 'wood', floorColor: '#8a6440', wallColor: '#5a4a3e', light: 0xffd8a0, mood: '木のぬくもりのある辺境の店' },
   town2: { floor: 'stone', floorColor: '#6e665c', wallColor: '#4a4038', light: 0xffb060, mood: '石造りでランプの灯る鉱山町の店' },
   town3: { floor: 'metal', floorColor: '#56606c', wallColor: '#36404e', light: 0xbfe0ff, mood: '金属パネルと白い照明の中継ステーション' },
+  town4: { floor: 'wood', floorColor: '#b08a5a', wallColor: '#d8d0bc', light: 0xfff0c8, mood: '白い漆喰と明るい木の床の風車の町' },
+  town5: { floor: 'stone', floorColor: '#8a9298', wallColor: '#5a6e82', light: 0xd8f0ff, mood: '青い壁と石の床の浮遊島の店' },
+  town6: { floor: 'metal', floorColor: '#7a6a5a', wallColor: '#4a3a2e', light: 0xffd8a8, mood: '真ちゅうと革の空港の店（飛行船の内装ふう）' },
 };
 // 施設ごとの特色（照明の色・床の敷物など）
 const FAC_THEME = {
