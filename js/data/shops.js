@@ -17,7 +17,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のおばちゃん',
       greet: 'ケガも故障も、そなえあればうれいなしだよ。',
-      items: ['kitS', 'repS', 'batS', 'kitM', 'revive', 'warpunit'],
+      items: ['kitS', 'repS', 'batS', 'kitM', 'revive', 'warpunit', 'repelS'],
       foot: ['charm', 'scarf'],
     },
     inn: { pricePerMember: 20, keeper: '宿屋のハル' },
@@ -45,7 +45,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のピコ',
       greet: '坑道に入るなら、修理キットは多めにね。',
-      items: ['kitS', 'kitM', 'repS', 'repM', 'batS', 'batM', 'maint', 'revive', 'warpunit'],
+      items: ['kitS', 'kitM', 'repS', 'repM', 'batS', 'batM', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
       foot: ['guardcharm', 'luckycoin', 'hpring', 'cape'],
     },
     inn: { pricePerMember: 30, keeper: '宿屋のおかみ' },
@@ -67,16 +67,16 @@ export const SHOPS = {
     item: {
       keeper: '補給係のモモ',
       greet: '上位の救急キットも修理キットもあるよ。',
-      items: ['kitM', 'repM', 'batM', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'repM', 'batM', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
     },
     // 交易マーケット（大きな店）と広場の屋台
     market: {
       keeper: 'マーケットの支配人ルゥ',
       greet: '宇宙港から届いた上物ばかり。ボス戦の準備ならここで全部そろうよ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelS', 'repelL'],
       foot: ['hpring', 'powerbelt', 'reflexchip', 'medpack'],
     },
-    stall_food: { keeper: '屋台のおやじ', greet: '安いよ安いよ！ 旅のおともにどうだい！', items: ['kitS', 'repS', 'batS', 'warpunit'] },
+    stall_food: { keeper: '屋台のおやじ', greet: '安いよ安いよ！ 旅のおともにどうだい！', items: ['kitS', 'repS', 'batS', 'warpunit', 'repelS', 'repelL'] },
     stall_food2: { keeper: '果物売りの娘', greet: 'となりの星の果物でつくった薬よ。よく効くんだから。', items: ['kitS', 'kitM', 'revive'] },
     stall_arms: { keeper: '流れ者の武器商', greet: '……出どころは聞かないでくれ。性能はたしかだ。', machine: ['gt1', 'rpod', 'flm1', 'hammer1', 'sc1'], foot: ['shotgun', 'knife', 'handgat', 'combatboots'] },
     stall_parts: { keeper: '中古パーツ屋', greet: '中古だけど、ちゃんと整備してあるよ。', parts: ['arm_light', 'legs_wheel', 'head_sensor', 'eng_v6'] },
@@ -102,7 +102,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のミルおばあさん',
       greet: '風車で作った電気で、バッテリーはいつも満タンさ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
       foot: ['windmuffler'],
     },
     inn: { pricePerMember: 60, keeper: '宿屋のソヨ' },
@@ -129,7 +129,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のハネ',
       greet: '研究所に行くなら、救急キットは多めにね。生身だと危ないから。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
       foot: ['stormcharm', 'windmuffler'],
     },
     inn: { pricePerMember: 70, keeper: '宿屋のクモイ' },
@@ -151,15 +151,15 @@ export const SHOPS = {
     item: {
       keeper: '補給係のエアリ',
       greet: '空港の補給品よ。旅の前にまとめてどうぞ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
     },
     market: {
       keeper: '交易所の主人バロウ',
       greet: '星の外から届いた上物ばかりさ。嵐の塔の準備なら、ここで全部そろう。',
-      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelS', 'repelL'],
       foot: ['stormcharm', 'windmuffler', 'medpack', 'reflexchip'],
     },
-    stall_wind1: { keeper: '風船売りの子', greet: 'いらっしゃい！ 空港名物の救急セットだよ。', items: ['kitM', 'repM', 'batM', 'warpunit'] },
+    stall_wind1: { keeper: '風船売りの子', greet: 'いらっしゃい！ 空港名物の救急セットだよ。', items: ['kitM', 'repM', 'batM', 'warpunit', 'repelS', 'repelL'] },
     stall_wind2: { keeper: '空賊あがりの武器商', greet: '……元空賊さ。いまは足を洗った。品物は本物だぜ。', machine: ['gt2', 'cm2', 'haxe', 'flm2'], foot: ['windcutter', 'aerorifle'] },
     stall_wind3: { keeper: 'ジャンクパーツ屋', greet: '飛行船の解体で出た部品だよ。', parts: ['arm_gale', 'legs_biped2', 'head_sharp2'] },
     inn: { pricePerMember: 80, keeper: '空港ホテルの支配人' },
@@ -183,7 +183,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のおやじウミ',
       greet: '潮風で体が冷える。救急キットは多めにな。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
       foot: ['pearlcharm'],
     },
     inn: { pricePerMember: 100, keeper: '灯台守の宿のナミ' },
@@ -210,7 +210,7 @@ export const SHOPS = {
     item: {
       keeper: '道具屋のアサリ',
       greet: '海上プラントに行くなら、生身の回復が大事よ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
       foot: ['pearlcharm', 'tidering'],
     },
     inn: { pricePerMember: 110, keeper: '水上の宿のシズク' },
@@ -232,15 +232,15 @@ export const SHOPS = {
     item: {
       keeper: '補給係のミオ',
       greet: 'ドームの補給品です。旅の前にまとめてどうぞ。',
-      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'],
     },
     market: {
       keeper: '交易所の主人タイド',
       greet: '海の底の遺跡から上がった品もあるよ。ボス戦の準備ならここで。',
-      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelS', 'repelL'],
       foot: ['pearlcharm', 'tidering', 'nanohelm', 'nanogloves'],
     },
-    stall_sea1: { keeper: '貝がら売りの子', greet: 'いらっしゃい！ 貝がらの薬はよく効くよ。', items: ['kitM', 'kitL', 'repM', 'warpunit'] },
+    stall_sea1: { keeper: '貝がら売りの子', greet: 'いらっしゃい！ 貝がらの薬はよく効くよ。', items: ['kitM', 'kitL', 'repM', 'warpunit', 'repelS', 'repelL'] },
     stall_sea2: { keeper: '元海賊の武器商', greet: '……海賊はやめたさ。品物は本物だ。', machine: ['tidalgat', 'torpedo', 'galemissile', 'windblade'], foot: ['harpoongun', 'coralblade'] },
     stall_sea3: { keeper: 'サルベージ屋', greet: '沈んだ船から引き上げた部品だよ。', parts: ['arm_hydro', 'legs_quad2', 'head_sonar'] },
     inn: { pricePerMember: 120, keeper: 'ドームホテルの支配人' },

@@ -64,6 +64,7 @@ export class BattleScene {
     timeScale.k = 1;
     clearTimeout(this.msgTimer);
     this.hudEl?.remove();
+    this.autoBtn?.remove(); this.autoBtn = null;
     this.fx?.dispose();
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
   }
@@ -260,6 +261,17 @@ export class BattleScene {
     this.hudEl = el;
     this.msgEl = el.querySelector('.b-msg');
     this.histEl = el.querySelector('.b-history');
+    // オートバトルのボタン（押すたびに切り替え。次の戦闘にも引きつぐ）
+    this.auto = !this.test && !!G.flags.autoBattle;
+    if (!this.test) {
+      const ab = document.createElement('button');
+      ab.className = 'auto-btn';
+      ab.addEventListener('pointerdown', (e) => e.stopPropagation());
+      ab.addEventListener('click', (e) => { e.stopPropagation(); this.setAuto(!this.auto); });
+      document.body.appendChild(ab);
+      this.autoBtn = ab;
+      this.setAuto(this.auto);
+    }
     this.partyEl = el.querySelector('.b-party');
     this.updateHud();
   }
@@ -403,14 +415,75 @@ export class BattleScene {
   clearSelectGlow() { for (const e of this.enemies) if (e.lit) { resetFlash(e.obj); e.lit = false; } }
   aliveParty() { return this.party.filter((u) => !u.m.ko); }
 
+  // オートバトルの切り替え。オンにしたとき、開いているコマンドのメニューは閉じて自動で進める
+  setAuto(on) {
+    this.auto = on;
+    G.flags.autoBattle = on;
+    if (this.autoBtn) { this.autoBtn.classList.toggle('on', on); this.autoBtn.textContent = on ? 'AUTO ●' : 'AUTO'; }
+    if (on) ui.cancelTopMenu();
+  }
+
+  // オートバトルの1人分の行動：弱っていたら回復・修理、そうでなければいちばんダメージが出る武器と相手を選ぶ
+  autoCommand(u) {
+    const inv = G.inv.items;
+    const has = (ids) => ids.find((k) => (inv[k] || 0) > 0);
+    const ko = this.party.find((p) => p.m.ko);
+    if (ko) { const id = has(['revive']); if (id) return { type: 'item', id, target: { member: ko.m } }; }
+    const lowMc = this.party.filter((p) => p.mc && !p.m.ko && p.mc.armor < machineStats(p.mc).maxArmor * 0.35).sort((a, b) => a.mc.armor - b.mc.armor)[0];
+    if (lowMc && CHARACTERS[u.m.id].skill.id === 'repair' && u.mc) return { type: 'repair', target: lowMc };
+    if (u.mc && lowMc === u) { const id = has(['maint', 'repL', 'repM', 'repS']); if (id) return { type: 'item', id, target: { mc: u.mc } }; }
+    if (!u.mc && u.m.hp < memberStats(u.m).maxHp * 0.35) { const id = has(['kitL', 'kitM', 'kitS']); if (id) return { type: 'item', id, target: { member: u.m } }; }
+    if (u.mc) {
+      const alive = this.aliveEnemies();
+      const st = machineStats(u.mc);
+      // エネルギーがたまっていて、ボス戦か敵が多いときは全砲門一斉発射
+      if (u.mc.en >= ALLFIRE_EN && u.mc.en >= st.maxEn * 0.85 && (alive.some((e) => e.def.boss) || alive.length >= 3) && u.mc.slots.some(Boolean)) return { type: 'allfire' };
+      let best = null;
+      u.mc.slots.forEach((uid, i) => {
+        if (!uid) return;
+        const w = weaponByUid(uid), d = WEAPONS[w.id];
+        if (weaponLocked(w, u.mc) || (d.en || 0) > u.mc.en) return;
+        for (const mode of d.modes ? Object.keys(d.modes) : [d.target || 'one']) {
+          const t = this.autoTarget(mode, d);
+          const score = weaponAtk(w, u.mc) * (d.modes ? d.modes[mode] : 1) * t.n * t.k - (d.en || 0) * 0.5;
+          if (!best || score > best.score) best = { score, slot: i, mode: d.modes ? mode : null, target: t.target };
+        }
+      });
+      if (best) return { type: 'attack', slot: best.slot, target: best.target, mode: best.mode, skill: null };
+      return { type: 'guard' };
+    }
+    const fw = memberStats(u.m).weapon;
+    return { type: 'attack', slot: null, target: this.autoTarget(fw.target || 'one', fw).target, skill: null };
+  }
+
+  // オートバトルの相手：全体＝全部、グループ＝いちばん多い（弱点ならそちら）種類、単体＝弱点の中で体力がいちばん少ない敵
+  autoTarget(kind, def) {
+    const alive = this.aliveEnemies();
+    const eff = (e) => (def?.elem && WEAKNESS[e.def.type] === def.elem ? ELEMENT_RATE : 1);
+    if (kind === 'all') return { target: { all: true }, n: alive.length, k: alive.reduce((a, e) => a + eff(e), 0) / alive.length };
+    if (kind === 'group') {
+      let bk = null, bs = -1, bn = 1, bkk = 1;
+      for (const key of new Set(alive.map((e) => e.key))) { const g = alive.filter((e) => e.key === key); const k = eff(g[0]); if (g.length * k > bs) { bs = g.length * k; bk = key; bn = g.length; bkk = k; } }
+      return { target: { group: bk }, n: bn, k: bkk };
+    }
+    const e = alive.slice().sort((a, b) => eff(b) - eff(a) || a.hp - b.hp)[0];
+    return { target: { unit: e }, n: 1, k: eff(e) };
+  }
+
   async commandPhase() {
     const actors = this.aliveParty();
+    if (this.auto) {
+      await wait(0.35);
+      if (this.auto) { this.showMarker(null); return actors.map((u) => ({ ...this.autoCommand(u), u })); }
+    }
     const cmds = [];
     let i = 0;
     while (i < actors.length) {
       const u = actors[i];
       this.updateHud(u);
       const c = await this.chooseCommand(u);
+      // 途中でオートに切り替えたら、残りの仲間も（決めた分も含めて）全員オートで行動
+      if (c === 'auto') { this.updateHud(); this.showMarker(null); this.clearSelectGlow(); return actors.map((a) => ({ ...this.autoCommand(a), u: a })); }
       if (c === 'back') { if (i > 0) { i--; cmds.pop(); } continue; }
       if (c.type === 'escape') { this.updateHud(); return 'escape'; }
       cmds.push({ ...c, u });
@@ -425,10 +498,13 @@ export class BattleScene {
   async chooseCommand(u) {
     const c = CHARACTERS[u.m.id];
     for (;;) {
+      if (this.auto) return 'auto';
       const items = [{ label: '攻撃', value: 'attack' }, { label: c.skill.name, value: 'skill' }];
       if (u.mc) items.push({ label: `全砲門一斉発射`, value: 'allfire', right: `EN${ALLFIRE_EN}`, disabled: u.mc.en < ALLFIRE_EN });
-      items.push({ label: '道具', value: 'item' }, { label: '防御', value: 'guard' }, { label: '逃げる', value: 'escape' });
+      items.push({ label: '道具', value: 'item' }, { label: '防御', value: 'guard' }, { label: 'オート', value: 'auto', right: '<small>自動で戦う</small>' }, { label: '逃げる', value: 'escape' });
       const v = await ui.menu({ title: `${esc(u.m.name)}${u.mc ? `<small>（${esc(machineName(u.mc))}）</small>` : ''}`, items, className: 'battle-cmd', cancel: true });
+      if (this.auto) return 'auto';
+      if (v === 'auto') { this.setAuto(true); return 'auto'; }
       if (v === null) return 'back';
       if (v === 'guard') return { type: 'guard' };
       if (v === 'escape') return { type: 'escape' };

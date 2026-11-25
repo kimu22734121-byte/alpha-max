@@ -1306,6 +1306,7 @@ async function statusMenu() {
 export async function chooseItemTarget(id, inBattle = false) {
   const it = ITEMS[id];
   if (it.use === 'warp') return inBattle ? null : { warp: true };
+  if (it.use === 'repel') return inBattle ? null : { repel: true };
   // 戦闘中は、味方のマシンやキャラを直接タップしても選べる（battle.js が ui.pickHook で光らせる）
   const bo = inBattle ? { className: 'battle-cmd', passThrough: true, onFocus: (x) => ui.pickHook?.focus?.(x?.value) } : {};
   if (it.use === 'hp') return ui.menu({ ...bo, title: `${esc(it.name)}：誰に？`, items: partyMembers().map((m) => ({ label: esc(m.name), right: `${m.hp}/${memberStats(m).maxHp}`, value: { member: m }, disabled: m.ko })) });
@@ -1327,6 +1328,10 @@ export function applyItem(id, target) {
   if (it.use === 'armor') return `${machineName(target.mc)}の装甲が${healA(target.mc, amt)}回復した`;
   if (it.use === 'en') return `${machineName(target.mc)}のエネルギーが${healE(target.mc, amt)}回復した`;
   if (it.use === 'maint') { healA(target.mc, amt); healE(target.mc, amt); return `${machineName(target.mc)}の装甲とエネルギーが全回復した`; }
+  if (it.use === 'repel') {
+    G.repel = { steps: amt, rate: it.rate, name: it.name };
+    return `${it.name}を使った。${amt}歩のあいだ、敵に出会いにくくなる。`;
+  }
   if (it.use === 'allheal') {
     for (const m of partyMembers()) { m.ko = false; m.hp = memberStats(m).maxHp; }
     for (const mc of Object.values(G.machines)) if (mc.loc.type === 'party') { healA(mc, 9999); }
@@ -1343,7 +1348,7 @@ export async function itemMenu(inBattle, world) {
     if (!list.length) { await ui.say('道具を持っていない。'); return null; }
     const id = await ui.menu({ title: 'どうぐ', desc: true, className: inBattle ? 'battle-cmd wide' : '', items: list.map(([id, n]) => ({ label: esc(ITEMS[id].name), right: `×${n}`, value: id, desc: esc(ITEMS[id].desc) })) });
     if (!id) return null;
-    if (inBattle && ITEMS[id].use === 'warp') { await ui.say('戦闘中はワープユニットを使えない。'); continue; }
+    if (inBattle && (ITEMS[id].use === 'warp' || ITEMS[id].use === 'repel')) { await ui.say(`戦闘中は${esc(ITEMS[id].name)}を使えない。`); continue; }
     const target = await chooseItemTarget(id, inBattle);
     if (!target) continue;
     if (inBattle) return { id, target };
@@ -1352,7 +1357,7 @@ export async function itemMenu(inBattle, world) {
       continue;
     }
     const msg = applyItem(id, target);
-    audio.sfx(ITEMS[id].use === 'armor' || ITEMS[id].use === 'maint' ? 'repair' : 'heal');
+    audio.sfx(ITEMS[id].use === 'armor' || ITEMS[id].use === 'maint' ? 'repair' : ITEMS[id].use === 'repel' ? 'warp' : 'heal');
     await ui.say(msg);
   }
 }

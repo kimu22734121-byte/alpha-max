@@ -160,6 +160,8 @@ export const ui = {
         pickBy: (pred) => { const i = findBy(pred); if (i < 0) return false; setIdx(i, false); choose(); return true; },
         focusBy: (pred) => { const i = findBy(pred); if (i < 0) return false; if (i !== idx) { audio.sfx('cursor'); setIdx(i); } return true; },
         focused: () => items[idx],
+        // 外から閉じる（オートバトルに切り替えたとき）
+        cancelMenu: () => done(null),
         onKey: (e) => {
           if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); move(1); }
           else if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); move(-1); }
@@ -435,6 +437,8 @@ export const ui = {
     return new Promise((r) => setTimeout(r, dur * 1000 + 30));
   },
 
+  // いちばん上のメニューを「やめる」で閉じる（オートバトルのボタンから）
+  cancelTopMenu() { const t = ui.topMenu(); if (t?.cancelMenu) { t.cancelMenu(); return true; } return false; },
   closeAll() {
     while (stack.length) popModal(stack[stack.length - 1]);
   },
