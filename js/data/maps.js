@@ -5,7 +5,8 @@
 // 座標は (x, y) = (列, 行)。3D空間では x → X、y → Z に対応する。
 // y=建造物（フィールドの町・ダンジョン入口の3Dの下。通れない）
 // 第1章「土」の惑星：町3つ（ラストヘイヴン・グレイロック・ウェイポイント）＋ダンジョン3つ（坑道・墜落した宇宙船・廃工場）
-import { parseRows } from './tiles.js';
+import { parseRows, TILES } from './tiles.js';
+import { spreadMaps } from './map-scale.js';
 import { addInteriors, addDevRoom } from './interiors.js';
 import { MAPS2 } from './maps2.js';
 import { MAPS3 } from './maps3.js';
@@ -762,6 +763,9 @@ for (const m of Object.values(MAPS)) {
   m.width = m.grid[0].length;
   m.height = m.grid.length;
 }
+
+// 町・ダンジョン・フィールドを広々させる（表は広げる前の座標で書いておき、ここで広げる。map-scale.js）
+spreadMaps(MAPS, TILES);
 
 // 町の建物の中（小さな部屋のマップ）を足す
 addInteriors(MAPS);

@@ -62,7 +62,9 @@ flow.flyTo = async ({ to, at, from, planet, lines, after }) => {
     const mc = m.machine && G.machines[m.machine];
     if (mc?.owned && (mc.loc.type === 'garage' || mc.loc.type === 'party')) mc.loc = { type: 'garage', town: to };
   }
-  G.pos = { map: to, x: at[0], y: at[1], dir: 0 };
+  // at は広げる前の町の座標で書いてある（map-scale.js）
+  const k = MAPS[to]?.spread || 1;
+  G.pos = { map: to, x: at[0] * k, y: at[1] * k, dir: 0 };
   G.lastTown = to; (G.flags.visited ||= {})[to] = true;
   await engine.setScene(scenes.flight, {
     from, to: planet, lines,
