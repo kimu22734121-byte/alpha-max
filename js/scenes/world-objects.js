@@ -548,6 +548,7 @@ export function addStructures(scene, map, heightAt) {
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     const x = st.x + 0.5, z = st.y + 0.5;
     obj.position.set(x, heightAt(map, x, z) - 0.05 + (st.lift || 0), z);
+    if (st.scale) obj.scale.setScalar(st.scale);
     if (st.rot) obj.rotation.y = st.rot;
     scene.add(obj);
     const blink = [], spin = [], spinY = [], spinX = [], bobs = [];

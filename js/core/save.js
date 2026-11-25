@@ -1,6 +1,7 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 import { START_EQUIP } from '../data/footgear.js';
+import { MAPS } from '../data/maps.js';
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
 
@@ -116,6 +117,16 @@ function migrate(data) {
     }
     G.uid = uid;
     data.v = 7;
+  }
+  // v7 → v8：町・ダンジョン・フィールドを広々させた（map-scale.js）。いる場所と、マップに置いてあるマシンの位置を広げた後の位置に直す
+  //   歩いた場所の記録（ちず）は、マップの大きさが変わったので消す
+  if (data.v < 8) {
+    const G = data.state;
+    const k = (id) => MAPS[id]?.spread || 1;
+    if (G.pos) { const kk = k(G.pos.map); G.pos.x *= kk; G.pos.y *= kk; }
+    for (const mc of Object.values(G.machines || {})) if (mc.loc?.type === 'map' && mc.loc.x != null) { const kk = k(mc.loc.map); mc.loc.x *= kk; mc.loc.y *= kk; }
+    for (const id of Object.keys(G.explored || {})) if (k(id) !== 1) delete G.explored[id];
+    data.v = 8;
   }
   return data;
 }

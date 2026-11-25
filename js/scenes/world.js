@@ -30,14 +30,14 @@ const MACHINE_SCALE = 0.72;
 const ENC_RATE = { sand: 0.13, rock: 0.18, metal: 0.16, road: 0, ship: 0.16, sea: 0.16 };
 const GRACE_STEPS = 14; // 戦闘の後・マップに入った後の、敵が出ない歩数
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
-const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
-// 表にない町（第2章以降）は、町の出口（warps の最初）の1マス内側
+// 町の出口（warps の最初）から内側へ進んで、最初の歩ける場所（マップを広げても自動で合う）
 const townGate = (id) => {
-  if (TOWN_GATE[id]) return TOWN_GATE[id];
-  const w = MAPS[id]?.warps?.[0];
-  if (!w) return [Math.floor((MAPS[id]?.width || 2) / 2), Math.floor((MAPS[id]?.height || 2) / 2)];
-  const d = { down: [0, -2], up: [0, 2], left: [2, 0], right: [-2, 0] }[w.dir] || [0, -2];
-  return [w.x + d[0], w.y + d[1]];
+  const m = MAPS[id];
+  const w = m?.warps?.[0];
+  if (!w) return [Math.floor((m?.width || 2) / 2), Math.floor((m?.height || 2) / 2)];
+  const d = { down: [0, -1], up: [0, 1], left: [1, 0], right: [-1, 0] }[w.dir] || [0, -1];
+  for (let i = 2; i < 8; i++) { const x = w.x + d[0] * i, y = w.y + d[1] * i; if (isWalkable(m, x, y)) return [x, y]; }
+  return [w.x + d[0] * 2, w.y + d[1] * 2];
 };
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
