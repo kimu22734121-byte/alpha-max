@@ -387,3 +387,7 @@ table.cmp td.arr { color: var(--dim); }
 /* 武器スロットのアイコン（胸のコア＝第7の専用スロット） */
 .slot-ico { display: inline-block; min-width: 18px; text-align: center; color: var(--dim); font-weight: normal; }
 .slot-ico.core { color: #bff4ff; text-shadow: 0 0 6px #6ad8ff; }
+
+/* オートバトルのボタン（戦闘中、右上。メニューの上からでも押せる） */
+.auto-btn { position: fixed; right: calc(10px + var(--safe-r)); top: 10px; z-index: 12; pointer-events: auto; background: var(--panel); border: 2px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 14px; font-family: var(--font); font-size: 15px; font-weight: bold; letter-spacing: 0.05em; cursor: pointer; }
+.auto-btn.on { background: #2a6a3a; border-color: #7aff9a; color: #eaffea; box-shadow: 0 0 12px rgba(122, 255, 154, 0.55); }

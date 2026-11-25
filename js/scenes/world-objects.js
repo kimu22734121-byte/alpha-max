@@ -130,11 +130,19 @@ export function addBuildings(scene, map) {
   return list;
 }
 
-// プレイヤーが建物の裏にいる時は建物を半透明にする
-export function updateBuildings(list, px, pz) {
+// プレイヤーとカメラの間に建物があるときは、建物を半透明にする（カメラを回しても見えるように）
+export function updateBuildings(list, px, pz, cx = px, cz = pz + 10, cy = 13) {
+  const dx = cx - px, dz = cz - pz, len = Math.hypot(dx, dz) || 1;
+  // 視線が建物の高さ（約3）より低いあいだだけ、建物が見えなくする（真上から見ているときはほとんど透けない）
+  const reach = Math.min(len, 9, (3.2 * len) / Math.max(cy, 0.5));
   for (const it of list) {
     const b = it.b;
-    const behind = px > b.x - 0.3 && px < b.x + b.w + 0.3 && pz < b.y + b.h - 0.4 && pz > b.y - 3.2;
+    let behind = false;
+    // プレイヤーからカメラの方へ少しずつ進んで、建物の中を通るか調べる
+    for (let i = 1; i <= 12 && !behind; i++) {
+      const d = (i / 12) * reach, x = px + (dx / len) * d, z = pz + (dz / len) * d;
+      if (x > b.x - 0.2 && x < b.x + b.w + 0.2 && z > b.y - 0.2 && z < b.y + b.h + 0.2) behind = true;
+    }
     if (behind !== it.faded) {
       it.faded = behind;
       for (const m of it.mats) { m.transparent = behind; m.opacity = behind ? 0.3 : 1; m.depthWrite = !behind; }

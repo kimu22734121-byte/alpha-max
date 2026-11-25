@@ -1,5 +1,5 @@
 // 道具・素材・生身の装備
-// use: hp=体力回復 / armor=装甲回復 / en=エネルギー回復 / maint=装甲＋エネルギー / revive=気絶から復帰 / allheal=全員まとめて
+// use: hp=体力回復 / armor=装甲回復 / en=エネルギー回復 / maint=装甲＋エネルギー / revive=気絶から復帰 / allheal=全員まとめて / warp=町へ移動 / repel=敵よけ
 // amount: 回復量（9999 は全回復）
 export const ITEMS = {
   kitS: { name: '救急キットS', use: 'hp', amount: 40, price: 30, desc: '仲間1人の体力を40回復' },
@@ -14,6 +14,9 @@ export const ITEMS = {
   maint: { name: 'フルメンテキット', use: 'maint', amount: 9999, price: 1500, desc: 'マシン1台の装甲とエネルギーを全回復' },
   revive: { name: '気つけスプレー', use: 'revive', amount: 0.5, price: 300, desc: '気絶した仲間を体力半分で起こす' },
   warpunit: { name: 'ワープユニット', use: 'warp', amount: 0, price: 120, desc: '一度行った町へ一瞬で移動する。ダンジョンからの脱出にも使える（戦闘中は使えない）' },
+  // 敵よけ：使ってから steps 歩のあいだ、敵に出会う確率が rate 倍になる（賞金首・ボスには効かない）
+  repelS: { name: '敵よけスプレー', use: 'repel', amount: 250, rate: 0.3, price: 180, desc: '250歩のあいだ、敵に出会いにくくなる（出会う確率が3割に）' },
+  repelL: { name: 'ジャミングユニット', use: 'repel', amount: 600, rate: 0.1, price: 650, desc: '600歩のあいだ、敵にほとんど出会わなくなる（出会う確率が1割に）' },
   megaheal: { name: 'メガリカバリー', use: 'allheal', amount: 9999, price: 5000, rare: true, desc: '全員の体力とマシンの装甲をまとめて全回復（ボス戦用）' },
 };
 

@@ -26,8 +26,9 @@ import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStr
 
 const MACHINE_SCALE = 0.72;
 // 遭遇の確率（3歩ごとに判定）。道（road）は0＝町と町をつなぐ安全な道
-const ENC_RATE = { sand: 0.2, rock: 0.27, metal: 0.25, road: 0, ship: 0.24 };
-const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が出ない歩数
+// 敵に出会う確率（3歩ごと）。v0.12 で約3割減らした
+const ENC_RATE = { sand: 0.13, rock: 0.18, metal: 0.16, road: 0, ship: 0.16, sea: 0.16 };
+const GRACE_STEPS = 14; // 戦闘の後・マップに入った後の、敵が出ない歩数
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
 const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
 // 表にない町（第2章以降）は、町の出口（warps の最初）の1マス内側
@@ -430,7 +431,7 @@ export class WorldScene {
     }
     for (const pk of this.parked) animateMachine(pk.obj, t, 0);
     for (const o of this.extras) animateMachine(o, t, 0);
-    updateBuildings(this.buildings, p.x, p.y, t);
+    updateBuildings(this.buildings, p.x, p.y, this.camera.position.x, this.camera.position.z, this.camera.position.y - heightAt(this.map, p.x, p.y));
     updateStructures(this.structures, t, dt, this.scene, getGlowTex());
     if (this.windLines.length) this.updateWind(dt);
     // 水面の波がゆっくり流れる・泡がのぼる
@@ -592,8 +593,8 @@ export class WorldScene {
     if (this.lamp) this.lamp.position.set(p.x, 2.5, p.y + 0.5);
   }
 
-  // カメラを回せるのは、まずはフィールドだけ（町やダンジョンは使い心地を見てから決める）
-  canRotate() { return this.map?.type === 'field'; }
+  // カメラを回せるマップ：フィールドと町の中（v0.12〜）。建物の中・ダンジョンは固定
+  canRotate() { return this.map?.type === 'field' || this.map?.type === 'town'; }
 
   // 海の底（タイル8）に入れるか：水中仕様のマップで、水中ユニットがあり、マシンに乗っているとき
   canDive(x, z) {
@@ -668,11 +669,18 @@ export class WorldScene {
     if (map.encounter && info?.enc) {
       const enc = map.encounter;
       G.steps++;
+      // 敵よけ（敵よけスプレー・ジャミングユニット）：歩くたびに残りの歩数が減る
+      let repelK = 1;
+      if (G.repel?.steps > 0) {
+        G.repel.steps--;
+        repelK = G.repel.rate;
+        if (G.repel.steps <= 0) { ui.banner(`${G.repel.name}の効果が切れた`, '敵に出会いやすさが元にもどった'); G.repel = null; }
+      }
       if ((G.encGrace || 0) > 0) { G.encGrace--; return; }
       G.encStep = (G.encStep || 0) + 1;
       if (G.encStep < (enc.every || 3)) return;
       G.encStep = 0;
-      const rate = (enc.rate || ENC_RATE)[info.enc] ?? 0.25;
+      const rate = ((enc.rate || ENC_RATE)[info.enc] ?? 0.16) * repelK;
       if (Math.random() < rate) {
         const zone = (enc.zones || []).find((z) => tx >= z.x0 && tx < z.x1 && ty >= z.y0 && ty < z.y1);
         const tables = zone ? zone.tables : enc.tables;
