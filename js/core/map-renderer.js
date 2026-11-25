@@ -415,6 +415,24 @@ export function heightField(map) {
   map._hf = { W, H, c };
   return map._hf;
 }
+// ダンジョンの壁を低くする／元に戻す（cells＝低くするマスの集合 "x,y"）
+const _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _m = new THREE.Matrix4();
+export function cutawayWalls(view, cells) {
+  if (!view?.cut) return;
+  const dirty = new Set();
+  for (const [key, c] of view.cut) {
+    const low = cells.has(key);
+    if (low === c.low) continue;
+    c.low = low;
+    if (low) {
+      c.base.decompose(_p, _q, _s);
+      const h = _s.y; _s.y *= 0.12; _p.y -= (h - _s.y) * 0.5;
+      _m.compose(_p, _q, _s); c.mesh.setMatrixAt(c.i, _m);
+    } else c.mesh.setMatrixAt(c.i, c.base);
+    dirty.add(c.mesh);
+  }
+  for (const m of dirty) m.instanceMatrix.needsUpdate = true;
+}
 export function heightAt(map, x, z) {
   const hf = heightField(map);
   const W = hf.W, H = hf.H;
@@ -525,11 +543,20 @@ function add3D(map, group, disposables, view) {
     for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) if (ids.includes(map.grid[y][x])) out.push([x, y]);
     return out;
   };
+  // ダンジョンの壁：カメラを回したとき、キャラとカメラの間の壁を低く縮められるように、1つずつの元の形を覚えておく
+  const cutIds = map.type === 'dungeon' ? new Set([4, 24, 27, 15, 16, 18]) : null;
+  if (cutIds) view.cut = new Map();
   for (const [id, k] of Object.entries(kinds)) {
     const cells = cellsOf([Number(id)]);
     if (!cells.length) continue;
     const inst = new THREE.InstancedMesh(k.geo, k.mat, cells.length);
-    cells.forEach(([x, y], i) => place(inst, i, x, y, k));
+    cells.forEach(([x, y], i) => {
+      place(inst, i, x, y, k);
+      if (cutIds?.has(Number(id))) {
+        const base = new THREE.Matrix4(); inst.getMatrixAt(i, base);
+        view.cut.set(`${x},${y}`, { mesh: inst, i, base, low: false });
+      }
+    });
     inst.castShadow = true; inst.receiveShadow = true;
     group.add(inst);
     disposables.push(k.geo, k.mat);
