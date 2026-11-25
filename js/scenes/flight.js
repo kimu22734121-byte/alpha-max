@@ -11,6 +11,10 @@ import { buildStruct } from './world-objects.js';
 export const PLANET_LOOK = {
   earth: { base: '#9a6a3e', bands: [[120, 80, 40], [170, 120, 70]], spots: 'rgba(60,36,20,0.45)', clouds: 0.18, atmo: 0xffc890 },
   water: { base: '#1a5aa8', bands: [[30, 90, 170], [40, 120, 200], [20, 70, 140]], spots: 'rgba(230,210,150,0.55)', clouds: 0.4, atmo: 0x9adcff },
+  fire: { base: '#3a1a10', bands: [[200, 70, 20], [120, 40, 20], [240, 120, 40]], spots: 'rgba(255,140,40,0.6)', clouds: 0.12, atmo: 0xff8a4a },
+  light: { base: '#f0e4c0', bands: [[255, 240, 200], [220, 200, 150], [200, 220, 240]], spots: 'rgba(255,255,255,0.5)', clouds: 0.35, atmo: 0xfff0b0 },
+  dark: { base: '#14101e', bands: [[40, 30, 60], [60, 40, 90], [20, 16, 30]], spots: 'rgba(140,110,255,0.4)', clouds: 0.1, atmo: 0x7a5aff },
+  core: { base: '#3a0a2a', bands: [[120, 30, 90], [80, 10, 60], [200, 60, 160]], spots: 'rgba(255,80,210,0.5)', clouds: 0.15, atmo: 0xff4ad0 },
   wind: { base: '#4a8ac8', bands: [[90, 160, 90], [120, 190, 110], [70, 130, 190]], spots: 'rgba(60,120,60,0.5)', clouds: 0.55, atmo: 0xbfe8ff },
 };
 function planetTexture(look) {

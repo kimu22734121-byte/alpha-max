@@ -27,7 +27,7 @@ import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStr
 const MACHINE_SCALE = 0.72;
 // 遭遇の確率（3歩ごとに判定）。道（road）は0＝町と町をつなぐ安全な道
 // 敵に出会う確率（3歩ごと）。v0.12 で約3割減らした
-const ENC_RATE = { sand: 0.13, rock: 0.18, metal: 0.16, road: 0, ship: 0.16, sea: 0.16 };
+const ENC_RATE = { sand: 0.13, rock: 0.18, metal: 0.16, road: 0, ship: 0.16, sea: 0.16, lava: 0.18 };
 const GRACE_STEPS = 14; // 戦闘の後・マップに入った後の、敵が出ない歩数
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
 // 町の出口（warps の最初）から内側へ進んで、最初の歩ける場所（マップを広げても自動で合う）
@@ -39,6 +39,27 @@ const townGate = (id) => {
   for (let i = 2; i < 8; i++) { const x = w.x + d[0] * i, y = w.y + d[1] * i; if (isWalkable(m, x, y)) return [x, y]; }
   return [w.x + d[0] * 2, w.y + d[1] * 2];
 };
+// 惑星ごとの空・霧・光（out＝屋外、in＝暗いダンジョン）
+const BIOME_LOOK = {
+  fire: {
+    out: { bg: 0x2a1008, fog: 0x5a2a14, near: 20, far: 52, sky: 0xffb080, ground: 0x3a1a0a, hemi: 0.95, sun: 0xff9a5a, sunK: 1.5 },
+    in: { bg: 0x140604, fog: 0x2a0c06, near: 14, far: 36, sky: 0xff8a5a, ground: 0x200804, hemi: 0.6, sun: 0xff8a5a, sunK: 0.5, lamp: 0xffa060 },
+  },
+  light: {
+    out: { bg: 0xfff0d0, fog: 0xfff0d8, near: 30, far: 72, sky: 0xffffff, ground: 0xd8c890, hemi: 1.3, sun: 0xfff8e0, sunK: 2.0 },
+    in: { bg: 0x2a2418, fog: 0x3a3020, near: 16, far: 40, sky: 0xfff0c8, ground: 0x3a3020, hemi: 0.75, sun: 0xfff0c8, sunK: 0.6, lamp: 0xfff0c0 },
+  },
+  dark: {
+    out: { bg: 0x07060e, fog: 0x0e0a1a, near: 12, far: 34, sky: 0x6a5a9a, ground: 0x0a0810, hemi: 0.5, sun: 0x8a8aff, sunK: 0.4, lamp: 0xc8b8ff, lampK: 26 },
+    in: { bg: 0x050408, fog: 0x0a0812, near: 10, far: 30, sky: 0x5a4a8a, ground: 0x08060c, hemi: 0.45, sun: 0x8a8aff, sunK: 0.3, lamp: 0xc8b8ff, lampK: 26 },
+  },
+  core: {
+    out: { bg: 0x14040e, fog: 0x2a0820, near: 14, far: 40, sky: 0xd86ab0, ground: 0x1a0414, hemi: 0.65, sun: 0xff6ad0, sunK: 0.7, lamp: 0xff9ae0, lampK: 22 },
+    in: { bg: 0x0e0208, fog: 0x1e0616, near: 12, far: 32, sky: 0xc85aa0, ground: 0x12020c, hemi: 0.55, sun: 0xff6ad0, sunK: 0.4, lamp: 0xff9ae0, lampK: 24 },
+  },
+};
+// 漂う粒（泡・火の粉・光の粒・闇の粒・胞子）：色と昇る速さ
+const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 }, light: { color: 0xfff0a0, up: 0.35 }, dark: { color: 0x9a7aff, up: 0.3 }, core: { color: 0xff6ad0, up: 0.5 } };
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
 //  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
@@ -172,6 +193,15 @@ export class WorldScene {
       this.lamp = new THREE.PointLight(deep ? 0xa8e8ff : 0xffd8a0, deep ? 24 : 18, deep ? 11 : 9, 1.6);
       this.scene.add(this.lamp);
     } else this.lamp = null;
+    // 第4〜7章の惑星の空と光（火＝赤い空と溶岩の光、光＝まぶしい白金、闇＝夜、マザーコア＝紫の肉の世界）
+    const look = !indoor && BIOME_LOOK[map.biome]?.[dark ? 'in' : 'out'];
+    if (look) {
+      this.scene.background = new THREE.Color(look.bg);
+      this.scene.fog = new THREE.Fog(look.fog, look.near, look.far);
+      hemi.color.setHex(look.sky); hemi.groundColor.setHex(look.ground); hemi.intensity = look.hemi;
+      sun.color.setHex(look.sun); sun.intensity = look.sunK;
+      if (look.lamp) { if (!this.lamp) { this.lamp = new THREE.PointLight(look.lamp, look.lampK || 20, 10, 1.6); this.scene.add(this.lamp); } else this.lamp.color.setHex(look.lamp); }
+    }
     if (indoor) {
       sun.intensity = 1.0;
       // 町ごと・お店ごとの照明の色（宿屋は暖かく、パーツ屋は白っぽく、酒場は紫がかって……）
@@ -287,9 +317,11 @@ export class WorldScene {
     this.cutKey = null;
     // 水の惑星の海の底・水没した都市：泡が立ちのぼる
     this.bubbles = [];
-    if (deep || map.bubbles) {
+    const pt = !indoor && (deep || map.bubbles ? PARTICLES.deep : PARTICLES[map.biome]);
+    this.bubbleUp = pt?.up || 0.9;
+    if (pt) {
       const bg = new THREE.SphereGeometry(0.06, 6, 4);
-      for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({ color: 0xbfefff, transparent: true, opacity: 0.6 })); m.userData.life = Math.random() * 4; this.scene.add(m); this.bubbles.push(m); }
+      for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({ color: pt.color, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })); m.userData.life = Math.random() * 4; this.scene.add(m); this.bubbles.push(m); }
     }
     if ((sky && !sea) || (map.wind && !indoor)) {
       const geo = new THREE.PlaneGeometry(1.6, 0.04);
@@ -440,7 +472,7 @@ export class WorldScene {
     for (const b of this.bubbles) {
       const u = b.userData; u.life += dt;
       if (u.life > (u.max || 0)) { u.life = 0; u.max = 2 + Math.random() * 3; b.position.set(p.x - 8 + Math.random() * 16, heightAt(this.map, p.x, p.y), p.y - 6 + Math.random() * 10); }
-      b.position.y += dt * 0.9; b.position.x += Math.sin(t * 3 + u.max * 10) * dt * 0.2;
+      b.position.y += dt * this.bubbleUp; b.position.x += Math.sin(t * 3 + u.max * 10) * dt * 0.2;
     }
     // 隠し通路の壁は近づくと透ける
     for (const h of this.mapView.hidden || []) {
@@ -620,6 +652,12 @@ export class WorldScene {
   // 海の底（タイル8）に入れるか：水中仕様のマップで、水中ユニットがあり、マシンに乗っているとき
   canDive(x, z) {
     const map = this.map;
+    // 第4章：溶岩の流れ（8）はマシンに乗っていれば渡れる（耐熱装甲がないと熱でダメージ）。生身は入れない
+    if (map.heat && tileAt(map, x, z) === 8) {
+      if (this.avatars?.[0]?.kind === 'machine') return true;
+      if (!this.diveHint && this.active) { this.diveHint = true; ui.banner('溶岩が流れている', '生身では渡れない。マシンに乗っていこう'); }
+      return false;
+    }
     if (!map.dive || tileAt(map, x, z) !== 8) return false;
     if (G.flags.diveUnit && this.avatars?.[0]?.kind === 'machine') return true;
     if (!this.diveHint && this.active) {
@@ -658,7 +696,13 @@ export class WorldScene {
     const map = this.map;
     const tile = tileAt(map, tx, ty);
     // 第3章：海の底（8）は、水中ユニットを付けたマシンで歩ける。敵は 'sea' の表から出る
-    const info = tile === 8 && map.dive ? { ...TILES[8], enc: 'sea' } : TILES[tile];
+    const info = tile === 8 && map.dive ? { ...TILES[8], enc: 'sea' } : tile === 8 && map.heat ? { ...TILES[8], enc: 'lava' } : TILES[tile];
+    // 溶岩の上：耐熱装甲がないと、仲間のマシンの装甲が少しずつ減る（0にはならない）
+    if (tile === 8 && map.heat && !G.flags.heatArmor) {
+      let hurt = false;
+      for (const mc of Object.values(G.machines)) if (mc.owned && mc.loc.type === 'party' && mc.armor > 1) { mc.armor = Math.max(1, mc.armor - Math.ceil(machineStats(mc).maxArmor * 0.03)); hurt = true; }
+      if (hurt) { audio.sfx('flame'); this.heatHint = (this.heatHint || 0) + 1; if (this.heatHint % 6 === 1) ui.banner('熱い！ 装甲がとけていく', '耐熱装甲がないと溶岩の上ではダメージを受ける'); hud.update(true); }
+    }
     if (info?.step === 'door') {
       const b = (map.buildings || []).find((bb) => bb.door[0] === tx && bb.door[1] === ty);
       if (b?.interior) {

@@ -465,6 +465,69 @@ const STRUCT = {
     g.userData.bob = 0.12;
     return g;
   },
+  // ---------------- 第4〜7章の町（共通の作り village に色と特徴を渡す） ----------------
+  // 第4章「火」：溶鉱炉の町（石の家と炎の煙突）
+  forge() { return village({ wall: 0x5a4a44, roof: 0x3a2a26, win: 0xffa04a, gate: 0x3a2a26, lamp: 0xff7a2a, chimneys: true, fire: true, lavaRing: true }); },
+  // 火口の町（黒い岩の上の金属ドームの家と蒸気）
+  caldera() { return village({ wall: 0x7a7a84, roof: 0x4a4a54, win: 0xffc070, gate: 0x4a4a54, lamp: 0xff8a3a, domes: true, steam: true }); },
+  // 灰の港（倉庫・クレーン・煙）
+  ashport() { return village({ wall: 0x6a6058, roof: 0x8a3a2a, win: 0xffb060, gate: 0x4a4038, lamp: 0xffa040, chimneys: true, crane: true }); },
+  // 第5章「光」：白い石と金の屋根の遺跡の町・水晶の町・大神殿の町
+  shrine() { return village({ wall: 0xf0e8d4, roof: 0xd8b040, win: 0xfff0b0, gate: 0xe8dcc0, lamp: 0xfff0a0, roofType: 'gable', pillars: true }); },
+  prism() { return village({ wall: 0xe8eef4, roof: 0x8ab8e8, win: 0xbfe8ff, gate: 0xd8e4f0, lamp: 0xa8d8ff, crystals: true }); },
+  sanctum() { return village({ wall: 0xf4ecd8, roof: 0xe8c050, win: 0xfff4c0, gate: 0xe8dcc0, lamp: 0xffe080, pillars: true, bigDome: true }); },
+  // 第6章「闇」：灯の町・要塞の町・最後の隠れ里
+  duskvale() { return village({ wall: 0x3a3448, roof: 0x24202e, win: 0xffc86a, gate: 0x2a2434, lamp: 0xffb04a, lanterns: true, roofType: 'gable' }); },
+  bastille() { return village({ wall: 0x2e2a3a, roof: 0x1e1a26, win: 0x9a7aff, gate: 0x24202e, lamp: 0x9a7aff, towers: true }); },
+  refuge() { return village({ wall: 0x4a4458, roof: 0x2a3a4a, win: 0xa8e8ff, gate: 0x2a2434, lamp: 0x6ad8ff, lanterns: true, domes: true }); },
+  // 第7章「マザーコアの世界」：前線基地（金属のバリケードと光の柱）
+  outpost() { return village({ wall: 0x6a7480, roof: 0x3a4250, win: 0x9fe8ff, gate: 0x4a5462, lamp: 0x6ad8ff, beacon: true, towers: true }); },
+  // ダンジョンの入口：火山（火口が光る）・光の神殿・闇の塔・マザーコアの巣
+  volcano() {
+    const g = new THREE.Group();
+    const rock = M(0x3a2222), glow = GLOW(0xff5a1a, 2.2);
+    const cone = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 3.2, 4.2, 9), rock); cone.position.set(0, 2.0, -2.2); g.add(cone);
+    const crater = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.2, 9), glow); crater.position.set(0, 4.15, -2.2); g.add(crater); crater.userData.blink = true;
+    for (let i = 0; i < 3; i++) box(g, 0.2, 2.4, 0.06, glow, -0.8 + i * 0.8, 2.2, -0.62 - i * 0.05, 0, 0.3 - i * 0.3).userData.blink = i === 1;
+    box(g, 1.3, 1.2, 0.1, M(0x0a0604), 0, 0.6, -0.75);
+    g.userData.smoke = [[0, 4.6, -2.2], [0.4, 4.4, -2.0]];
+    gate(g, rock, glow, 1.6, 1.3);
+    return g;
+  },
+  temple() {
+    const g = new THREE.Group();
+    const stone = M(0xf0e8d4), gold = M(0xd8b040, { metalness: 0.6 }), glow = GLOW(0xfff0a0, 2.2);
+    box(g, 4.0, 0.4, 3.0, stone, 0, 0.2, -2.0);
+    for (let i = 0; i < 6; i++) cyl(g, 0.16, 0.18, 2.4, 10, stone, -1.75 + i * 0.7, 1.6, -0.7);
+    box(g, 4.2, 0.3, 3.2, gold, 0, 2.9, -2.0);
+    const tri = new THREE.Mesh(new THREE.ConeGeometry(2.4, 1.0, 4), gold); tri.rotation.y = Math.PI / 4; tri.scale.set(1, 1, 0.65); tri.position.set(0, 3.5, -2.0); g.add(tri);
+    const orb = new THREE.Mesh(new THREE.OctahedronGeometry(0.4, 0), glow); orb.position.set(0, 4.4, -2.0); g.add(orb); orb.userData.blink = true;
+    box(g, 1.0, 1.6, 0.1, M(0x2a2418), 0, 1.2, -1.2);
+    gate(g, stone, glow, 1.6, 1.4);
+    return g;
+  },
+  spire() {
+    const g = new THREE.Group();
+    const dark = M(0x1e1a26, { metalness: 0.4 }), glow = GLOW(0x9a7aff, 2.4);
+    for (let i = 0; i < 5; i++) cyl(g, 1.1 - i * 0.18, 1.3 - i * 0.18, 1.4, 6, dark, 0, 0.7 + i * 1.35, -2.0);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.6, 6), dark); tip.position.set(0, 7.4, -2.0); g.add(tip);
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 10, 8), glow); orb.position.set(0, 8.4, -2.0); g.add(orb); orb.userData.blink = true;
+    const rg = new THREE.Group(); rg.position.set(0, 4.0, -2.0); rg.userData.spinY = true; g.add(rg);
+    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.25, 0), glow); c.position.set(Math.cos(a) * 1.8, Math.sin(i) * 0.3, Math.sin(a) * 1.8); rg.add(c); }
+    box(g, 1.1, 1.3, 0.1, M(0x050408), 0, 0.65, -0.75);
+    gate(g, dark, glow, 1.6, 1.4);
+    return g;
+  },
+  hive() {
+    const g = new THREE.Group();
+    const flesh = M(0x6a2a5a), dark = M(0x2a1022), glow = GLOW(0xff4ad0, 2.4);
+    const body = new THREE.Mesh(new THREE.SphereGeometry(2.4, 14, 10), flesh); body.scale.set(1, 0.8, 0.9); body.position.set(0, 1.6, -2.4); g.add(body);
+    for (let i = 0; i < 7; i++) { const a = (i / 7) * Math.PI * 2; const sp = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.6, 5), dark); sp.position.set(Math.cos(a) * 2.0, 2.6 + Math.sin(i) * 0.4, -2.4 + Math.sin(a) * 1.6); sp.rotation.set(Math.sin(a) * 0.6, 0, -Math.cos(a) * 0.6); g.add(sp); }
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10), glow); eye.position.set(0, 2.2, -0.4); g.add(eye); eye.userData.blink = true;
+    box(g, 1.3, 1.3, 0.1, M(0x0a0206), 0, 0.65, -0.55);
+    g.userData.bob = 0.08;
+    return g;
+  },
   // 1本だけの風車（フィールドの飾り）
   mill() { const g = new THREE.Group(); g.add(windmillObj(1.3, 0, 0)); return g; },
   // 嵐の塔：らせんの塔のまわりを雲と稲妻が回る
@@ -517,6 +580,29 @@ const STRUCT = {
     return g;
   },
 };
+// 第4〜7章の町の外観（共通の作り）。色と特徴を変えて使い回す
+function village(o) {
+  const g = new THREE.Group();
+  const wall = M(o.wall), roof = M(o.roof), win = GLOW(o.win, 1.4), gm = M(o.gate), lamp = GLOW(o.lamp, 2.2);
+  const rt = o.roofType || 'flat';
+  house(g, 0.9, 0.9, 0.8, -1.4, -1.4, wall, roof, win, rt);
+  house(g, 0.8, 1.2, 0.8, 1.3, -1.3, wall, roof, win, rt);
+  house(g, 1.2, 0.8, 0.8, 0.0, -2.7, wall, roof, win, rt);
+  house(g, 0.7, 1.5, 0.7, -1.7, -2.9, wall, roof, win);
+  if (o.chimneys) for (const [x, z] of [[-1.5, -1.7], [0.3, -2.9]]) { cyl(g, 0.12, 0.15, 1.2, 6, M(0x2a2222), x, 1.5, z); if (o.fire) { const f = cyl(g, 0.12, 0.02, 0.35, 6, GLOW(0xff7a2a, 2.4), x, 2.25, z); f.userData.blink = true; } g.userData.smoke = [...(g.userData.smoke || []), [x, 2.3, z]]; }
+  if (o.steam) g.userData.smoke = [[1.8, 0.8, -0.8], [-2.2, 0.6, -1.0]];
+  if (o.lavaRing) { const r = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.08, 4, 28, Math.PI * 1.6), GLOW(0xff5a1a, 1.8)); r.rotation.set(Math.PI / 2, 0, Math.PI * 0.7); r.position.set(0, 0.04, -1.9); g.add(r); }
+  if (o.domes) for (const [x, z] of [[1.6, -2.6], [-0.4, -1.3]]) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), M(0x9aa0a8, { metalness: 0.6 })); d.position.set(x, 0, z); g.add(d); }
+  if (o.crane) { box(g, 0.12, 2.6, 0.12, M(0xd8a020), 2.0, 1.3, -2.8); box(g, 2.0, 0.1, 0.1, M(0xd8a020), 1.2, 2.6, -2.8); box(g, 0.4, 0.3, 0.3, M(0x4a4a4a), 0.4, 2.1, -2.8); }
+  if (o.pillars) for (let i = 0; i < 4; i++) cyl(g, 0.1, 0.12, 1.6, 8, M(0xf4ecd8), -2.4 + i * 1.6, 0.8, -3.6);
+  if (o.crystals) for (const [x, z, h] of [[1.9, -2.4, 1.8], [-2.1, -2.0, 1.4], [0.8, -3.4, 2.2]]) { const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.4, 0), GLOW(0xa8d8ff, 1.2)); c.scale.set(0.6, h, 0.6); c.position.set(x, h * 0.4, z); g.add(c); }
+  if (o.bigDome) { const d = new THREE.Mesh(new THREE.SphereGeometry(1.1, 14, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(0xe8c050, { metalness: 0.5 })); d.position.set(0.4, 1.0, -3.0); g.add(d); cyl(g, 1.1, 1.1, 1.0, 14, M(0xf4ecd8), 0.4, 0.5, -3.0); }
+  if (o.lanterns) for (const [x, z] of [[-0.9, -0.4], [0.9, -0.4], [-2.0, -2.2], [2.0, -2.0]]) { cyl(g, 0.03, 0.03, 1.0, 4, M(0x2a2222), x, 0.5, z); box(g, 0.16, 0.2, 0.16, GLOW(o.lamp, 2.2), x, 1.05, z).userData.blink = Math.random() < 0.3; }
+  if (o.towers) for (const x of [-2.6, 2.6]) { cyl(g, 0.3, 0.38, 2.4, 6, wall, x, 1.2, -1.6); box(g, 0.16, 0.16, 0.16, lamp, x, 2.5, -1.6).userData.blink = true; }
+  if (o.beacon) { cyl(g, 0.15, 0.2, 3.2, 8, M(0x8a96a2, { metalness: 0.6 }), 0.4, 1.6, -3.4); const b2 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 6, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fe8ff, transparent: true, opacity: 0.25, depthWrite: false })); b2.position.set(0.4, 6.0, -3.4); g.add(b2); }
+  gate(g, gm, lamp, 1.5, 1.3);
+  return g;
+}
 // 灯台（白と赤のしま模様、上で光が回る）
 function lighthouseObj(k, x, z) {
   const g = new THREE.Group();

@@ -246,4 +246,101 @@ export const SHOPS = {
     inn: { pricePerMember: 120, keeper: 'ドームホテルの支配人' },
     garage: { keeper: '整備長マリン', repairPerArmor: 1, repairPerEn: 1, towFee: 700 },
   },
+  // ================================================================ 第4〜7章
+  // 第4章：クリムゾンフォージ
+  town10: {
+    weapon: { keeper: '武器屋のダグ', greet: '溶鉱炉の火で鍛えた武器だ。', machine: ['magmacannon', 'lavagat', 'flaremissile', 'heatsaber', 'hrg', 'plg'], foot: ['flamethrower', 'magmapistol', 'heatvisor', 'fireproof', 'forgegloves', 'lavaboots', 'plasmarifle', 'stormgat'] },
+    parts: { keeper: 'パーツ屋のスミス', greet: '熱に強いパーツならまかせとけ。', parts: ['head_f4', 'body_bf4', 'body_hf4', 'body_sf4', 'arm_f4', 'legs_f4', 'eng_f4'] },
+    item: { keeper: '道具屋のアカネ', greet: '火傷にはこれ。修理キットも忘れずにね。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['embercharm'] },
+    inn: { pricePerMember: 220, keeper: 'クリムゾンフォージの宿の主人' },
+    garage: { keeper: 'クリムゾンフォージの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1000 },
+  },
+  // 第4章：カルデラリム
+  town11: {
+    weapon: { keeper: '武器屋のマグナ', greet: '火口のふちで鍛えた品さ。', machine: ['magmacannon', 'lavagat', 'flaremissile', 'heatsaber', 'hrg', 'plg', 'sm2', 'inferno'], foot: ['flamethrower', 'magmapistol', 'heatvisor', 'fireproof', 'forgegloves', 'lavaboots', 'plasmarifle', 'stormgat'] },
+    parts: { keeper: 'パーツ屋のコークス', greet: '腕と頭はこっちだよ。', parts: ['head_f4', 'arm_f4', 'legs_f4'] },
+    frame: { keeper: 'カルデラリムの工房の親方', greet: 'フレームとエンジンは工房で組むんだ。', parts: ['body_bf4', 'body_hf4', 'body_sf4', 'eng_f4'] },
+    item: { keeper: '道具屋のヒバナ', greet: '耐熱工房の帰りにどうぞ。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['embercharm'] },
+    inn: { pricePerMember: 230, keeper: 'カルデラリムの宿の主人' },
+    garage: { keeper: 'カルデラリムの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1050 },
+  },
+  // 第4章：アッシュポート
+  town12: {
+    weapon: { keeper: '武器商人ブレイズ', greet: '灰の港に集まる最新の武器だ。', machine: ['magmacannon', 'lavagat', 'flaremissile', 'heatsaber', 'hrg', 'plg', 'sm2', 'inferno', 'pile3'], foot: ['flamethrower', 'magmapistol', 'heatvisor', 'fireproof', 'forgegloves', 'lavaboots', 'plasmarifle', 'stormgat'] },
+    parts: { keeper: 'パーツ屋のスラグ', greet: '港の倉庫から出した新品だよ。', parts: ['head_f4', 'body_bf4', 'body_hf4', 'body_sf4', 'arm_f4', 'legs_f4', 'eng_f4'] },
+    item: { keeper: '補給係のホムラ', greet: '火山に入るなら回復は多めに。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['embercharm'] },
+    market: { keeper: 'アッシュポートの交易所の主人', greet: 'ボス戦の準備ならここで全部そろうよ。', items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelL'], foot: ['embercharm', 'medpack', 'reflexchip'] },
+    stall_town12a: { keeper: '屋台の売り子', greet: 'いらっしゃい！ 安いよ！', items: ['kitM', 'kitL', 'repM', 'batM', 'warpunit', 'repelS'] },
+    stall_town12b: { keeper: '流れの武器商', greet: '……出どころは聞かないでくれ。', machine: ['magmacannon', 'lavagat', 'flaremissile'], foot: ['flamethrower', 'magmapistol'] },
+    stall_town12c: { keeper: 'ジャンクパーツ屋', greet: '拾ってきた部品だよ。', parts: ['arm_f4', 'legs_f4', 'eng_f4'] },
+    inn: { pricePerMember: 240, keeper: 'アッシュポートの宿の主人' },
+    garage: { keeper: 'アッシュポートの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1100 },
+  },
+  // 第5章：ルミナ
+  town13: {
+    weapon: { keeper: '武器屋のアウラ', greet: '古代の技術で作った武器ですよ。', machine: ['lumencannon', 'prismgat', 'halomissile', 'crystallance', 'gpc', 'hvg'], foot: ['photonrifle', 'radiantblade', 'halocrown', 'lightmail', 'lumengloves', 'skywalkers', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のソル', greet: '光の力で動くパーツです。', parts: ['head_l5', 'body_bl5', 'body_hl5', 'body_sl5', 'arm_l5', 'legs_l5', 'eng_l5'] },
+    item: { keeper: '道具屋のヒカリ', greet: '光の星の薬はよく効きますよ。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['sunamulet'] },
+    inn: { pricePerMember: 250, keeper: 'ルミナの宿の主人' },
+    garage: { keeper: 'ルミナの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1100 },
+  },
+  // 第5章：クリスタリア
+  town14: {
+    weapon: { keeper: '武器屋のジェム', greet: '水晶で磨いた武器だよ。', machine: ['lumencannon', 'prismgat', 'halomissile', 'crystallance', 'gpc', 'hvg', 'nova', 'thor'], foot: ['photonrifle', 'radiantblade', 'halocrown', 'lightmail', 'lumengloves', 'skywalkers', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のクオーツ', greet: '頭と腕ならこっち。', parts: ['head_l5', 'arm_l5', 'legs_l5'] },
+    frame: { keeper: 'クリスタリアの工房の親方', greet: 'フレームとエンジンは工房で組むんだ。', parts: ['body_bl5', 'body_hl5', 'body_sl5', 'eng_l5'] },
+    item: { keeper: '道具屋のミラ', greet: '旧基地に行くなら、救急キットをね。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['sunamulet'] },
+    inn: { pricePerMember: 260, keeper: 'クリスタリアの宿の主人' },
+    garage: { keeper: 'クリスタリアの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1150 },
+  },
+  // 第5章：サンクトゥム
+  town15: {
+    weapon: { keeper: '武器商人セイント', greet: '神殿の都の最高の品をどうぞ。', machine: ['lumencannon', 'prismgat', 'halomissile', 'crystallance', 'gpc', 'hvg', 'nova', 'thor', 'photon'], foot: ['photonrifle', 'radiantblade', 'halocrown', 'lightmail', 'lumengloves', 'skywalkers', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のルクス', greet: 'フレームもエンジンもそろっています。', parts: ['head_l5', 'body_bl5', 'body_hl5', 'body_sl5', 'arm_l5', 'legs_l5', 'eng_l5'] },
+    item: { keeper: '補給係のステラ', greet: '神殿の奥は長いですよ。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['sunamulet'] },
+    market: { keeper: 'サンクトゥムの交易所の主人', greet: 'ボス戦の準備ならここで全部そろうよ。', items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelL'], foot: ['sunamulet', 'medpack', 'reflexchip'] },
+    stall_town15a: { keeper: '屋台の売り子', greet: 'いらっしゃい！ 安いよ！', items: ['kitM', 'kitL', 'repM', 'batM', 'warpunit', 'repelS'] },
+    stall_town15b: { keeper: '流れの武器商', greet: '……出どころは聞かないでくれ。', machine: ['lumencannon', 'prismgat', 'halomissile'], foot: ['photonrifle', 'radiantblade'] },
+    stall_town15c: { keeper: 'ジャンクパーツ屋', greet: '拾ってきた部品だよ。', parts: ['arm_l5', 'legs_l5', 'eng_l5'] },
+    inn: { pricePerMember: 270, keeper: 'サンクトゥムの宿の主人' },
+    garage: { keeper: 'サンクトゥムの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1200 },
+  },
+  // 第6章：ダスクヴェイル
+  town16: {
+    weapon: { keeper: '武器屋のノクト', greet: '闇の中でも光る照準つきだ。', machine: ['shadowcannon', 'nightvulcan', 'umbralnova', 'voidscythe', 'gpc', 'hvg'], foot: ['shadowsniper', 'nightbomb', 'nighthelm', 'shadowcloak', 'umbragloves', 'phantomboots', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のシェイド', greet: '夜でも見えるパーツさ。', parts: ['head_d6', 'body_bd6', 'body_hd6', 'body_sd6', 'arm_d6', 'legs_d6', 'eng_d6'] },
+    item: { keeper: '道具屋のトモシビ', greet: 'ランタンの灯りの下でどうぞ。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['moonpendant'] },
+    inn: { pricePerMember: 280, keeper: 'ダスクヴェイルの宿の主人' },
+    garage: { keeper: 'ダスクヴェイルの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1200 },
+  },
+  // 第6章：ブラックフォート
+  town17: {
+    weapon: { keeper: '武器屋のアイアン', greet: '要塞の武器庫の品だ。', machine: ['shadowcannon', 'nightvulcan', 'umbralnova', 'voidscythe', 'gpc', 'hvg', 'nova', 'thor'], foot: ['shadowsniper', 'nightbomb', 'nighthelm', 'shadowcloak', 'umbragloves', 'phantomboots', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のボルト', greet: '頭と腕ならこっちだ。', parts: ['head_d6', 'arm_d6', 'legs_d6'] },
+    frame: { keeper: 'ブラックフォートの工房の親方', greet: 'フレームとエンジンは工房で組むんだ。', parts: ['body_bd6', 'body_hd6', 'body_sd6', 'eng_d6'] },
+    item: { keeper: '道具屋のクロ', greet: '浮遊ドックに行くなら生身の回復を。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['moonpendant'] },
+    inn: { pricePerMember: 290, keeper: 'ブラックフォートの宿の主人' },
+    garage: { keeper: 'ブラックフォートの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1250 },
+  },
+  // 第6章：ラストランタン
+  town18: {
+    weapon: { keeper: '武器商人エンバー', greet: '最後の隠れ里の、最後の品ぞろえさ。', machine: ['shadowcannon', 'nightvulcan', 'umbralnova', 'voidscythe', 'gpc', 'hvg', 'nova', 'thor', 'photon'], foot: ['shadowsniper', 'nightbomb', 'nighthelm', 'shadowcloak', 'umbragloves', 'phantomboots', 'antimat', 'mortar'] },
+    parts: { keeper: 'パーツ屋のルーメ', greet: '尖塔に挑むなら、いちばん強いのを。', parts: ['head_d6', 'body_bd6', 'body_hd6', 'body_sd6', 'arm_d6', 'legs_d6', 'eng_d6'] },
+    item: { keeper: '補給係のホタル', greet: '闇の王の前に、準備はしっかりね。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'], foot: ['moonpendant'] },
+    market: { keeper: 'ラストランタンの交易所の主人', greet: 'ボス戦の準備ならここで全部そろうよ。', items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelL'], foot: ['moonpendant', 'medpack', 'reflexchip'] },
+    stall_town18a: { keeper: '屋台の売り子', greet: 'いらっしゃい！ 安いよ！', items: ['kitM', 'kitL', 'repM', 'batM', 'warpunit', 'repelS'] },
+    stall_town18b: { keeper: '流れの武器商', greet: '……出どころは聞かないでくれ。', machine: ['shadowcannon', 'nightvulcan', 'umbralnova'], foot: ['shadowsniper', 'nightbomb'] },
+    stall_town18c: { keeper: 'ジャンクパーツ屋', greet: '拾ってきた部品だよ。', parts: ['arm_d6', 'legs_d6', 'eng_d6'] },
+    inn: { pricePerMember: 300, keeper: 'ラストランタンの宿の主人' },
+    garage: { keeper: 'ラストランタンの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1300 },
+  },
+  // 第7章：ラストホープ
+  town19: {
+    weapon: { keeper: '武器商人ゼロ', greet: 'これが宇宙で最後の、最強の品ぞろえだ。', machine: ['starfall', 'gpc', 'hvg', 'nova', 'thor', 'photon', 'shadowcannon', 'nightvulcan', 'umbralnova', 'voidscythe'], foot: [] },
+    parts: { keeper: 'パーツ屋のオメガ', greet: '三機を信じて、最高のパーツを。', parts: ['head_s7', 'body_bs7', 'body_hs7', 'body_ss7', 'arm_s7', 'legs_s7', 'eng_s7'] },
+    item: { keeper: '補給係のアイ', greet: 'マザーコアの心臓へ……必ず帰ってきて。', items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit', 'repelS', 'repelL'] },
+    market: { keeper: 'ラストホープの交易所の主人', greet: 'ボス戦の準備ならここで全部そろうよ。', items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit', 'repelL'], foot: ['medpack', 'reflexchip'] },
+    inn: { pricePerMember: 310, keeper: 'ラストホープの宿の主人' },
+    garage: { keeper: 'ラストホープの整備長', repairPerArmor: 1, repairPerEn: 1, towFee: 1300 },
+  },
 };

@@ -65,6 +65,54 @@ export const PALETTES = {
     caveWall: ['#14242c', '#1e3038', '#28404a'],
     sea: '#1a3a5a', seaWave: ['rgba(120,200,240,0.25)', 'rgba(60,140,200,0.3)'], shore: '#2a5a7a', seabed: '#2a4a5a',
   },
+  // 第4章「火」の惑星：灰の大地・黒い玄武岩・赤い岩山・溶岩の海（z）と溶岩の流れ（8）
+  fire: {
+    sand: '#6a5a50', sandSp: ['#5a4a42', '#7a6a5e', '#4a3c36'],
+    rock: '#3a3236', rockSp: ['#2a2428', '#4a4044'], stoneD: '#1e1a1c', stoneL: '#5a5054',
+    metal: '#5a4a44', metalD: '#4a3a34', metalL: '#7a6a62', metalB: '#ff7a2a',
+    mount: ['#4a2a22', '#3a1e18', '#6a3a2a', '#ff8a3a'],
+    wall: ['#3a2a26', '#4a3630', '#241814'],
+    road: '#8a7a6a', roadSp: ['#7a6a5a', '#9a8a7a'],
+    grass: '#6a4a2a',
+    caveWall: ['#1e1210', '#2e1c18', '#3e2620'],
+    sea: '#c84a14', seaWave: ['rgba(255,220,120,0.6)', 'rgba(255,120,40,0.6)'], shore: '#5a2a18', seabed: '#3a1a14', lava: true,
+  },
+  // 第5章「光」の惑星：白い石の遺跡・金色の草・水晶の岩山・光の空（z）
+  light: {
+    sand: '#e8dcb8', sandSp: ['#dccfa8', '#f2e8c8', '#d8c898'],
+    rock: '#d8d4cc', rockSp: ['#c8c4bc', '#e8e4dc'], stoneD: '#b8b0a4', stoneL: '#fffaf0',
+    metal: '#e0d8c4', metalD: '#c8bea8', metalL: '#fff8e4', metalB: '#e8c040',
+    mount: ['#c8d8e8', '#a8c0d8', '#e8f4ff', '#ffffff'],
+    wall: ['#d8ceb4', '#e8e0c8', '#b8ae94'],
+    road: '#f0e4c0', roadSp: ['#e4d8b0', '#fff0d0'],
+    grass: '#c8b040', flowers: ['#ffffff', '#ffe060', '#a8d8ff'],
+    caveWall: ['#b8ae94', '#c8bea4', '#d8ceb4'],
+    voidCol: '#fff4d8', cliff: ['#d8ccb0', '#c8bca0', '#e8dcc0'],
+  },
+  // 第6章「闇」の惑星：夜の大地・紫の岩・黒い山・闇の谷（z）
+  dark: {
+    sand: '#3a3448', sandSp: ['#2e2a3a', '#46405a', '#342e44'],
+    rock: '#2a2636', rockSp: ['#201c2a', '#363046'], stoneD: '#18141e', stoneL: '#4a4460',
+    metal: '#3a3a4a', metalD: '#2e2e3c', metalL: '#4e4e60', metalB: '#9a7aff',
+    mount: ['#24202e', '#1a1622', '#3a3448', '#8a7aca'],
+    wall: ['#2a2636', '#363046', '#1a1622'],
+    road: '#4e4860', roadSp: ['#423c54', '#5a546c'],
+    grass: '#3a5a4a', flowers: ['#9a7aff', '#6ad8ff'],
+    caveWall: ['#141018', '#1e1a26', '#282234'],
+    voidCol: '#06040c', cliff: ['#1e1a26', '#2a2434', '#141018'],
+  },
+  // 第7章「マザーコアの世界」：脈打つ肉の大地・紫の血管・とげの山・底なしの穴（z）・酸の沼（8）
+  core: {
+    sand: '#4a2a3e', sandSp: ['#3e2234', '#5a3248', '#6a2a4a'],
+    rock: '#3a1e30', rockSp: ['#2e1626', '#4a283c'], stoneD: '#22101c', stoneL: '#6a3a58',
+    metal: '#3a2a3a', metalD: '#2e202e', metalL: '#4e384e', metalB: '#ff6ad0',
+    mount: ['#2a1022', '#200a1a', '#4a1a3a', '#ff6ad0'],
+    wall: ['#3a1a30', '#4a2440', '#24101e'],
+    road: '#5a3a4e', roadSp: ['#4e3244', '#664258'],
+    grass: '#8a2a6a', flowers: ['#ff6ad0', '#9a4aff'],
+    caveWall: ['#1e0a18', '#2a1022', '#36162c'],
+    voidCol: '#14040e', cliff: ['#3a1a30', '#2a1022', '#4a2440'],
+  },
   lab: {
     sand: '#a8b4b8', sandSp: ['#98a4a8', '#b8c4c8'],
     rock: '#8a949a', rockSp: ['#7a848a', '#9aa4aa'], stoneD: '#6a7478', stoneL: '#aab4b8',
@@ -124,6 +172,20 @@ const DRAW = {
   },
   7(g, px, py) { g.fillStyle = '#2a2420'; g.fillRect(px + 4, py + 4, TS - 8, TS - 4); g.fillStyle = '#ffcf6a'; g.fillRect(px + 6, py + 6, TS - 12, 3); },
   8(g, px, py, x, y) {
+    if (P.lava) {
+      // 溶岩の流れ（耐熱装甲がないマシンは熱でダメージ）：冷えた黒い殻と光る割れ目
+      g.fillStyle = '#2a1410'; g.fillRect(px, py, TS, TS);
+      g.strokeStyle = '#ff7a2a'; g.lineWidth = 2;
+      for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(px + rng(x, y, i) * TS, py); g.lineTo(px + rng(x, y, i + 5) * TS, py + TS / 2); g.lineTo(px + rng(x, y, i + 9) * TS, py + TS); g.stroke(); }
+      g.fillStyle = 'rgba(255,200,80,0.6)'; g.fillRect(px + rng(x, y, 20) * 26, py + rng(x, y, 21) * 26, 4, 3);
+      return;
+    }
+    if (P === PALETTES.core) {
+      // 酸の沼（マザーコアの世界）
+      g.fillStyle = '#6a1a5a'; g.fillRect(px, py, TS, TS);
+      g.fillStyle = '#c83ab0'; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + 5 + rng(x, y, i) * 22, py + 5 + rng(x, y, i + 3) * 22, 2 + rng(x, y, i + 6) * 3, 0, 7); g.fill(); }
+      return;
+    }
     if (P.seabed) {
       // 海の底（水中ユニットを付けたマシンで歩ける）：砂と海藻と岩
       g.fillStyle = P.seabed; g.fillRect(px, py, TS, TS);
@@ -252,9 +314,16 @@ DRAW[35] = (g, px, py, x, y) => {
     return;
   }
   if (edge) {
-    g.fillStyle = '#6a6258'; g.fillRect(px, py, TS, TS);
-    speckle(g, px, py, x, y, ['#5a5248', '#7e7468', '#4a443c'], 10, 3);
+    const cl = P.cliff || ['#6a6258', '#5a5248', '#7e7468'];
+    g.fillStyle = cl[0]; g.fillRect(px, py, TS, TS);
+    speckle(g, px, py, x, y, [cl[1], cl[2], '#4a443c'], 10, 3);
     g.fillStyle = 'rgba(40,30,20,0.35)'; for (let i = 0; i < 3; i++) g.fillRect(px + rng(x, y, i + 60) * 26, py, 2, TS);
+    return;
+  }
+  if (P.voidCol) {
+    // 光の空・闇の谷・底なしの穴：ぼんやりした色の霧
+    g.fillStyle = P.voidCol; g.fillRect(px, py, TS, TS);
+    for (let i = 0; i < 2; i++) { g.fillStyle = 'rgba(255,255,255,0.06)'; g.beginPath(); g.ellipse(px + rng(x, y, i) * TS, py + rng(x, y, i + 3) * TS, 10, 5, 0, 0, 7); g.fill(); }
     return;
   }
   g.fillStyle = '#d8e8f4'; g.fillRect(px, py, TS, TS);
@@ -373,7 +442,7 @@ const BLOCK_TALL = new Set([3]);
 export const SKY_DEPTH = 6; // 空（雲海）の深さ。浮かぶ島のふちは崖になる
 const SKY = 35;
 // 水の惑星の海は浅い（空の雲海ほど深く落ちない）
-export const seaDepth = (map) => (map.biome === 'water' || map.biome === 'deep' ? 0.7 : SKY_DEPTH);
+export const seaDepth = (map) => (map.biome === 'water' || map.biome === 'deep' ? 0.7 : map.biome === 'fire' ? 0.6 : SKY_DEPTH);
 export function heightField(map) {
   if (map._hf) return map._hf;
   const W = map.width, H = map.height;
@@ -397,6 +466,7 @@ export function heightField(map) {
     }
     if (t === SKY) h = -seaDepth(map);
     if (t === 8 && (map.biome === 'water' || map.biome === 'deep')) h = -0.55; // 海の底
+    if (t === 8 && map.biome === 'fire') h = -0.25; // 溶岩の流れ（少し低い）
     th[y * W + x] = h;
   }
   const c = new Float32Array((W + 1) * (H + 1));
@@ -479,7 +549,7 @@ export function createMapView(map, mode = '3d', renderer) {
   // 空のあるマップ（浮かぶ島）は、外側も雲海にする
   const hasSky = map.grid.some((row) => row.includes(SKY));
   const pal = PALETTES[map.biome];
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: hasSky ? (pal?.sea || '#d8e8f4') : (map.ground || '#555'), roughness: 1 }));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: hasSky ? (pal?.sea || pal?.voidCol || '#d8e8f4') : (map.ground || '#555'), roughness: 1, ...(pal?.lava && hasSky ? { emissive: 0xc83a0a, emissiveIntensity: 0.8 } : {}) }));
   outer.rotation.x = -Math.PI / 2;
   outer.position.set(map.width / 2, hasSky ? -seaDepth(map) - 0.05 : -0.05, map.height / 2);
   outer.receiveShadow = true;
@@ -493,7 +563,9 @@ export function createMapView(map, mode = '3d', renderer) {
     wg.fillStyle = '#ffffff'; wg.fillRect(0, 0, 128, 128);
     for (let i = 0; i < 40; i++) { wg.strokeStyle = i % 2 ? 'rgba(160,210,240,0.9)' : 'rgba(90,160,210,0.7)'; wg.lineWidth = 2; const x = Math.random() * 128, y = Math.random() * 128; wg.beginPath(); wg.moveTo(x, y); wg.quadraticCurveTo(x + 6, y - 4, x + 14, y); wg.stroke(); }
     const wt = new THREE.CanvasTexture(wc); wt.wrapS = wt.wrapT = THREE.RepeatWrapping; wt.repeat.set((map.width + 80) / 6, (map.height + 80) / 6);
-    const wm = new THREE.MeshStandardMaterial({ color: map.biome === 'deep' ? 0x1a5a8a : 0x3aa0d8, map: wt, transparent: true, opacity: 0.5, roughness: 0.2, metalness: 0.1, depthWrite: false });
+    const wm = pal.lava
+      ? new THREE.MeshStandardMaterial({ color: 0xff6a1a, emissive: 0xff4a0a, emissiveIntensity: 1.1, map: wt, emissiveMap: wt, transparent: true, opacity: 0.85, roughness: 0.6, depthWrite: false })
+      : new THREE.MeshStandardMaterial({ color: map.biome === 'deep' ? 0x1a5a8a : 0x3aa0d8, map: wt, transparent: true, opacity: 0.5, roughness: 0.2, metalness: 0.1, depthWrite: false });
     const water = new THREE.Mesh(new THREE.PlaneGeometry(map.width + 80, map.height + 80), wm);
     water.rotation.x = -Math.PI / 2; water.position.set(map.width / 2, -0.12, map.height / 2);
     group.add(water);
@@ -510,14 +582,21 @@ function add3D(map, group, disposables, view) {
   const field = map.type === 'field';
   const wind = map.biome === 'wind';
   const sea = map.biome === 'water' || map.biome === 'deep';
+  // 第4〜7章の惑星の色（山・壁・洞窟の壁・岩場の岩・地面の石・木の幹と葉）。glow があると光る
+  const BC = {
+    fire: { m3: 0x4a2a22, w4: 0x3a2a26, c24: 0x2e1c18, r1: 0x3a3236, r0: 0x5a4a44, trunk: 0x2a1a14, leaf: null, glow: 0xff5a1a },
+    light: { m3: 0xc8d8ec, w4: 0xe0d6bc, c24: 0xd0c6ac, r1: 0xe0dcd4, r0: 0xf0e8d0, trunk: 0xe8e0c8, leaf: 0xf0d860, glow: 0xa8d8ff },
+    dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x3a4a5a, glow: 0x9a7aff },
+    core: { m3: 0x3a1430, w4: 0x3a1a30, c24: 0x2a1022, r1: 0x3a1e30, r0: 0x5a2a48, trunk: 0x4a1a3a, leaf: 0xc83ab0, glow: 0xff6ad0 },
+  }[map.biome];
   const kinds = {
     3: field
-      ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(sea ? 0x4a5058 : wind ? 0x7a8a7c : 0x8a6442), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
+      ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(BC ? BC.m3 : sea ? 0x4a5058 : wind ? 0x7a8a7c : 0x8a6442, BC?.glow && map.biome !== 'light' ? { emissive: BC.glow, emissiveIntensity: 0.12 } : {}), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
       : { geo: new THREE.ConeGeometry(0.7, 1.5, 6), mat: S(0x7a5a3a), y: 0.75, h: [0.9, 1.4], w: [1, 1.3] },
     21: { geo: new THREE.ConeGeometry(0.7, 1.0, 6), mat: S(0x9a7652), y: 0.5, h: [0.8, 1.0], w: [0.9, 1.0], onTerrain: true },
-    4: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: S(map.biome === 'lab' ? 0xb8c4cc : sea ? 0x2e5060 : wind ? 0x4e5e6c : 0x4a4f57), y: 0.8, h: [1, 1], w: [1, 1] },
+    4: { geo: new THREE.BoxGeometry(1, 1.6, 1), mat: S(BC ? BC.w4 : map.biome === 'lab' ? 0xb8c4cc : sea ? 0x2e5060 : wind ? 0x4e5e6c : 0x4a4f57), y: 0.8, h: [1, 1], w: [1, 1] },
     10: { geo: new THREE.BoxGeometry(1, 1.4, 1), mat: S(0x4a6078, { metalness: 0.4 }), y: 0.7, h: [1, 1], w: [1, 1] },
-    24: { geo: new THREE.DodecahedronGeometry(0.75, 0), mat: S(sea ? 0x24404c : wind ? 0x3e4a56 : 0x4a3a2c), y: 0.7, h: [1.1, 1.7], w: [1.1, 1.3] },
+    24: { geo: new THREE.DodecahedronGeometry(0.75, 0), mat: S(BC ? BC.c24 : sea ? 0x24404c : wind ? 0x3e4a56 : 0x4a3a2c), y: 0.7, h: [1.1, 1.7], w: [1.1, 1.3] },
     27: { geo: new THREE.BoxGeometry(1, 1.7, 1), mat: S(0x2a2e3e, { metalness: 0.5 }), y: 0.85, h: [1, 1], w: [1, 1] },
     15: { geo: new THREE.BoxGeometry(0.9, 1.1, 0.9), mat: S(0x5a5f66, { metalness: 0.4 }), y: 0.55, h: [0.9, 1.3], w: [1, 1] },
     16: { geo: new THREE.CylinderGeometry(0.22, 0.22, 1, 8), mat: S(0x8a7a5a, { metalness: 0.5 }), y: 0.5, h: [1, 1], w: [1, 1], rotZ: true },
@@ -576,7 +655,7 @@ function add3D(map, group, disposables, view) {
   // 空のあるマップ：雲海に浮かぶ雲のかたまりと、つり橋の手すり
   const skyCells = cellsOf([35]);
   if (skyCells.length) {
-    const clouds = sea ? [] : skyCells.filter(([x, y]) => rng(x, y, 71) < 0.05);
+    const clouds = !(wind || map.biome === 'light') ? [] : skyCells.filter(([x, y]) => rng(x, y, 71) < 0.05);
     if (clouds.length) {
       const cg = new THREE.SphereGeometry(1, 8, 6), cm = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.85, flatShading: true });
       const inst = new THREE.InstancedMesh(cg, cm, clouds.length);
@@ -618,8 +697,8 @@ function add3D(map, group, disposables, view) {
     group.add(inst);
     disposables.push(geo, mat);
   };
-  deco([1], 0.16, new THREE.DodecahedronGeometry(0.32, 0), S(sea ? 0xc0a8a0 : wind ? 0x9aa2a0 : 0x8a7c6a), 0.25, [0.6, 1.4], [0.7, 1.5], 31);
-  deco([0], 0.025, new THREE.DodecahedronGeometry(0.25, 0), S(sea ? 0xe8dcc0 : wind ? 0x8a9290 : 0xa08a6a), 0.18, [0.5, 1.2], [0.6, 1.4], 41);
+  deco([1], 0.16, new THREE.DodecahedronGeometry(0.32, 0), S(BC ? BC.r1 : sea ? 0xc0a8a0 : wind ? 0x9aa2a0 : 0x8a7c6a), 0.25, [0.6, 1.4], [0.7, 1.5], 31);
+  deco([0], 0.025, new THREE.DodecahedronGeometry(0.25, 0), S(BC ? BC.r0 : sea ? 0xe8dcc0 : wind ? 0x8a9290 : 0xa08a6a), 0.18, [0.5, 1.2], [0.6, 1.4], 41);
   if (sea) {
     // 水の惑星：ヤシの木（少し曲がった幹と、放射状の葉）
     const tcell = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.18);
@@ -637,6 +716,24 @@ function add3D(map, group, disposables, view) {
           m4.compose(v.set(tx + Math.cos(a2) * 0.4, ty - 0.08, y + 0.5 + oz + Math.sin(a2) * 0.4), q.setFromEuler(e.set(0, -a2, -0.35)), sc.set(1, 1, 1));
           leaf.setMatrixAt(i * 5 + k, m4);
         }
+      });
+      for (const im of [trunk, leaf]) { im.castShadow = true; im.receiveShadow = true; group.add(im); }
+      disposables.push(trunkG, trunkM, leafG, leafM);
+    }
+    return;
+  }
+  if (BC?.leaf) {
+    // 光・闇・マザーコアの惑星：水晶の木／黒い木／肉のとげの木（形は三角、色だけ変える）
+    const tcell = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.14);
+    if (tcell.length) {
+      const trunkG = new THREE.CylinderGeometry(0.06, 0.09, 0.6, 5), trunkM = S(BC.trunk);
+      const leafG = map.biome === 'light' ? new THREE.OctahedronGeometry(0.45, 0) : new THREE.ConeGeometry(0.4, 1.1, 5);
+      const leafM = S(BC.leaf, { emissive: BC.leaf, emissiveIntensity: map.biome === 'dark' ? 0.05 : 0.35 });
+      const trunk = new THREE.InstancedMesh(trunkG, trunkM, tcell.length), leaf = new THREE.InstancedMesh(leafG, leafM, tcell.length);
+      tcell.forEach(([x, y], i) => {
+        const gy = heightAt(map, x + 0.5, y + 0.5), hs = 0.8 + rng(x, y, 52) * 0.8, ox = (rng(x, y, 55) - 0.5) * 0.4, oz = (rng(x, y, 56) - 0.5) * 0.4;
+        m4.compose(v.set(x + 0.5 + ox, gy + 0.3 * hs, y + 0.5 + oz), q.identity(), sc.set(1, hs, 1)); trunk.setMatrixAt(i, m4);
+        m4.compose(v.set(x + 0.5 + ox, gy + 1.0 * hs, y + 0.5 + oz), q.setFromEuler(e.set(0, rng(x, y, 57) * 6, 0)), sc.set(1, hs, 1)); leaf.setMatrixAt(i, m4);
       });
       for (const im of [trunk, leaf]) { im.castShadow = true; im.receiveShadow = true; group.add(im); }
       disposables.push(trunkG, trunkM, leafG, leafM);

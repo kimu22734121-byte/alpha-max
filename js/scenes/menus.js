@@ -212,8 +212,18 @@ async function bar() {
       'マスター「ドームの整備長マリンが、新しい機体の乗り手を探してたぞ」',
       'マスター「白、黒、赤の三機が、この海の底に何かを封じた……そんな昔話がある」',
     ],
+    town10: ['マスター「耐熱装甲がないと、溶岩の上でマシンが溶けちまうぞ」', 'マスター「南西の山のすき間の傭兵の墓場に、でっかい剣が眠ってるって噂だ」'],
+    town11: ['マスター「耐熱工房のオーブンは、マグマサウルスのうろこを欲しがってる」', 'マスター「島の西の溶鉱炉跡の奥に、隠し部屋があるらしい」'],
+    town12: ['マスター「東の浮島の研究所は生身でしか入れない。狂った司令機に気をつけな」', 'マスター「炎帝イグニスは1ターンに2回動く」'],
+    town13: ['マスター「古代工房には、メカニックのための道具が残ってるって話だ」', 'マスター「アルファの胸のコアは、星の核の結晶……ステラっていうらしい」'],
+    town14: ['マスター「宇宙軍の旧基地には、パイロットのための装備が眠ってるとか」', 'マスター「水晶工房の親方が、新しい機体を組み上げたらしいぞ」'],
+    town15: ['マスター「光の神殿には、傭兵の守りの鎧があるそうだ」', 'マスター「古代の結晶と寄生コアで、専用の武器は最後の姿に進化するらしい」'],
+    town16: ['マスター「この星の夜は明けない。ランタンを離れるなよ」', 'マスター「ナイトモウを倒すと、メカニックの手袋が出てきたって話だ」'],
+    town17: ['マスター「グレイブメックは、パイロットの手袋を飲みこんだらしい」', 'マスター「浮遊ドックの隠し部屋に、三人分の靴があるそうだ」'],
+    town18: ['マスター「闇の王を倒したとき、白い機体は本当の姿になるという言い伝えがある」', 'マスター「専用装備は、ガレージで最後の姿にしておけ」'],
+    town19: ['マスター「……最後の酒だ。おまえたちの帰りを待ってるぜ」', 'マスター「宝箱には、伝説の武器が眠ってる。全部拾っていけ」'],
   }[currentTown()] || ['マスター「いらっしゃい」'];
-  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム', town7: '灯台下', town8: '潮だまり', town9: 'ブルーホール' }[currentTown()] || '酒場';
+  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム', town7: '灯台下', town8: '潮だまり', town9: 'ブルーホール', town10: '溶鉱炉の一杯', town11: '火口亭', town12: '灰の港の灯', town13: '光の杯', town14: '水晶の間', town15: '神殿の泉', town16: '灯の下', town17: '要塞の食堂', town18: '最後の灯', town19: 'ラストオーダー' }[currentTown()] || '酒場';
   for (;;) {
     const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
     if (!v) return;
@@ -252,9 +262,9 @@ function join(id, machineId) {
 // 宇宙船の行き先（星ごと）。need＝行けるようになる封印の段階、flag＝はじめて着いたら立つフラグ
 // 新しい星（章）はここに1つ足せば船長の行き先に並ぶ
 const SHUTTLE_ROUTES = [
-  { planet: 'earth', town: 'town3', at: [24.5, 26.5], label: '土の惑星（ウェイポイント）', lines: ['宇宙船は星の海を飛び立った。', '目指すは、なつかしい土の惑星――。'] },
+  { planet: 'earth', order: 1, town: 'town3', at: [24.5, 26.5], label: '土の惑星（ウェイポイント）', lines: ['宇宙船は星の海を飛び立った。', '目指すは、なつかしい土の惑星――。'] },
   {
-    planet: 'wind', town: 'town4', at: [24.5, 8.5], label: '風の惑星（ブリーズヒル）', need: 1, flag: 'ch2Started',
+    planet: 'wind', order: 2, town: 'town4', at: [24.5, 8.5], label: '風の惑星（ブリーズヒル）', need: 1, flag: 'ch2Started',
     lines: ['宇宙船は土の惑星を飛び立った。', '星図が示すのは、風の吹く惑星――。', '雲の海に浮かぶ島々が、近づいてくる。'],
     talk: (r, cap) => [
       { name: r, text: '船長さん！ アルファのモニターに、この星図が出たんだ。' },
@@ -273,7 +283,7 @@ const SHUTTLE_ROUTES = [
     },
   },
   {
-    planet: 'water', town: 'town7', at: [23.5, 9.5], label: '水の惑星（シーゲート）', need: 2, flag: 'ch3Started',
+    planet: 'water', order: 3, town: 'town7', at: [23.5, 9.5], label: '水の惑星（シーゲート）', need: 2, flag: 'ch3Started',
     lines: ['宇宙船は風の惑星を飛び立った。', '二つ目の封印が示した星図は、青い海の惑星――。', '海に浮かぶ人工島が、近づいてくる。'],
     talk: (r, cap) => [
       { name: r, text: '船長さん、また新しい星図だ！ 青い……海ばっかりの星みたい。' },
@@ -291,7 +301,60 @@ const SHUTTLE_ROUTES = [
       ui.banner('第3章「水」の惑星', '海に浮かぶ人工島と、海の底に沈んだ都市の星');
     },
   },
+  newPlanet({
+    planet: 'fire', order: 4, town: 'town10', label: '火の惑星（クリムゾンフォージ）', flag: 'ch4Started', ok: () => G.seal >= 3,
+    lines: ['宇宙船は水の惑星を飛び立った。', '三つ目の封印が示したのは、赤く燃える惑星――。', '溶岩の川が光る大地が、近づいてくる。'],
+    talk: ['船長さん、次の星図だ！ 赤い……燃えてるみたいな星。', '「火の惑星」だな。溶岩の川が流れる星だ。マシンの装甲が溶けないように気をつけろよ。'],
+    arrive: ['着いたぞ。火の惑星、溶鉱炉の町クリムゾンフォージだ。', 'あっつ……！ 空まで赤いや。溶岩が川みたいに流れてる！', 'こういう暑いのは嫌いじゃないよ。ひと暴れしようじゃないか！', '……星図は北の火山を指している。'],
+    banner: ['第4章「火」の惑星', '溶岩の川と火山の星'],
+  }),
+  newPlanet({
+    planet: 'light', order: 5, town: 'town13', label: '光の惑星（ルミナ）', flag: 'ch5Started', ok: () => !!G.flags.ch4Clear,
+    lines: ['宇宙船は火の惑星を飛び立った。', '炎帝の記録が示したのは、まばゆい光の惑星――。', '白い遺跡が光の中に浮かんでいる。'],
+    talk: ['船長さん、火山の記録に新しい星図があった！ 白く光る星だ。', '「光の惑星」……古代文明の遺跡の星か。おまえさんたちの機体の生まれ故郷かもしれんな。'],
+    arrive: ['着いたぞ。光の惑星、遺跡の町ルミナだ。', 'まぶしい……！ 建物が全部、白い石と金でできてる。', 'すごい場所だね。宝の匂いがするよ。', '……アルファが、何かに反応している。'],
+    banner: ['第5章「光」の惑星', '古代文明の遺跡が眠る、光の星'],
+  }),
+  newPlanet({
+    planet: 'dark', order: 6, town: 'town16', label: '闇の惑星（ダスクヴェイル）', flag: 'ch6Started', ok: () => !!G.flags.ch5Clear,
+    lines: ['宇宙船は光の惑星を飛び立った。', '光の神殿が示したのは、夜の明けない惑星――。', 'マザーコアの本拠地は、もうすぐそこだ。'],
+    talk: ['船長さん……光の神殿の記録に、闇の星への航路があった。', '「闇の惑星」か。マザーコアにいちばん近い星だ。……覚悟はいいな。'],
+    arrive: ['着いたぞ。闇の惑星、灯の町ダスクヴェイルだ。ここから先は、おれの船もそうそう近づけない。', '真っ暗だ……ランタンの灯りしかない。', '空気が重いね。あいつらの親玉が近いってことか。', '……オメガが、低く唸っている。'],
+    banner: ['第6章「闇」の惑星', '夜の明けない、マザーコアに近い星'],
+  }),
+  newPlanet({
+    planet: 'core', order: 7, town: 'town19', label: 'マザーコアの世界（ラストホープ）', flag: 'ch7Started', ok: () => !!G.flags.ch6Clear,
+    lines: ['宇宙船は闇の惑星を飛び立った。', 'アルファマックスの翼が、最後の星図を照らし出す。', 'マザーコアの世界――すべての始まりの場所へ。'],
+    talk: ['船長さん。最後の星図だ。マザーコアの世界への航路。', '……ここまで来たんだ。最後まで乗せていくさ。必ず帰ってこいよ。'],
+    arrive: ['着いたぞ……マザーコアの世界、最後の前線基地ラストホープだ。', '地面が……脈打ってる。星そのものが生きてるみたいだ。', '最後の大仕事だね。三人と三機、そろって帰るよ！', '……終わらせよう。'],
+    banner: ['第7章「マザーコアの世界」', '最終決戦'],
+  }),
 ];
+
+// 第4章以降の星の行き先（字幕と、はじめて着いたときの話を短く書けるように）
+function newPlanet(o) {
+  return {
+    ...o, at: [24.5, 8.5],
+    talk: (r, cap) => [{ name: r, text: o.talk[0] }, { name: cap, text: o.talk[1] }],
+    arrive: async (r, cap) => {
+      const [a, b, c, d] = o.arrive;
+      await ui.say([{ name: cap, text: a }, { name: r, text: b }, { name: G.members.gina.name, text: c }, { name: G.members.shion.name, text: d }, { name: '', text: '（仲間のマシンはこの町のガレージに運ばれた。転送台や宇宙船でほかの星にも行けます）' }]);
+      ui.banner(o.banner[0], o.banner[1]);
+    },
+  };
+}
+
+// 町の人がマシンを譲ってくれる（第4章以降）
+async function machineGift(type, flag, town, who, lines, after) {
+  const r = ren().name;
+  if (G.flags[flag]) { await ui.say({ name: who, text: after }); return; }
+  await ui.say(lines.map((t, i) => ({ name: i === lines.length - 1 && t.startsWith('@') ? r : who, text: t.replace(/^@/, '') })));
+  createMachine(type, { loc: { type: 'garage', town } });
+  G.flags[flag] = true;
+  audio.sfx('levelup');
+  ui.banner(`${MACHINES[type].name}を手に入れた！`, `${MAPS[town].name}のガレージに入った`);
+  autosave();
+}
 
 // NPCから始まるイベント（world.js から呼ばれる）
 export async function runEvent(name, world) {
@@ -353,13 +416,14 @@ export async function runEvent(name, world) {
       return;
     }
     // まだ行っていない次の星の星図を、アルファが映したとき
-    const next = SHUTTLE_ROUTES.find((rt) => rt.need && G.seal >= rt.need && !G.flags[rt.flag]);
+    const open = (rt) => (rt.ok ? rt.ok() : G.seal >= (rt.need || 0));
+    const next = SHUTTLE_ROUTES.find((rt) => rt.flag && open(rt) && !G.flags[rt.flag]);
     if (next && !G.flags[`${next.flag}Talk`]) {
       G.flags[`${next.flag}Talk`] = true;
       await ui.say(next.talk(r, cap));
     }
     // 新しい星ほど上に並べる
-    const routes = SHUTTLE_ROUTES.filter((rt) => rt.planet !== here && G.seal >= (rt.need || 0)).sort((a, b) => (b.need || 0) - (a.need || 0));
+    const routes = SHUTTLE_ROUTES.filter((rt) => rt.planet !== here && open(rt)).sort((a, b) => (b.order || 0) - (a.order || 0));
     const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「どこへ飛ぶ？」`, items: [...routes.map((rt) => ({ label: `${rt.label}へ飛ぶ`, value: rt.planet })), { label: 'やめる', value: null }] });
     const rt = routes.find((x) => x.planet === v);
     if (!rt) return;
@@ -397,6 +461,41 @@ export async function runEvent(name, world) {
     ui.banner('水中ユニットを付けた！', 'マシンに乗っていれば、北の浅い海の底を歩ける');
     await ui.say({ name: lk, text: 'できたよ。まんなかの島の北の浜から、海の中へ下りていけるはずさ。' });
     autosave();
+    return;
+  }
+  // 第4章：カルデラリムの耐熱工房（マグマサウルスのうろこで耐熱装甲を作る）
+  if (name === 'heatWorkshop') {
+    const ov = 'オーブン';
+    if (G.flags.heatArmor) { await ui.say({ name: ov, text: '耐熱装甲の具合はどうだい？ 溶岩の上でも平気だろう。' }); return; }
+    if (!G.bounties.magmasaurus) {
+      await ui.say([
+        { name: ov, text: '溶岩の上をマシンで歩きたい？ 耐熱装甲がいるね。' },
+        { name: ov, text: '熱を通さない材料……南の溶岩原のマグマサウルスのうろこがあれば、作れるんだけどねえ。' },
+        { name: '', text: '（マグマサウルスを倒すと、耐熱装甲を作ってもらえる）' },
+      ]);
+      return;
+    }
+    await ui.say([
+      { name: ov, text: 'そのうろこ……マグマサウルスを倒したのかい！ よし、まかせな。全部のマシンに耐熱装甲を張ってやる！' },
+      { name: r, text: 'ぼくも手伝う！ 熱の逃げ道は、ここに通すといいよ。' },
+    ]);
+    await ui.fade(true, 0.4); audio.sfx('repair'); await new Promise((res) => setTimeout(res, 800)); await ui.fade(false, 0.4);
+    G.flags.heatArmor = true;
+    audio.sfx('levelup');
+    ui.banner('耐熱装甲を付けた！', '溶岩の上でもマシンがダメージを受けなくなった');
+    autosave();
+    return;
+  }
+  if (name === 'bulldogGift') {
+    await machineGift('bulldog', 'bulldogGot', 'town12', '整備長ボイラー', ['灰の港へようこそ。あんたたちが噂のメカニック一行か。', '港の倉庫に、戦車型の「ブルドッグ」が眠ってる。装甲が厚くて溶岩にも強い。使ってくれ。', '@ありがとう！ 大事に整備するよ！'], 'ブルドッグの調子はどうだい？');
+    return;
+  }
+  if (name === 'mantisGift') {
+    await machineGift('mantis', 'mantisGot', 'town14', '親方ガラス', ['水晶工房へようこそ。古代の設計図から、四脚の機体を組み上げたんだ。', '「マンティス」。どんな足場でも倒れない。持っていってくれ。', '@すごい……古代の設計図か！ 大切にするよ！'], 'マンティスの脚の具合はどうだい？');
+    return;
+  }
+  if (name === 'rhinoGift') {
+    await machineGift('rhino', 'rhinoGot', 'town17', '整備長アイゼン', ['要塞の整備長だ。闇の王に挑むなら、こいつを連れていけ。', '突撃型の「ライノ」。要塞でいちばん頑丈な機体だ。', '@ありがとう。必ず、勝って帰ってくる！'], 'ライノは要塞の誇りだ。頼んだぞ。');
     return;
   }
   // 海上ドームの整備長：砲台型マシン「バスティオン」を譲ってくれる
