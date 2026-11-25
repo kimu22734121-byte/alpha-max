@@ -1,5 +1,5 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 import { START_EQUIP } from '../data/footgear.js';
 const KEY_AUTO = 'alphamax.auto';
 const slotKey = (n) => `alphamax.slot${n}`;
@@ -88,6 +88,34 @@ function migrate(data) {
     G.testGot ||= { foot: {}, items: {}, mats: {}, gear: 0 };
     G.uid = uid;
     data.v = 6;
+  }
+  // v6 → v7：武器の取り付け位置を6か所（右腕・左腕・右肩・左肩・背中右・背中左）＋アルファの胸のコアに変えた
+  //   旧「背中・中央」の武器は右肩へ、旧「背中・右／左」は新しい背中・右／左へ。まだ開いていない場所なら、開いている空きへ移す（無ければ外して持ち物に残る）
+  //   アルファバスターはアルファの専用武器「ルミナス・ランス」に、アルファには胸のコアのステラ・ブレイカーを付ける
+  if (data.v < 7) {
+    const G = data.state;
+    let uid = G.uid || 1;
+    for (const w of G.inv?.weapons || []) if (w.id === 'abuster') w.id = 'alpha_lance';
+    const BASE = { body_alpha: 4, body_omega: 6, body_gaia: 5 };
+    for (const mc of Object.values(G.machines || {})) {
+      const o = mc.slots || [];
+      const n = [o[0] || null, o[1] || null, o[2] || null, null, o[3] || null, o[4] || null, null];
+      const open = Math.min(6, (BASE[mc.parts?.body] || 3) + (mc.mods?.frame || 0));
+      for (let i = open; i < 6; i++) {
+        if (!n[i]) continue;
+        const free = [2, 3, 4, 5].find((k) => k < open && !n[k]);
+        if (free != null) n[free] = n[i];
+        n[i] = null;
+      }
+      mc.slots = n;
+      if (mc.type === 'alpha') {
+        const st = `w${uid++}`;
+        G.inv.weapons.push({ uid: st, id: 'stella', plus: 0 });
+        mc.slots[6] = st;
+      }
+    }
+    G.uid = uid;
+    data.v = 7;
   }
   return data;
 }

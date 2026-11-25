@@ -383,3 +383,7 @@ table.cmp td.arr { color: var(--dim); }
 .menu-panel.viewer-panel, .menu-panel.hangar-panel, .menu-panel.station-panel, .menu-panel.compare-panel { background: #121016; }
 .vw-btns .menu-item { font-size: 13px; white-space: nowrap; padding-left: 6px; padding-right: 6px; }
 .vw-btns .menu-item::before { display: none; }
+
+/* 武器スロットのアイコン（胸のコア＝第7の専用スロット） */
+.slot-ico { display: inline-block; min-width: 18px; text-align: center; color: var(--dim); font-weight: normal; }
+.slot-ico.core { color: #bff4ff; text-shadow: 0 0 6px #6ad8ff; }
