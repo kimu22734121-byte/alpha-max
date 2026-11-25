@@ -10,6 +10,7 @@ import { buildStruct } from './world-objects.js';
 // 惑星の見た目（色の帯と雲）。PLANET_LOOK に足せば、先の章の惑星も同じ演出で飛べる
 export const PLANET_LOOK = {
   earth: { base: '#9a6a3e', bands: [[120, 80, 40], [170, 120, 70]], spots: 'rgba(60,36,20,0.45)', clouds: 0.18, atmo: 0xffc890 },
+  water: { base: '#1a5aa8', bands: [[30, 90, 170], [40, 120, 200], [20, 70, 140]], spots: 'rgba(230,210,150,0.55)', clouds: 0.4, atmo: 0x9adcff },
   wind: { base: '#4a8ac8', bands: [[90, 160, 90], [120, 190, 110], [70, 130, 190]], spots: 'rgba(60,120,60,0.5)', clouds: 0.55, atmo: 0xbfe8ff },
 };
 function planetTexture(look) {

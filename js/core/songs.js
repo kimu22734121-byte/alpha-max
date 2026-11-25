@@ -69,6 +69,11 @@ const windA = ['Dadd9', 'Gmaj7', 'Dadd9', 'Asus4 A', 'Bm7', 'Gmaj7', 'Em7', 'A']
 const windB = ['Gmaj7', 'A', 'F#m7', 'Bm7', 'Gmaj7', 'Dadd9 A', 'Em7', 'Asus4 A'];
 const wind = [...windA, ...windB];
 
+// ---------------------------------------------------------------- 第3章のフィールド（水の惑星：のんびりした南の海の長調）
+const waterA = ['Fmaj7', 'C/E', 'Dm7', 'Bbmaj7', 'Gm7', 'C', 'Fmaj7', 'C'];
+const waterB = ['Bbmaj7', 'C', 'Am7', 'Dm7', 'Gm7', 'C', 'F', 'C7'];
+const water = [...waterA, ...waterB];
+
 // ---------------------------------------------------------------- 戦闘
 const battleIntro = ['E5', 'E5'];
 const battleA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'D', 'B'];
@@ -143,6 +148,23 @@ export const SONGS = {
       { inst: 'warmpad', vol: 0.35, mml: pad(wind, 45) },
       { inst: 'ebass', vol: 0.6, mml: bass(wind, { 4: 'R2 F4 O4', 2: 'R4 F4' }, 2) },
       { inst: 'drums', vol: 0.4, mml: '[o4 c4 e8 e8 d4 e8 e8]16' },
+    ],
+  },
+
+  // 第3章「水」の惑星のフィールド
+  field3: {
+    bpm: 96,
+    tracks: [
+      { inst: 'flute', vol: 1.0, mml: `o5 l4
+        c f a g | e2. c | d f a > c < | b-2. a |
+        g a b- > d < | > c2 < g2 | a g f e | g1 |
+        f b- > d c < | b- a g2 | a > c e d < | > c2 < a2 |
+        b- a g f | e g > c < b- | a2 f2 | g2 r2 |` },
+      { inst: 'piano', vol: 0.45, mml: `q5 ${stabs(water, 55)}` },
+      { inst: 'harp', vol: 0.5, mml: arp(water, 48, [0, 2, 1, 3, 2, 4, 3, 1]) },
+      { inst: 'strings', vol: 0.3, mml: pad(water, 60) },
+      { inst: 'ebass', vol: 0.75, mml: bass(water, { 4: 'R4. R8 F4 O4', 2: 'R4 F4' }, 2) },
+      { inst: 'drums', vol: 0.45, mml: '[o4 c8 e8 d8 e8 c8 c8 d8 e8]16' },
     ],
   },
 

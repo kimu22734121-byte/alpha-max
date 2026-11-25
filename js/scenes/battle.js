@@ -86,6 +86,15 @@ export class BattleScene {
       rock: { g: '#8a9290', s: ['#727a78', '#a2aaa8'], sky: [0xd0e4f4, 0x4a8ad0], fog: 0xb8d0e8 },
       metal: { g: '#8a96a2', s: ['#76828e', '#a2aeba'], sky: [0xd0e4f4, 0x4a8ad0], fog: 0xb8d0e8 },
     }[terrain] || {});
+    // 水の惑星：白い砂浜と海・青空
+    const beach = biome === 'water';
+    if (beach) Object.assign(pal, {
+      sand: { g: '#e2d2a0', s: ['#d4c290', '#ece0b4'], sky: [0xd8f0fa, 0x3a9ae0], fog: 0xa8dcf0 },
+      road: { g: '#c8aa7a', s: ['#b8986a', '#d8ba8a'], sky: [0xd8f0fa, 0x3a9ae0], fog: 0xa8dcf0 },
+      rock: { g: '#b09a94', s: ['#9a8682', '#c4b0aa'], sky: [0xd8f0fa, 0x3a9ae0], fog: 0xa8dcf0 },
+      metal: { g: '#8aa0aa', s: ['#748a94', '#a8c0ca'], sky: [0xd8f0fa, 0x3a9ae0], fog: 0xa8dcf0 },
+      sea: { g: '#3a6a7a', s: ['#2a5a6a', '#4a7a8a'], sky: [0x9ad8f0, 0x2a6ab0], fog: 0x6ab0d0 },
+    }[terrain] || {});
     const dark = dungeon;
     // 地面
     const cv = document.createElement('canvas'); cv.width = cv.height = 512;
@@ -93,6 +102,7 @@ export class BattleScene {
     g.fillStyle = dark ? '#3a3c42' : pal.g; g.fillRect(0, 0, 512, 512);
     for (let i = 0; i < 1800; i++) { g.fillStyle = dark ? (i % 2 ? '#2e3036' : '#474a50') : pal.s[i % 2]; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
     if (dark || terrain === 'metal') { g.strokeStyle = dark ? '#2a2c30' : '#5a6068'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
+    if (dark && biome === 'deep') { g.fillStyle = '#2a4a5a'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 1200; i++) { g.fillStyle = i % 2 ? '#1e3a48' : '#3a5a6a'; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); } }
     if (dark && biome === 'lab') { g.fillStyle = '#c8d2d8'; g.fillRect(0, 0, 512, 512); g.strokeStyle = '#7ad8d8'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
     if (dark && veins) { g.strokeStyle = 'rgba(180,70,220,0.5)'; g.lineWidth = 4; for (let i = 0; i < 10; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512); g.stroke(); } }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 6);
@@ -110,13 +120,25 @@ export class BattleScene {
     this.scene.fog = new THREE.Fog(dark ? 0x16161c : pal.fog, 25, 90);
     this.scene.background = null;
     // 遠くの景色・小物
-    const rockMat = new THREE.MeshStandardMaterial({ color: dark ? (biome === 'lab' ? 0xa8b4bc : windy ? 0x34404c : 0x3a3e44) : windy ? 0x7a8a7c : 0x8a6a4a, flatShading: true, roughness: 1 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: dark ? (biome === 'lab' ? 0xa8b4bc : biome === 'deep' ? 0x1e3a4a : windy ? 0x34404c : 0x3a3e44) : beach ? 0x5a5a62 : windy ? 0x7a8a7c : 0x8a6a4a, flatShading: true, roughness: 1 });
     if (!dark) {
       for (let i = 0; i < 14; i++) {
         const a = (i / 14) * Math.PI * 2 + rand(-0.1, 0.1);
         const m = new THREE.Mesh(new THREE.CylinderGeometry(rand(2, 4), rand(5, 8), rand(6, 14), 6), rockMat);
         m.position.set(Math.cos(a) * rand(45, 60), 3, Math.sin(a) * rand(45, 60));
         this.scene.add(m);
+      }
+      // 水の惑星：まわりは海、砂浜にヤシの木
+      if (beach) {
+        const seaM = new THREE.Mesh(new THREE.RingGeometry(24, 160, 48), new THREE.MeshStandardMaterial({ color: 0x2a8ac8, roughness: 0.2, metalness: 0.1 }));
+        seaM.rotation.x = -Math.PI / 2; seaM.position.y = 0.04; this.scene.add(seaM);
+        for (let i = 0; i < 9; i++) {
+          const a = rand(0, Math.PI * 2), r = rand(14, 21);
+          const palm = new THREE.Group();
+          const tr = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 3.2, 6), new THREE.MeshStandardMaterial({ color: 0x8a6a44, flatShading: true })); tr.position.y = 1.6; tr.rotation.z = rand(-0.25, 0.25); palm.add(tr);
+          for (let k = 0; k < 6; k++) { const lf = new THREE.Mesh(new THREE.BoxGeometry(2, 0.06, 0.4), new THREE.MeshStandardMaterial({ color: 0x3a9a4a, flatShading: true })); const b2 = (k / 6) * Math.PI * 2; lf.position.set(Math.cos(b2) * 0.9, 3.1, Math.sin(b2) * 0.9); lf.rotation.set(0, -b2, -0.35); palm.add(lf); }
+          palm.position.set(Math.cos(a) * r, 0, Math.sin(a) * r); this.scene.add(palm);
+        }
       }
       // 風の惑星：空に浮かぶ岩の島と雲
       if (windy) for (let i = 0; i < 7; i++) {
@@ -157,7 +179,7 @@ export class BattleScene {
     Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 });
     sun.shadow.bias = -0.0015;
     this.scene.add(sun);
-    if (dark) { const pl = new THREE.PointLight(0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
+    if (dark) { const pl = new THREE.PointLight(biome === 'deep' ? 0x4ad8ff : 0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
   }
 
   makePartyObj(u) {

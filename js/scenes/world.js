@@ -153,10 +153,12 @@ export class WorldScene {
     const dark = !!map.dark;
     const indoor = map.type === 'interior';
     // 風の惑星の外は青空と雲海（遠くまで見えるように霧を薄く）
-    const sky = !indoor && !dark && map.biome === 'wind';
-    this.scene.background = new THREE.Color(indoor ? 0x140e0a : dark ? 0x101014 : sky ? 0x8ec4ee : 0x2a2018);
-    this.scene.fog = indoor ? null : sky ? new THREE.Fog(0xc4dcf0, 26, 62) : new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
-    const hemi = new THREE.HemisphereLight(indoor ? 0xffe8c8 : dark ? 0x8a90a8 : sky ? 0xeaf6ff : 0xfff2dc, indoor ? 0x4a3020 : dark ? 0x201820 : sky ? 0x5a7a5a : 0x6a5038, indoor ? 0.9 : dark ? 0.55 : sky ? 1.15 : 1.0);
+    const sky = !indoor && !dark && (map.biome === 'wind' || map.biome === 'water');
+    const sea = map.biome === 'water';
+    const deep = dark && map.biome === 'deep';
+    this.scene.background = new THREE.Color(indoor ? 0x140e0a : deep ? 0x06182a : dark ? 0x101014 : sea ? 0x7cc8f0 : sky ? 0x8ec4ee : 0x2a2018);
+    this.scene.fog = indoor ? null : deep ? new THREE.Fog(0x0a2438, 14, 34) : sky ? new THREE.Fog(sea ? 0xa8dcf0 : 0xc4dcf0, 26, 62) : new THREE.Fog(dark ? 0x101014 : (map.type === 'town' ? 0x4a4640 : 0xb89868), 22, 46);
+    const hemi = new THREE.HemisphereLight(indoor ? 0xffe8c8 : deep ? 0x6ab0d8 : dark ? 0x8a90a8 : sea ? 0xf0faff : sky ? 0xeaf6ff : 0xfff2dc, indoor ? 0x4a3020 : deep ? 0x0a2030 : dark ? 0x201820 : sea ? 0x4a8a9a : sky ? 0x5a7a5a : 0x6a5038, indoor ? 0.9 : deep ? 0.7 : dark ? 0.55 : sky ? 1.15 : 1.0);
     this.scene.add(hemi);
     const sun = new THREE.DirectionalLight(dark ? 0xb0b8ff : sky ? 0xfff8ec : 0xfff0d0, dark ? 0.5 : 1.8);
     sun.castShadow = true;
@@ -166,7 +168,7 @@ export class WorldScene {
     this.scene.add(sun, sun.target);
     this.sun = sun;
     if (dark) {
-      this.lamp = new THREE.PointLight(0xffd8a0, 18, 9, 1.6);
+      this.lamp = new THREE.PointLight(deep ? 0xa8e8ff : 0xffd8a0, deep ? 24 : 18, deep ? 11 : 9, 1.6);
       this.scene.add(this.lamp);
     } else this.lamp = null;
     if (indoor) {
@@ -280,7 +282,14 @@ export class WorldScene {
     this.lastTile = `${Math.floor(p.x)},${Math.floor(p.y)}`;
     // 風の惑星：風の筋が流れる
     this.windLines = [];
-    if (sky || (map.wind && !indoor)) {
+    this.diveHint = false;
+    // 水の惑星の海の底・水没した都市：泡が立ちのぼる
+    this.bubbles = [];
+    if (deep || map.bubbles) {
+      const bg = new THREE.SphereGeometry(0.06, 6, 4);
+      for (let i = 0; i < 40; i++) { const m = new THREE.Mesh(bg, new THREE.MeshBasicMaterial({ color: 0xbfefff, transparent: true, opacity: 0.6 })); m.userData.life = Math.random() * 4; this.scene.add(m); this.bubbles.push(m); }
+    }
+    if ((sky && !sea) || (map.wind && !indoor)) {
       const geo = new THREE.PlaneGeometry(1.6, 0.04);
       for (let i = 0; i < 26; i++) {
         const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
@@ -424,6 +433,13 @@ export class WorldScene {
     updateBuildings(this.buildings, p.x, p.y, t);
     updateStructures(this.structures, t, dt, this.scene, getGlowTex());
     if (this.windLines.length) this.updateWind(dt);
+    // 水面の波がゆっくり流れる・泡がのぼる
+    if (this.mapView.water) { const o = this.mapView.water.material.map.offset; o.x += dt * 0.03; o.y += dt * 0.012; this.mapView.water.position.y = -0.12 + Math.sin(t * 1.2) * 0.03; }
+    for (const b of this.bubbles) {
+      const u = b.userData; u.life += dt;
+      if (u.life > (u.max || 0)) { u.life = 0; u.max = 2 + Math.random() * 3; b.position.set(p.x - 8 + Math.random() * 16, heightAt(this.map, p.x, p.y), p.y - 6 + Math.random() * 10); }
+      b.position.y += dt * 0.9; b.position.x += Math.sin(t * 3 + u.max * 10) * dt * 0.2;
+    }
     // 隠し通路の壁は近づくと透ける
     for (const h of this.mapView.hidden || []) {
       const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
@@ -579,10 +595,23 @@ export class WorldScene {
   // カメラを回せるのは、まずはフィールドだけ（町やダンジョンは使い心地を見てから決める）
   canRotate() { return this.map?.type === 'field'; }
 
+  // 海の底（タイル8）に入れるか：水中仕様のマップで、水中ユニットがあり、マシンに乗っているとき
+  canDive(x, z) {
+    const map = this.map;
+    if (!map.dive || tileAt(map, x, z) !== 8) return false;
+    if (G.flags.diveUnit && this.avatars?.[0]?.kind === 'machine') return true;
+    if (!this.diveHint && this.active) {
+      this.diveHint = true;
+      ui.banner('この先は海の中', G.flags.diveUnit ? 'マシンに乗っていないと入れない' : '水中仕様のマシンでないと進めない（タイドウォークの工房で改造できるらしい）');
+    }
+    return false;
+  }
+
   canStand(x, z, r) {
     const map = this.map;
     for (const [ox, oz] of [[-r, -r], [r, -r], [-r, r], [r, r]]) {
-      if (!isWalkable(map, Math.floor(x + ox), Math.floor(z + oz))) return false;
+      const fx = Math.floor(x + ox), fz = Math.floor(z + oz);
+      if (!isWalkable(map, fx, fz) && !this.canDive(fx, fz)) return false;
     }
     for (const n of this.npcs) if (Math.hypot(n.x - x, n.z - z) < 0.55) return false;
     for (const pk of this.parked) if (Math.hypot(pk.mc.loc.x - x, pk.mc.loc.y - z) < 0.75) return false;
@@ -606,7 +635,8 @@ export class WorldScene {
     this.lastTile = key;
     const map = this.map;
     const tile = tileAt(map, tx, ty);
-    const info = TILES[tile];
+    // 第3章：海の底（8）は、水中ユニットを付けたマシンで歩ける。敵は 'sea' の表から出る
+    const info = tile === 8 && map.dive ? { ...TILES[8], enc: 'sea' } : TILES[tile];
     if (info?.step === 'door') {
       const b = (map.buildings || []).find((bb) => bb.door[0] === tx && bb.door[1] === ty);
       if (b?.interior) {

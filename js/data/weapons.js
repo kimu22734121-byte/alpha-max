@@ -65,6 +65,18 @@ export const WEAPONS = {
   pile3: { name: 'パイルバンカーP-3', cat: 'melee', style: 'pile', mount: 'arm', target: 'one', atk: 170, hit: 8, wt: 9, price: 45000, tier: 5, model: 'wpn_pile', color: 0x2a2a4a, size: 1.2, pierce: true },
   photon: { name: 'フォトンセイバー', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 210, hit: 25, wt: 6, price: 70000, tier: 6, model: 'wpn_blade', color: 0x8ae8ff, size: 1.25, elem: 'elec' },
   valiant: { name: 'ヴァリアントエッジ', cat: 'melee', style: 'blade', mount: 'arm', target: 'all', atk: 300, hit: 30, wt: 6, price: 0, tier: 7, model: 'wpn_blade', color: 0xffe08a, size: 1.4, unique: true },
+
+  // ---------------- 章ごとに増える武器（その章のお店・宝箱・ボスで手に入る） ----------------
+  // 第2章「風」の惑星
+  galemissile: { name: 'ゲイルミサイル', cat: 'missile', mount: 'back', target: 'group', atk: 46, hit: 28, wt: 10, price: 12000, tier: 3, model: 'wpn_missile', color: 0x6ab8d8, size: 1.1, chapter: 2 },
+  windblade: { name: 'ウィンドブレード', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 88, hit: 22, wt: 4, price: 11500, tier: 3, model: 'wpn_blade', color: 0x9ad8e8, size: 1.1, chapter: 2 },
+  // 第3章「水」の惑星
+  aquacannon: { name: 'アクアキャノン', cat: 'cannon', mount: 'back', target: 'one', atk: 128, hit: 6, wt: 15, price: 22000, tier: 4, model: 'wpn_cannon', color: 0x2a7ab8, size: 1.25, chapter: 3 },
+  torpedo: { name: 'トーピードーTP-1', cat: 'missile', mount: 'back', target: 'one', atk: 98, hit: 40, wt: 12, price: 20000, tier: 4, model: 'wpn_missile', color: 0x3a5a7a, size: 1.15, chapter: 3 },
+  tidalgat: { name: 'タイダルガトリング', cat: 'mg', mount: 'arm', target: 'group', atk: 46, hit: 6, wt: 7, price: 19000, tier: 4, model: 'wpn_gatling', color: 0x2a9ab8, size: 1.15, chapter: 3 },
+  cryoray: { name: 'クライオレイ', cat: 'special', mount: 'back', target: 'group', atk: 58, hit: 14, wt: 11, price: 21000, tier: 4, model: 'wpn_special', color: 0x8ae8ff, size: 1.15, en: 16, chapter: 3 },
+  hydrocutter: { name: 'ハイドロカッター', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 120, hit: 20, wt: 6, price: 23000, tier: 4, model: 'wpn_blade', color: 0x4ac8e8, size: 1.2, chapter: 3 },
+  shellbreaker: { name: 'シェルブレイカー【限定】', cat: 'melee', style: 'hammer', mount: 'arm', target: 'group', atk: 104, hit: 4, wt: 9, price: 0, tier: 4, model: 'wpn_hammer', color: 0xd8a040, size: 1.3, chapter: 3, limited: true },
 };
 
 // 攻撃の範囲（技ではなく武器ごとに決まる）

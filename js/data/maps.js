@@ -8,6 +8,7 @@
 import { parseRows } from './tiles.js';
 import { addInteriors, addDevRoom } from './interiors.js';
 import { MAPS2 } from './maps2.js';
+import { MAPS3 } from './maps3.js';
 
 export const MAPS = {
   // ================================================================ 町1
@@ -753,6 +754,8 @@ export const MAPS = {
 
 // 第2章「風」の惑星のマップ（maps2.js）
 Object.assign(MAPS, MAPS2);
+// 第3章「水」の惑星のマップ（maps3.js）
+Object.assign(MAPS, MAPS3);
 
 for (const m of Object.values(MAPS)) {
   m.grid = parseRows(m.rows);
