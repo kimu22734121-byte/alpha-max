@@ -71,25 +71,25 @@ export const WEAPONS = {
 // 全体の武器は1体あたりの威力を低め・エネルギー消費を多めに、単体の武器は威力を高めにする
 // （ザコ戦は全体、ボス戦は単体の大ダメージ、と使い分けられるように）
 // ================================================================ 特別機の専用武器（only でその機体だけ）
-// 強さの目安（noRule：範囲ルールをかけない数値）。同じ時期の通常の武器より1〜2割上。最強クラスにはしない
+// 強さの目安（noRule：範囲ルールをかけない数値）。同じ時期の通常の武器より約5割上（v0.9.1 で引き上げ）。ステラ・ブレイカーよりは下
 //   アルファ＝バランス型（どの範囲も少し上）／オメガ＝単体が強い（第1章で手に入る）／ガイア＝グループが強い（第2章以降）
 // rank：専用武器の強さの順位（1＝最強）。sig：発射の演出の種類（battle.js の signatureFire）
 Object.assign(WEAPONS, {
   // ---- アルファ（白と金・青白い光）。第一封印の解放（第1章の最後）から使える
-  alpha_lance: { name: 'ルミナス・ランス', cat: 'cannon', mount: 'any', target: 'one', atk: 210, hit: 20, wt: 10, price: 0, tier: 4, model: 'wpn_alpha_lance', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', elem: 'elec', noRule: true, rank: 2, sig: 'lance', sfx: 'beam' },
-  alpha_halo: { name: 'ヘイロー・ガトリング', cat: 'mg', mount: 'any', target: 'group', atk: 74, hit: 22, wt: 6, price: 0, tier: 4, model: 'wpn_alpha_halo', color: 0xf4f2ea, glow: 0xffd86a, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 6, sig: 'halo', sfx: 'laser' },
-  alpha_aurora: { name: 'オーロラ・ミサイル', cat: 'missile', mount: 'any', target: 'all', atk: 50, hit: 40, wt: 8, en: 18, price: 0, tier: 4, model: 'wpn_alpha_aurora', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 8, sig: 'aurora', sfx: 'missile' },
+  alpha_lance: { name: 'ルミナス・ランス', cat: 'cannon', mount: 'any', target: 'one', atk: 315, hit: 20, wt: 10, price: 0, tier: 4, model: 'wpn_alpha_lance', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', elem: 'elec', noRule: true, rank: 2, sig: 'lance', sfx: 'beam' },
+  alpha_halo: { name: 'ヘイロー・ガトリング', cat: 'mg', mount: 'any', target: 'group', atk: 111, hit: 22, wt: 6, price: 0, tier: 4, model: 'wpn_alpha_halo', color: 0xf4f2ea, glow: 0xffd86a, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 6, sig: 'halo', sfx: 'laser' },
+  alpha_aurora: { name: 'オーロラ・ミサイル', cat: 'missile', mount: 'any', target: 'all', atk: 75, hit: 40, wt: 8, en: 18, price: 0, tier: 4, model: 'wpn_alpha_aurora', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 8, sig: 'aurora', sfx: 'missile' },
   // ---- オメガ（漆黒と赤）。第1章の地下で手に入る
-  omega_buster: { name: 'オメガバスター', cat: 'cannon', mount: 'any', target: 'one', atk: 152, hit: 25, wt: 9, price: 0, tier: 3, model: 'wpn_omega_buster', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', elem: 'elec', noRule: true, rank: 4, sig: 'crimson', sfx: 'cannon' },
-  omega_storm: { name: 'オメガストーム', cat: 'mg', mount: 'any', target: 'group', atk: 58, hit: 20, wt: 5, price: 0, tier: 3, model: 'wpn_omega_storm', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 7, sig: 'storm', sfx: 'mg' },
-  omega_nova: { name: 'オメガノヴァ', cat: 'missile', mount: 'any', target: 'all', atk: 40, hit: 40, wt: 8, en: 18, price: 0, tier: 3, model: 'wpn_omega_nova', color: 0x2a0a10, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 10, sig: 'nova', sfx: 'missile' },
+  omega_buster: { name: 'オメガバスター', cat: 'cannon', mount: 'any', target: 'one', atk: 228, hit: 25, wt: 9, price: 0, tier: 3, model: 'wpn_omega_buster', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', elem: 'elec', noRule: true, rank: 4, sig: 'crimson', sfx: 'cannon' },
+  omega_storm: { name: 'オメガストーム', cat: 'mg', mount: 'any', target: 'group', atk: 87, hit: 20, wt: 5, price: 0, tier: 3, model: 'wpn_omega_storm', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 7, sig: 'storm', sfx: 'mg' },
+  omega_nova: { name: 'オメガノヴァ', cat: 'missile', mount: 'any', target: 'all', atk: 60, hit: 40, wt: 8, en: 18, price: 0, tier: 3, model: 'wpn_omega_nova', color: 0x2a0a10, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 10, sig: 'nova', sfx: 'missile' },
   // ---- ガイア（深紅と鋼の赤・大地）。第2章以降の隠し場所
-  gaia_pile: { name: 'テラ・パイル', cat: 'melee', style: 'pile', pierce: true, mount: 'any', target: 'one', atk: 175, hit: 8, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_pile', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 3, sig: 'terra', sfx: 'press' },
-  gaia_claymore: { name: 'ガイア・クレイモア', cat: 'melee', style: 'blade', mount: 'any', target: 'group', atk: 135, hit: 6, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_claymore', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', elem: 'fire', noRule: true, rank: 5, sig: 'claymore', sfx: 'metalhit' },
-  gaia_quake: { name: 'アース・クエイク', cat: 'special', mount: 'any', target: 'all', atk: 44, hit: 30, wt: 10, en: 20, price: 0, tier: 4, model: 'wpn_gaia_quake', color: 0x6a3a2a, glow: 0xff9a3a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 9, sig: 'quake', sfx: 'press' },
+  gaia_pile: { name: 'テラ・パイル', cat: 'melee', style: 'pile', pierce: true, mount: 'any', target: 'one', atk: 263, hit: 8, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_pile', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 3, sig: 'terra', sfx: 'press' },
+  gaia_claymore: { name: 'ガイア・クレイモア', cat: 'melee', style: 'blade', mount: 'any', target: 'group', atk: 203, hit: 6, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_claymore', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', elem: 'fire', noRule: true, rank: 5, sig: 'claymore', sfx: 'metalhit' },
+  gaia_quake: { name: 'アース・クエイク', cat: 'special', mount: 'any', target: 'all', atk: 66, hit: 30, wt: 10, en: 20, price: 0, tier: 4, model: 'wpn_gaia_quake', color: 0x6a3a2a, glow: 0xff9a3a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 9, sig: 'quake', sfx: 'press' },
   // ---- アルファの第7の専用スロット（胸のコア）にだけ付く、ゲーム中で最強の武器
   // 範囲は撃つ前に切り替える（modes の倍率：単体が最大、全体が最小）。威力は封印の段階で進化（sealAtk[封印] が単体の威力。0 は壊れていて使えない）
-  stella: { name: 'ステラ・ブレイカー', cat: 'cannon', mount: 'core', target: 'one', modes: { one: 1.0, group: 0.72, all: 0.52 }, sealAtk: [0, 300, 430, 580, 820], atk: 300, hit: 50, wt: 0, en: 30, price: 0, tier: 7, model: null, color: 0xf4f2ea, glow: 0xbff4ff, unique: true, only: 'alpha', noRule: true, rank: 1, sig: 'stella', sfx: 'beam',
+  stella: { name: 'ステラ・ブレイカー', cat: 'cannon', mount: 'core', target: 'one', modes: { one: 1.0, group: 0.72, all: 0.52 }, sealAtk: [0, 380, 540, 740, 1050], atk: 300, hit: 50, wt: 0, en: 30, price: 0, tier: 7, model: null, color: 0xf4f2ea, glow: 0xbff4ff, unique: true, only: 'alpha', noRule: true, rank: 1, sig: 'stella', sfx: 'beam',
     stageNames: ['封印（壊れていて撃てない）', '目覚めの光', '白金の光', '星光の奔流', 'アルファマックス・ステラ'] },
 });
 
