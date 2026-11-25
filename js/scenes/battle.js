@@ -46,7 +46,9 @@ export class BattleScene {
     this.fx = new BattleFX(this.scene, this.camera);
     this.buildUnits(opts.enemies);
     this.buildHud();
-    audio.playSong(this.boss ? 'boss' : 'battle', { restart: true });
+    // マザーコアとの最後の戦いは専用の曲
+    const lastBattle = (opts.enemies || []).some(([id]) => id === 'mothercore');
+    audio.playSong(lastBattle ? 'lastboss' : this.boss ? 'boss' : 'battle', { restart: true });
     this.camera.position.set(0, 9, -14);
     this.look.set(0, 1, -2);
     this.camIdle = false;
@@ -77,7 +79,7 @@ export class BattleScene {
       road: { g: '#b49462', s: ['#a08050', '#c4a472'], sky: [0xe8b878, 0x8a5a3a], fog: 0xd8a870 },
       rock: { g: '#8a7660', s: ['#6e5e4c', '#a08a72'], sky: [0xd8a070, 0x6a4a32], fog: 0xb88a60 },
       metal: { g: '#6a7078', s: ['#5a6068', '#7a8088'], sky: [0xc8a080, 0x5a4a40], fog: 0xa89080 },
-    }[terrain] || {};
+    }[terrain] || { g: '#c4a068', s: ['#b08c58', '#d4b07a'], sky: [0xe8b878, 0x8a5a3a], fog: 0xd8a870 };
     // 風の惑星：草原の地面・青空・雲
     const biome = MAPS[G.pos.map]?.biome;
     const windy = biome === 'wind';
@@ -96,12 +98,20 @@ export class BattleScene {
       metal: { g: '#8aa0aa', s: ['#748a94', '#a8c0ca'], sky: [0xd8f0fa, 0x3a9ae0], fog: 0xa8dcf0 },
       sea: { g: '#3a6a7a', s: ['#2a5a6a', '#4a7a8a'], sky: [0x9ad8f0, 0x2a6ab0], fog: 0x6ab0d0 },
     }[terrain] || {});
+    // 第4〜7章の惑星：地面・空・霧の色（どの地形でも同じ）
+    const ARENA = {
+      fire: { g: '#5a4a44', s: ['#3a3236', '#7a5a4a'], sky: [0xff7a3a, 0x2a0804], fog: 0x6a2a14, rock: 0x3a2228 },
+      light: { g: '#e8dcb8', s: ['#dccfa8', '#fff4d8'], sky: [0xffffff, 0xd8c890], fog: 0xfff0d8, rock: 0xd8e4f0 },
+      dark: { g: '#3a3448', s: ['#2a2636', '#4e4860'], sky: [0x2a2040, 0x05040a], fog: 0x14101e, rock: 0x2a2434 },
+      core: { g: '#4a2a3e', s: ['#3a1e30', '#6a2a4a'], sky: [0x8a2a6a, 0x14040e], fog: 0x2a0820, rock: 0x3a1430 },
+    }[biome];
+    if (ARENA) Object.assign(pal, ARENA);
     const dark = dungeon;
     // 地面
     const cv = document.createElement('canvas'); cv.width = cv.height = 512;
     const g = cv.getContext('2d');
-    g.fillStyle = dark ? '#3a3c42' : pal.g; g.fillRect(0, 0, 512, 512);
-    for (let i = 0; i < 1800; i++) { g.fillStyle = dark ? (i % 2 ? '#2e3036' : '#474a50') : pal.s[i % 2]; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
+    g.fillStyle = dark ? (ARENA ? ARENA.g : '#3a3c42') : pal.g; g.fillRect(0, 0, 512, 512);
+    for (let i = 0; i < 1800; i++) { g.fillStyle = dark && !ARENA ? (i % 2 ? '#2e3036' : '#474a50') : pal.s[i % 2]; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); }
     if (dark || terrain === 'metal') { g.strokeStyle = dark ? '#2a2c30' : '#5a6068'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
     if (dark && biome === 'deep') { g.fillStyle = '#2a4a5a'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 1200; i++) { g.fillStyle = i % 2 ? '#1e3a48' : '#3a5a6a'; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); } }
     if (dark && biome === 'lab') { g.fillStyle = '#c8d2d8'; g.fillRect(0, 0, 512, 512); g.strokeStyle = '#7ad8d8'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
@@ -121,7 +131,7 @@ export class BattleScene {
     this.scene.fog = new THREE.Fog(dark ? 0x16161c : pal.fog, 25, 90);
     this.scene.background = null;
     // 遠くの景色・小物
-    const rockMat = new THREE.MeshStandardMaterial({ color: dark ? (biome === 'lab' ? 0xa8b4bc : biome === 'deep' ? 0x1e3a4a : windy ? 0x34404c : 0x3a3e44) : beach ? 0x5a5a62 : windy ? 0x7a8a7c : 0x8a6a4a, flatShading: true, roughness: 1 });
+    const rockMat = new THREE.MeshStandardMaterial({ color: ARENA ? ARENA.rock : dark ? (biome === 'lab' ? 0xa8b4bc : biome === 'deep' ? 0x1e3a4a : windy ? 0x34404c : 0x3a3e44) : beach ? 0x5a5a62 : windy ? 0x7a8a7c : 0x8a6a4a, flatShading: true, roughness: 1 });
     if (!dark) {
       for (let i = 0; i < 14; i++) {
         const a = (i / 14) * Math.PI * 2 + rand(-0.1, 0.1);
@@ -180,7 +190,7 @@ export class BattleScene {
     Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12, near: 1, far: 50 });
     sun.shadow.bias = -0.0015;
     this.scene.add(sun);
-    if (dark) { const pl = new THREE.PointLight(biome === 'deep' ? 0x4ad8ff : 0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
+    if (dark || biome === 'dark' || biome === 'core') { const pl = new THREE.PointLight({ deep: 0x4ad8ff, fire: 0xff7a2a, light: 0xfff0c0, dark: 0x9a7aff, core: 0xff4ad0 }[biome] || 0xb050ff, 30, 20, 1.5); pl.position.set(0, 5, -5); this.scene.add(pl); }
   }
 
   makePartyObj(u) {

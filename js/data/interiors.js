@@ -37,6 +37,16 @@ const TOWN_THEME = {
   town7: { floor: 'wood', floorColor: '#a89070', wallColor: '#e8e4d8', light: 0xfff4d8, mood: '白い壁と潮風の木の床の港町' },
   town8: { floor: 'wood', floorColor: '#7a5a3a', wallColor: '#5a7a6a', light: 0xffd8a0, mood: '高床の木の家。窓の外は海' },
   town9: { floor: 'metal', floorColor: '#5a7a8a', wallColor: '#2a4a5a', light: 0xa8e8ff, mood: '青いガラスと金属の海上ドーム' },
+  town10: { floor: 'stone', floorColor: '#4a3a34', wallColor: '#3a2a26', light: 0xffa060, mood: '石の床と炉の火の明かり' },
+  town11: { floor: 'metal', floorColor: '#5a5a62', wallColor: '#3a3a44', light: 0xffc080, mood: '金属の耐熱ドームの中' },
+  town12: { floor: 'wood', floorColor: '#6a5a4a', wallColor: '#4a3e34', light: 0xffb070, mood: '灰をかぶった港の倉庫' },
+  town13: { floor: 'stone', floorColor: '#e8dcc0', wallColor: '#f0e8d4', light: 0xfff4d8, mood: '白い石と金の飾り' },
+  town14: { floor: 'stone', floorColor: '#c8d4e0', wallColor: '#d8e4f0', light: 0xd8f0ff, mood: '水晶の壁が光る' },
+  town15: { floor: 'stone', floorColor: '#e8d8b0', wallColor: '#f4ecd8', light: 0xffe8b0, mood: '大神殿の金色の広間' },
+  town16: { floor: 'wood', floorColor: '#3a3040', wallColor: '#2a2434', light: 0xffc86a, mood: 'ランタンの灯る夜の家' },
+  town17: { floor: 'metal', floorColor: '#2e2a3a', wallColor: '#1e1a26', light: 0xb8a0ff, mood: '黒い鉄の要塞' },
+  town18: { floor: 'wood', floorColor: '#4a4458', wallColor: '#2a3a4a', light: 0xa8e8ff, mood: '最後の隠れ里の青い灯' },
+  town19: { floor: 'metal', floorColor: '#5a6470', wallColor: '#3a4250', light: 0xbfeaff, mood: '前線基地の白い照明' },
 };
 // 施設ごとの特色（照明の色・床の敷物など）
 const FAC_THEME = {

@@ -1174,6 +1174,66 @@ function buildEnEel(colors) {
   return root;
 }
 
+// 第4章：溶岩トカゲ（背中に光る溶岩の割れ目、しっぽがゆれる）
+function buildEnSalamander(colors) {
+  const m = makeMats({ primary: 0x3a2a26, secondary: 0x1e1412, organic: 0xff6a1a, glow: 0xffc040, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy' };
+  const body = grp(root, 'torso', 0, 0.35, 0);
+  const b0 = add(body, Sp(0.36, 1), m('primary'), 0, 0.05, 0); b0.scale.set(0.9, 0.6, 1.6);
+  const head = add(body, Sp(0.24, 1), m('primary'), 0, 0.1, 0.62); head.scale.set(1, 0.7, 1.3);
+  for (const sx of [-1, 1]) { add(body, Sp(0.05, 0), m('glow'), 0.12 * sx, 0.2, 0.82); for (const z of [0.35, -0.35]) add(body, Bx(0.08, 0.3, 0.08), m('secondary'), 0.32 * sx, -0.15, z, 0, 0, 0.4 * sx); }
+  for (let i = 0; i < 4; i++) add(body, Co(0.07, 0.24, 4), m('organic'), 0, 0.28, 0.35 - i * 0.22);
+  let parent = body;
+  for (let i = 0; i < 3; i++) { const seg = grp(parent, `tentacle${i}`, 0, 0, i === 0 ? -0.5 : -0.24); add(seg, Sp(0.14 - i * 0.03, 0), m(i % 2 ? 'organic' : 'primary'), 0, 0, -0.12); parent = seg; }
+  return root;
+}
+// 第5章：水晶のゴーレム（光る結晶の体）
+function buildEnGolem(colors) {
+  const m = makeMats({ primary: 0xd8e4f0, secondary: 0x8ab8e8, organic: 0xfff0a0, glow: 0xa8d8ff, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy' };
+  const body = grp(root, 'torso', 0, 0.9, 0);
+  const chest = add(body, geo('oct', () => new THREE.OctahedronGeometry(0.5, 0)), m('primary'), 0, 0.2, 0); chest.scale.set(1.1, 1.3, 0.8);
+  add(body, Sp(0.12, 0), m('glow'), 0, 0.3, 0.35, 0, 0, 0, 'eye');
+  const hd = add(body, geo('oct2', () => new THREE.OctahedronGeometry(0.22, 0)), m('secondary'), 0, 0.95, 0); hd.scale.set(1, 1.2, 1);
+  for (const [name, sx] of [['wingL', -1], ['wingR', 1]]) {
+    const arm = grp(body, name, 0.6 * sx, 0.45, 0);
+    const a1 = add(arm, geo('oct3', () => new THREE.OctahedronGeometry(0.22, 0)), m('secondary'), 0.1 * sx, -0.3, 0); a1.scale.set(1, 2.0, 1);
+    add(arm, geo('oct4', () => new THREE.OctahedronGeometry(0.2, 0)), m('organic'), 0.12 * sx, -0.8, 0.05);
+  }
+  for (const sx of [-1, 1]) { const l = add(body, geo('oct5', () => new THREE.OctahedronGeometry(0.2, 0)), m('primary'), 0.25 * sx, -0.6, 0); l.scale.set(1, 1.8, 1); }
+  return root;
+}
+// 第6章：闇の亡霊（浮かぶ黒い衣と光る目、下に影の触手）
+function buildEnWraith(colors) {
+  const m = makeMats({ primary: 0x1e1a26, secondary: 0x0e0a14, organic: 0x6a4aca, glow: 0xc8a8ff, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy', flying: true };
+  const core = grp(root, 'core', 0, 1.1, 0);
+  const robe = add(core, Co(0.45, 1.1, 7), m('primary'), 0, -0.1, 0); robe.rotation.x = Math.PI;
+  const hood = add(core, Sp(0.3, 1), m('secondary'), 0, 0.5, 0.05); hood.scale.set(1, 1.1, 1);
+  for (const sx of [-1, 1]) add(core, Sp(0.06, 0), m('glow'), 0.1 * sx, 0.52, 0.28);
+  for (const [name, sx] of [['wingL', -1], ['wingR', 1]]) { const w = grp(core, name, 0.35 * sx, 0.25, 0); add(w, Bx(0.5, 0.05, 0.35), m('primary'), 0.25 * sx, 0, 0, 0, 0, -0.3 * sx); add(w, Bx(0.4, 0.04, 0.05), m('organic'), 0.3 * sx, 0.02, 0.18); }
+  tentacles(core, m, 5, 3, 0.05, -0.7, 0.25);
+  return root;
+}
+// 第7章：マザーコア（巨大な脈打つ核・大きな目・とげ・たくさんの触手）
+function buildBossMotherCore(colors) {
+  const m = makeMats({ primary: 0x4a1a3a, secondary: 0x2a0a20, organic: 0xff4ad0, glow: 0xffe0ff, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy', boss: true, flying: true };
+  const core = grp(root, 'core', 0, 2.4, 0);
+  const shell = add(core, Sp(1.3, 2), m('primary'), 0, 0, 0); shell.scale.set(1.1, 1, 1);
+  add(core, Sp(1.0, 2), m('organic'), 0, 0, 0.45);
+  add(core, Sp(0.45, 2), m('glow'), 0, 0.1, 1.05, 0, 0, 0, 'eye');
+  add(core, Sp(0.2, 1), m('secondary'), 0, 0.1, 1.42);
+  for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; add(core, Co(0.14, 0.9, 5), m('secondary'), Math.cos(a) * 1.2, Math.sin(a) * 1.1, -0.2, Math.sin(a) * 1.2, 0, -Math.cos(a) * 1.2 + Math.PI / 2 * 0); }
+  for (const [name, sx] of [['wingL', -1], ['wingR', 1]]) { const w = grp(core, name, 1.2 * sx, 0.3, -0.2); add(w, Bx(1.6, 0.06, 0.9), m('organic'), 0.8 * sx, 0, 0, 0, 0, -0.2 * sx); }
+  tentacles(core, m, 8, 6, 0.09, -1.2, 0.6);
+  return root;
+}
+
 function buildEnCrawler(colors) {
   const m = makeMats({ organic: 0xa04a6a, primary: 0x7a3a50, ...colors });
   const root = grp(null, 'enemy');
@@ -1422,6 +1482,10 @@ export const MODEL_BUILDERS = {
   boss_titan: buildBossTitan,
   en_bird: buildEnBird,
   en_crab: buildEnCrab,
+  en_salamander: buildEnSalamander,
+  en_golem: buildEnGolem,
+  en_wraith: buildEnWraith,
+  boss_mothercore: buildBossMotherCore,
   en_eel: buildEnEel,
 };
 

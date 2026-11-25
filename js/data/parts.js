@@ -95,6 +95,38 @@ export const PARTS = {
   eng_alpha: { name: 'アルファコア', slot: 'engine', cap: 70, en: 140, wt: 0, price: 0, only: 'alpha' },
   eng_omega: { name: 'オメガコア', slot: 'engine', cap: 85, en: 120, wt: 0, price: 0, only: 'omega' },
   eng_gaia: { name: 'ガイアコア', slot: 'engine', cap: 110, en: 100, wt: 0, price: 0, only: 'gaia' },
+  // 第4章のお店
+  head_f4: { name: '耐火センサーヘッドF', slot: 'head', model: 'head_radar', armor: 43, def: 8, wt: 3, hit: 21, scan: 16, price: 16400, chapter: 4 },
+  body_bf4: { name: '耐火バランスフレームF', slot: 'body', mtype: 'balance', model: 'body_std', armor: 256, def: 14, wt: 14, slots: 3, maxSlots: 6, price: 27300, chapter: 4 },
+  body_hf4: { name: '耐火重装フレームF', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 364, def: 20, wt: 21, slots: 3, maxSlots: 6, price: 32800, chapter: 4 },
+  body_sf4: { name: '耐火シャープフレームF', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 189, def: 8, wt: 9, slots: 3, maxSlots: 6, price: 30100, chapter: 4 },
+  arm_f4: { name: '耐火アームF', slot: 'arm', model: 'arm_power', armor: 59, def: 8, wt: 7, atkMul: 1.23, hit: 4, eva: 2, power: true, price: 20000, chapter: 4 },
+  legs_f4: { name: '耐火レッグF', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 84, def: 11, wt: 7, eva: 16, spd: 5, price: 18200, chapter: 4 },
+  eng_f4: { name: '耐火エンジンF', slot: 'engine', cap: 94, en: 108, wt: 0, price: 21900, chapter: 4 },
+  // 第5章のお店
+  head_l5: { name: '光輝センサーヘッドL', slot: 'head', model: 'head_radar', armor: 54, def: 10, wt: 3, hit: 23, scan: 20, price: 26000, chapter: 5 },
+  body_bl5: { name: '光輝バランスフレームL', slot: 'body', mtype: 'balance', model: 'body_std', armor: 323, def: 17, wt: 14, slots: 3, maxSlots: 6, price: 43400, chapter: 5 },
+  body_hl5: { name: '光輝重装フレームL', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 459, def: 26, wt: 21, slots: 3, maxSlots: 6, price: 52000, chapter: 5 },
+  body_sl5: { name: '光輝シャープフレームL', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 238, def: 10, wt: 9, slots: 3, maxSlots: 6, price: 47700, chapter: 5 },
+  arm_l5: { name: '光輝アームL', slot: 'arm', model: 'arm_power', armor: 75, def: 10, wt: 7, atkMul: 1.31, hit: 4, eva: 2, power: true, price: 31800, chapter: 5 },
+  legs_l5: { name: '光輝レッグL', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 105, def: 14, wt: 7, eva: 17, spd: 5, price: 28900, chapter: 5 },
+  eng_l5: { name: '光輝エンジンL', slot: 'engine', cap: 119, en: 136, wt: 0, price: 34700, chapter: 5 },
+  // 第6章のお店
+  head_d6: { name: '漆黒センサーヘッドD', slot: 'head', model: 'head_radar', armor: 66, def: 12, wt: 3, hit: 24, scan: 25, price: 37800, chapter: 6 },
+  body_bd6: { name: '漆黒バランスフレームD', slot: 'body', mtype: 'balance', model: 'body_std', armor: 389, def: 20, wt: 14, slots: 3, maxSlots: 6, price: 63000, chapter: 6 },
+  body_hd6: { name: '漆黒重装フレームD', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 554, def: 31, wt: 21, slots: 3, maxSlots: 6, price: 75600, chapter: 6 },
+  body_sd6: { name: '漆黒シャープフレームD', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 287, def: 12, wt: 9, slots: 3, maxSlots: 6, price: 69300, chapter: 6 },
+  arm_d6: { name: '漆黒アームD', slot: 'arm', model: 'arm_power', armor: 90, def: 12, wt: 7, atkMul: 1.39, hit: 4, eva: 2, power: true, price: 46200, chapter: 6 },
+  legs_d6: { name: '漆黒レッグD', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 127, def: 16, wt: 7, eva: 18, spd: 6, price: 42000, chapter: 6 },
+  eng_d6: { name: '漆黒エンジンD', slot: 'engine', cap: 144, en: 164, wt: 0, price: 50400, chapter: 6 },
+  // 第7章のお店
+  head_s7: { name: '星核センサーヘッドS', slot: 'head', model: 'head_radar', armor: 77, def: 14, wt: 3, hit: 26, scan: 29, price: 51800, chapter: 7 },
+  body_bs7: { name: '星核バランスフレームS', slot: 'body', mtype: 'balance', model: 'body_std', armor: 456, def: 24, wt: 14, slots: 3, maxSlots: 6, price: 86400, chapter: 7 },
+  body_hs7: { name: '星核重装フレームS', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 648, def: 36, wt: 21, slots: 3, maxSlots: 6, price: 103700, chapter: 7 },
+  body_ss7: { name: '星核シャープフレームS', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 336, def: 14, wt: 9, slots: 3, maxSlots: 6, price: 95000, chapter: 7 },
+  arm_s7: { name: '星核アームS', slot: 'arm', model: 'arm_power', armor: 106, def: 14, wt: 7, atkMul: 1.47, hit: 4, eva: 2, power: true, price: 63400, chapter: 7 },
+  legs_s7: { name: '星核レッグS', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 149, def: 19, wt: 7, eva: 19, spd: 6, price: 57600, chapter: 7 },
+  eng_s7: { name: '星核エンジンS', slot: 'engine', cap: 168, en: 192, wt: 0, price: 69100, chapter: 7 },
 };
 
 // マシンのタイプ（ボディの mtype）。武器は共通で、タイプごとに得意な武器の相性がある

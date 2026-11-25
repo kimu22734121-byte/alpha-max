@@ -77,6 +77,24 @@ export const WEAPONS = {
   cryoray: { name: 'クライオレイ', cat: 'special', mount: 'back', target: 'group', atk: 58, hit: 14, wt: 11, price: 21000, tier: 4, model: 'wpn_special', color: 0x8ae8ff, size: 1.15, en: 16, chapter: 3 },
   hydrocutter: { name: 'ハイドロカッター', cat: 'melee', style: 'blade', mount: 'arm', target: 'one', atk: 120, hit: 20, wt: 6, price: 23000, tier: 4, model: 'wpn_blade', color: 0x4ac8e8, size: 1.2, chapter: 3 },
   shellbreaker: { name: 'シェルブレイカー【限定】', cat: 'melee', style: 'hammer', mount: 'arm', target: 'group', atk: 104, hit: 4, wt: 9, price: 0, tier: 4, model: 'wpn_hammer', color: 0xd8a040, size: 1.3, chapter: 3, limited: true },
+  // 第4章
+  magmacannon: { name: 'マグマキャノン', cat: 'cannon', mount: 'back', target: 'one', atk: 170, hit: 4, wt: 17, price: 34000, tier: 5, model: 'wpn_cannon', color: 0xc84a14, size: 1.3, elem: 'fire', chapter: 4 },
+  lavagat: { name: 'ラーヴァガトリング', cat: 'mg', mount: 'arm', target: 'group', atk: 60, hit: 4, wt: 8, price: 30000, tier: 5, model: 'wpn_gatling', color: 0xff6a1a, size: 1.2, elem: 'fire', chapter: 4 },
+  flaremissile: { name: 'フレアミサイル', cat: 'missile', mount: 'back', target: 'group', atk: 62, hit: 26, wt: 12, price: 31000, tier: 5, model: 'wpn_missile', color: 0xd84a2a, size: 1.2, elem: 'fire', chapter: 4 },
+  heatsaber: { name: 'ヒートセイバー', cat: 'melee', mount: 'arm', target: 'one', atk: 165, hit: 18, wt: 6, price: 36000, tier: 5, model: 'wpn_blade', color: 0xff7a2a, size: 1.25, elem: 'fire', style: 'blade', chapter: 4 },
+  // 第5章
+  lumencannon: { name: 'ルーメンキャノン', cat: 'cannon', mount: 'back', target: 'one', atk: 215, hit: 10, wt: 17, price: 52000, tier: 6, model: 'wpn_cannon', color: 0xfff0a0, size: 1.35, elem: 'elec', chapter: 5 },
+  prismgat: { name: 'プリズムガトリング', cat: 'mg', mount: 'arm', target: 'group', atk: 78, hit: 12, wt: 8, price: 46000, tier: 6, model: 'wpn_gatling', color: 0xa8d8ff, size: 1.2, elem: 'elec', chapter: 5 },
+  halomissile: { name: 'ヘイローミサイル', cat: 'missile', mount: 'back', target: 'one', atk: 160, hit: 50, wt: 12, price: 48000, tier: 6, model: 'wpn_missile', color: 0xe8c050, size: 1.2, chapter: 5 },
+  crystallance: { name: 'クリスタルランス', cat: 'melee', mount: 'arm', target: 'one', atk: 230, hit: 12, wt: 8, price: 55000, tier: 6, model: 'wpn_pile', color: 0xd8e4f0, size: 1.3, style: 'pile', pierce: true, chapter: 5 },
+  // 第6章
+  shadowcannon: { name: 'シャドウキャノン', cat: 'cannon', mount: 'back', target: 'one', atk: 255, hit: 6, wt: 18, price: 76000, tier: 6, model: 'wpn_cannon', color: 0x4a2a8a, size: 1.4, chapter: 6 },
+  nightvulcan: { name: 'ナイトバルカン', cat: 'mg', mount: 'arm', target: 'all', atk: 70, hit: 6, wt: 10, price: 70000, tier: 6, model: 'wpn_gatling', color: 0x2a2434, size: 1.3, chapter: 6 },
+  umbralnova: { name: 'アンブラノヴァ', cat: 'missile', mount: 'back', target: 'all', atk: 90, hit: 20, wt: 13, price: 74000, tier: 6, model: 'wpn_missile', color: 0x9a7aff, size: 1.3, elem: 'fire', chapter: 6 },
+  voidscythe: { name: 'ヴォイドサイズ', cat: 'melee', mount: 'arm', target: 'group', atk: 160, hit: 10, wt: 8, price: 78000, tier: 6, model: 'wpn_blade', color: 0x6a4aca, size: 1.35, style: 'blade', chapter: 6 },
+  // 第7章
+  corebreaker: { name: 'コアブレイカー【限定】', cat: 'melee', mount: 'arm', target: 'one', atk: 320, hit: 24, wt: 8, price: 0, tier: 7, model: 'wpn_pile', color: 0xff4ad0, size: 1.4, elem: 'fire', style: 'pile', pierce: true, limited: true, chapter: 7 },
+  starfall: { name: 'スターフォール', cat: 'missile', mount: 'back', target: 'all', atk: 120, hit: 30, wt: 13, price: 98000, tier: 7, model: 'wpn_missile', color: 0xffe0ff, size: 1.35, elem: 'elec', chapter: 7 },
 };
 
 // 攻撃の範囲（技ではなく武器ごとに決まる）

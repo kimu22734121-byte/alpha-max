@@ -170,8 +170,137 @@ flow.onBossDefeated = async (def) => {
     ui.banner('水没都市 隔壁の鍵を手に入れた', '北東の水没都市の入口が開けられるようになった');
   } else if (def.bounty === 'abyssleviathan') {
     await endingChapter3();
+  } else if (BOSS_TALK[def.bounty || def.flag]) {
+    const t = BOSS_TALK[def.bounty || def.flag];
+    if (t.key) { G.flags[t.key] = true; audio.sfx('levelup'); }
+    await ui.say(t.lines.map(([who, text]) => ({ name: who === 'r' ? r : who === 's' ? G.members.shion.name : who === 'g' ? G.members.gina.name : '', text })));
+    if (t.banner) ui.banner(t.banner[0], t.banner[1]);
+  } else if (def.bounty === 'flameemperor') {
+    await chapterEnding(4);
+  } else if (def.bounty === 'luxguardian') {
+    await chapterEnding(5);
+  } else if (def.bounty === 'umbraking') {
+    await chapterEnding(6);
+  } else if (def.bounty === 'mothercore') {
+    await finalEnding();
   }
 };
+
+// 第4〜7章の賞金首・小ボスを倒したあとの話（key があれば、その鍵のフラグを立てる）
+const BOSS_TALK = {
+  magmasaurus: { lines: [['r', '熱かった……！ でも、このうろこ、熱をまったく通さないぞ。'], ['g', 'カルデラリムの耐熱工房に持っていけば、何か作ってくれるんじゃないかい？']] },
+  blazefort: { lines: [['r', '空の要塞を撃ち落とした！'], ['', '残骸の航海日誌に「三機の技師は、息子の住む辺境の星へ向かった」と書かれていた。'], ['r', '息子の住む……辺境の星……？']] },
+  milBoss: { key: 'volcanoKey', banner: ['火山の防壁の鍵を手に入れた', '炎帝の火山に入れるようになった'], lines: [['', '狂った司令機が止まると、胸の装甲から「火山防壁の鍵」がこぼれ落ちた。'], ['', '研究所の記録：「技師カイ・アマギ、三機の封印処置を完了。オメガのみ封印を拒否」'], ['r', 'カイ・アマギ……それ、父さんの名前だ！'], ['s', '……あなたの父親が、三機を？']] },
+  prismdragon: { lines: [['r', '虹色の竜も、やっつけたぞ！'], ['g', 'あの翼、マントにしたらきれいだろうね。']] },
+  seraphdrone: { lines: [['r', '古代の守護ドローンだったのか……。宇宙生物に乗っ取られてたんだ。'], ['', 'ドローンの記録装置に、白・黒・赤の三機の設計図が映っていた。']] },
+  baseBoss: { key: 'templeKey', banner: ['光の神殿の鍵を手に入れた', '光の神殿に入れるようになった'], lines: [['', '番人が崩れ落ちると、台座の上の光の鍵が輝いた。'], ['', '旧基地の記録：「パイロット候補 シオン。オメガとの神経接続に適合」'], ['s', '……私が、オメガに選ばれていた？ ずっと前から……。']] },
+  nightmaw: { lines: [['r', '影の顎が消えた……！'], ['', '影の中から、使い込まれた機械の手袋が出てきた。']] },
+  gravemech: { lines: [['r', '墓場の重機も止まった！'], ['', '重機のコックピットに、照準用の手袋が残されていた。']] },
+  dockBoss: { key: 'spireKey', banner: ['霧払いの装置を手に入れた', '闇の尖塔に入れるようになった'], lines: [['', 'ドックマスターが崩れ落ちると、霧を払う装置が転がり出た。'], ['g', 'これで闇の尖塔の霧が晴れるね。……それと、このごつい籠手、あたしにぴったりだ。']] },
+  corewarden: { lines: [['r', 'マザーコアの番人を倒した！'], ['s', '……次は、肉の回廊。その奥に女王がいる。']] },
+  broodqueen: { key: 'heartKey', banner: ['心臓への道が開いた', 'マザーコアの心臓に入れるようになった'], lines: [['', '女王が崩れ落ちると、大地が大きく脈打ち、北の肉の壁が裂けた。'], ['r', 'マザーコアの心臓への道だ……！'], ['g', '行くよ、二人とも。最後の戦いだ！']] },
+};
+
+// 第4〜6章のクリア
+async function chapterEnding(ch) {
+  const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
+  G.flags[`ch${ch}Clear`] = true;
+  if (ch === 4) {
+    audio.sfx('seal');
+    await ui.say([
+      { name: '', text: '炎帝イグニスが崩れ落ちると、火山の溶岩がゆっくりと冷えはじめた。' },
+      { name: '', text: '火口の奥の記録装置に、ひとりの男の姿が映し出された。油で汚れた作業着、腰に工具――。' },
+      { name: '', text: '「……この記録を見ているのが、レン、おまえだといいんだが」' },
+      { name: r, text: '父さん……！' },
+      { name: '', text: '「三機はマザーコアと戦うために作られた。だが、まだ力が足りない。わたしは三機を眠らせ、おまえの住む星に隠した」' },
+      { name: '', text: '「オメガだけは封印を拒んだ。だから、わたしたちの家の地下に。……いつか、おまえが三機を目覚めさせてくれると信じている」' },
+      { name: s, text: '……あなたの父親は、ずっとあなたを待っていた。' },
+      { name: g, text: 'いい親父さんじゃないか。最後まで付き合うよ、レン。' },
+      { name: '', text: '記録の最後に、光の惑星への星図が残されていた。' },
+    ]);
+  } else if (ch === 5) {
+    audio.sfx('seal');
+    await ui.say([
+      { name: '', text: 'ルクス・ガーディアンが光の粒になって消えると、神殿の奥の扉が開いた。' },
+      { name: '', text: '中には、アルファとそっくりの白い機体の像。その胸には、空っぽの台座があった。' },
+      { name: '', text: '古代の記録：「ステラの結晶――星の核の光。三機の心臓。白き翼はその光を、すべての星へ届けるために生まれた」' },
+      { name: r, text: 'アルファの胸のコアは……星の核の光そのものなんだ。' },
+      { name: '', text: '「マザーコアは星の光を食べて育つ。ゆえに、星の光を宿す三機だけが、それを止められる」' },
+      { name: s, text: '……だから、寄生体はマシンを狙う。光を探して。' },
+      { name: g, text: 'それなら、あたしたちが一番のごちそうってわけだ。望むところさ！' },
+      { name: '', text: 'アルファのモニターに、闇の惑星への星図が浮かび上がった。' },
+    ]);
+  } else if (ch === 6) {
+    G.seal = Math.max(G.seal, 4);
+    audio.sfx('seal');
+    await ui.say([
+      { name: '', text: 'アンブラキングが消えると、闇の尖塔の頂上に、はじめて星の光が差しこんだ。' },
+      { name: '', text: 'その光が、アルファの胸のコアに吸いこまれていく。' },
+      { name: '', text: '――最後の封印が、音を立てて砕け散った。' },
+      { name: '', text: '白金の装甲が星の光で満たされ、背中の翼が光となって大きく広がる。' },
+      { name: r, text: 'これが……アルファの、本当の姿……！' },
+    ]);
+    ui.banner('アルファマックス 覚醒', 'すべての封印が解けた。光の翼が大きく広がる');
+    await wait(2.8);
+    await ui.say([
+      { name: '', text: '伝説の機体アルファは、完全な姿――「アルファマックス」になった。' },
+      { name: s, text: '……オメガも、共鳴している。' },
+      { name: g, text: 'ガイアもだ。三機そろって、震えてるよ。' },
+      { name: r, text: 'マザーコアの世界への星図が見えた。……行こう、みんな。最後の戦いへ！' },
+    ]);
+  }
+  audio.playSong('title', { restart: true });
+  const titles = { 4: '火', 5: '光', 6: '闇' };
+  const notes = {
+    4: 'レンの父が三機を隠した理由が明かされた。次は光の惑星へ――',
+    5: 'アルファの胸のコアの正体が明かされた。次は闇の惑星へ――',
+    6: 'アルファはすべての封印を解き、アルファマックスとなった。次は、マザーコアの世界へ――',
+  };
+  await ui.panel(`<div class="ending">
+    <div class="ending-big">第${ch}章「${titles[ch]}」の惑星　クリア！</div>
+    <p>${notes[ch]}</p>
+    <p class="note">（宇宙船の船長キールに話すと、次の星へ飛べます。このまま遊び続けることもできます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+  audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
+  autosave();
+}
+
+// 最終章：マザーコアを倒した。エンディングとスタッフロール
+async function finalEnding() {
+  const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
+  G.flags.ch7Clear = true;
+  G.flags.gameClear = true;
+  audio.sfx('bigexplosion');
+  await ui.say([
+    { name: '', text: 'アルファマックスの光の翼、オメガの赤い刃、ガイアの深紅の拳――三機の光がひとつになり、マザーコアの核を貫いた。' },
+    { name: '', text: 'マザーコアの巨大な目が、ゆっくりと閉じていく。' },
+    { name: '', text: '「……ヒカリ……ホシノ……ヒカリ……」' },
+    { name: '', text: '脈打っていた大地が静まり、空をおおっていた紫の雲が、少しずつ晴れていく。' },
+    { name: '', text: '雲の切れ間から、たくさんの星の光が降りそそいだ。' },
+  ]);
+  await wait(1.5);
+  await ui.say([
+    { name: g, text: '……終わった、のかい？' },
+    { name: s, text: '寄生体の反応が、すべて消えていく。……どの星からも。' },
+    { name: r, text: 'やった……！ やったんだ、みんな！' },
+    { name: '', text: 'アルファマックスの翼が、ゆっくりとたたまれる。胸のコアの光が、やさしく瞬いた。まるで、ありがとうと言うように。' },
+    { name: r, text: '父さん……見てる？ 三機は、ちゃんと目覚めたよ。' },
+  ]);
+  audio.playSong('ending', { restart: true });
+  await ui.panel(`<div class="ending">
+    <div class="ending-big">ALPHA MAX</div>
+    <p>星の果て、鋼を駆る者</p>
+    <p>――マザーコアは倒れ、宇宙じゅうのマシンが、寄生体から解き放たれた。</p>
+    <p>土の星では、ラストヘイヴンの修理屋に、今日も壊れたマシンが運びこまれる。</p>
+    <p>風の星の風車は、やわらかな風に回り、水の星の海は、どこまでも青い。</p>
+    <p>火の星の溶岩は静かに冷え、光の星の遺跡は、星の光を受けて輝いている。</p>
+    <p>そして闇の星にも――はじめての朝が来た。</p>
+    <p>メカニックのレン、パイロットのシオン、傭兵のジーナ。そして三機の兄弟機、アルファ、オメガ、ガイア。</p>
+    <p>彼らの旅は、ここで終わる。けれど、星の海は、まだどこまでも続いている。</p>
+    <p class="note">THE END　――　遊んでくれて、ありがとう！</p>
+    <p class="note">（クリア後もこのまま遊び続けられます。行ったことのある星へは、宇宙船と転送台で自由に行けます）</p></div>`, { title: 'エンディング', closeText: 'おわり' });
+  audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
+  autosave();
+}
 
 async function endingChapter3() {
   const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;

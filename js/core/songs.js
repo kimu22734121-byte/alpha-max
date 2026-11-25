@@ -74,6 +74,16 @@ const waterA = ['Fmaj7', 'C/E', 'Dm7', 'Bbmaj7', 'Gm7', 'C', 'Fmaj7', 'C'];
 const waterB = ['Bbmaj7', 'C', 'Am7', 'Dm7', 'Gm7', 'C', 'F', 'C7'];
 const water = [...waterA, ...waterB];
 
+// ---------------------------------------------------------------- 第4〜7章のフィールド・最後のボス・エンディング
+const fire = ['Am', 'Am', 'F', 'G', 'Am', 'Dm', 'E', 'E', 'F', 'G', 'Am', 'Am', 'Dm', 'E', 'Am', 'E'];       // 火：熱くて力強い短調
+const light = ['C', 'G/B', 'Am', 'Em', 'F', 'C/E', 'Dm', 'G', 'C', 'Em', 'F', 'G', 'Am', 'F', 'Gsus4 G', 'C'];  // 光：おごそかで明るい長調
+const dark = ['Dm', 'Dm', 'Bb', 'A', 'Gm', 'Dm', 'Eb', 'A', 'Dm', 'F', 'Gm', 'A', 'Bb', 'Gm', 'A', 'A'];     // 闇：静かで不気味な短調
+const core = ['Cm', 'Ab', 'Fm', 'G', 'Cm', 'Db', 'Bb', 'G', 'Ab', 'Fm', 'Cm', 'G', 'Ab', 'Db', 'G', 'G'];    // マザーコアの世界：重く不安な短調
+const lastA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'Am', 'B'];
+const lastB = ['C', 'D', 'Bm', 'Em', 'Am', 'D', 'B', 'B'];
+const last = [...lastA, ...lastB];
+const ending = ['D', 'A/C#', 'Bm', 'F#m', 'G', 'D/F#', 'Em', 'A', 'D', 'A', 'Bm', 'G', 'Em', 'A', 'D', 'D'];
+
 // ---------------------------------------------------------------- 戦闘
 const battleIntro = ['E5', 'E5'];
 const battleA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'D', 'B'];
@@ -165,6 +175,102 @@ export const SONGS = {
       { inst: 'strings', vol: 0.3, mml: pad(water, 60) },
       { inst: 'ebass', vol: 0.75, mml: bass(water, { 4: 'R4. R8 F4 O4', 2: 'R4 F4' }, 2) },
       { inst: 'drums', vol: 0.45, mml: '[o4 c8 e8 d8 e8 c8 c8 d8 e8]16' },
+    ],
+  },
+
+  // 第4章「火」の惑星のフィールド
+  field4: {
+    bpm: 112,
+    tracks: [
+      { inst: 'brass', vol: 0.9, mml: `o4 l4
+        a > c e d < | a2. g | f a > c < b | g2. e |
+        a > c e g | f2 e d | e g+ b > d < | b2. r |
+        > c < a f g | g2 b g | a > c e d < | e2 a2 |
+        f a > d c < | b g+ e g+ | a2 e2 | g+2. r |` },
+      { inst: 'guitar', vol: 0.6, mml: `q6 ${chug(fire, 40)}` },
+      { inst: 'strings', vol: 0.35, mml: pad(fire, 57) },
+      { inst: 'ebass', vol: 0.85, mml: bass(fire, { 4: 'R8 R8 O8 R8 F8 R8 O8 R8', 2: 'R8 O8 F8 O8' }, 1) },
+      { inst: 'drums', vol: 0.75, mml: '[o4 c8 c8 d8 r8 c8 c8 d8 e8]16' },
+    ],
+  },
+  // 第5章「光」の惑星のフィールド
+  field5: {
+    bpm: 88,
+    tracks: [
+      { inst: 'flute', vol: 1.0, mml: `o5 l4
+        e g > c < b | d2. g | c e a g | e2. r |
+        f a > c < a | g2 e2 | f e d f | g1 |
+        e g > c d | e2 d2 | c < a > c < a | g2. r |
+        a > c f e | d < b g b | > c2 < g2 | > c1 < |` },
+      { inst: 'harp', vol: 0.6, mml: arp(light, 50, [0, 2, 4, 5, 4, 2, 1, 3]) },
+      { inst: 'strings', vol: 0.5, mml: pad(light, 57) },
+      { inst: 'warmpad', vol: 0.35, mml: pad(light, 45) },
+      { inst: 'ebass', vol: 0.55, mml: bass(light, { 4: 'R2 F4 O4', 2: 'R4 F4' }, 2) },
+    ],
+  },
+  // 第6章「闇」の惑星のフィールド
+  field6: {
+    bpm: 76,
+    tracks: [
+      { inst: 'strings', vol: 0.9, mml: `o4 l4
+        d f a g | a2. f | d d b- a | a2. r |
+        g b- > d c < | a2 f2 | e- g b- a | a1 |
+        d f a > c < | a2 f2 | g b- > d c < | c+2. r |
+        > d < b- g b- | g e- d e- | d2 c+2 | d1 |` },
+      { inst: 'warmpad', vol: 0.45, mml: pad(dark, 45) },
+      { inst: 'harp', vol: 0.4, mml: arp(dark, 48, [0, 1, 2, 1, 3, 2, 1, 0]) },
+      { inst: 'ebass', vol: 0.6, mml: bass(dark, { 4: 'R1', 2: 'R2' }, 2) },
+      { inst: 'drums', vol: 0.3, mml: '[o4 c2 r4 c8 c8]16' },
+    ],
+  },
+  // 第7章「マザーコアの世界」のフィールド
+  field7: {
+    bpm: 84,
+    tracks: [
+      { inst: 'brass', vol: 0.75, mml: `o4 l4
+        c e- g f | e-2. c | c f a- g | g2. r |
+        c e- g > c < | b-2 a-2 | f a- > c < b- | b1 |
+        a- > c e- d < | c2 < a-2 > | g b- > d c < | b2. r |
+        a- > c f e- < | d- f a- g | g2 b2 | g1 |` },
+      { inst: 'strings', vol: 0.45, mml: pad(core, 57) },
+      { inst: 'warmpad', vol: 0.4, mml: pad(core, 45) },
+      { inst: 'ebass', vol: 0.8, mml: bass(core, { 4: 'R4. R8 R4 F4', 2: 'R4 R4' }, 1) },
+      { inst: 'drums', vol: 0.55, mml: '[o4 c4 r8 c8 d4 r4]16' },
+    ],
+  },
+  // 最後のボス（マザーコア）
+  lastboss: {
+    bpm: 176,
+    tracks: [
+      { inst: 'lead', vol: 1.0, mml: `o5 l8
+        e4. f+ g4 b4 | > c4. < b a4 e4 | f+4. g a4 > d4 < | d+2. r4 |
+        e4. g b4 > e4 < | > c4. < b a4 g4 | a4 > c4 < b4 a4 | b2. r4 |
+        > c4. d e4 c4 < | b4. a g4 e4 | e4 g4 f+4 a4 | b2 > d+2 < |
+        > e4. d c4 < b4 | a4. g f+4 e4 | f+4 a4 b4 > d+4 < | e1 |` },
+      { inst: 'brass', vol: 0.55, transpose: -12, mml: `o5 l8
+        e4. f+ g4 b4 | > c4. < b a4 e4 | f+4. g a4 > d4 < | d+2. r4 |
+        e4. g b4 > e4 < | > c4. < b a4 g4 | a4 > c4 < b4 a4 | b2. r4 |
+        > c4. d e4 c4 < | b4. a g4 e4 | e4 g4 f+4 a4 | b2 > d+2 < |
+        > e4. d c4 < b4 | a4. g f+4 e4 | f+4 a4 b4 > d+4 < | e1 |` },
+      { inst: 'guitar', vol: 0.8, mml: `q6 ${chug(last, 40)}` },
+      { inst: 'ebass', vol: 1.0, mml: `q6 ${bass(last, { 4: 'R8 R8 O8 R8 R8 R8 O8 R8', 2: 'R8 R8 O8 R8' }, 1)}` },
+      { inst: 'strings', vol: 0.35, mml: pad(last, 59) },
+      { inst: 'drums', vol: 0.95, mml: '[o4 c8 c8 d8 c8 c8 c8 d8 e8]16' },
+    ],
+  },
+  // エンディング（スタッフロール）
+  ending: {
+    bpm: 80,
+    tracks: [
+      { inst: 'flute', vol: 1.0, mml: `o5 l4
+        f+ a > d < a | e2. c+ | d f+ b a | f+2. r |
+        g b > d < b | a2 f+2 | g f+ e g | a1 |
+        f+ a > d e | f+2 e2 | d < b > d < b | g2. r |
+        e g b a | a > c+ e d | d2 < a2 > | d1 |` },
+      { inst: 'piano', vol: 0.55, mml: arp(ending, 50, [0, 1, 2, 3, 2, 1, 2, 1]) },
+      { inst: 'strings', vol: 0.5, mml: pad(ending, 57) },
+      { inst: 'warmpad', vol: 0.35, mml: pad(ending, 45) },
+      { inst: 'ebass', vol: 0.55, mml: bass(ending, { 4: 'R2 F2', 2: 'R2' }, 2) },
     ],
   },
 

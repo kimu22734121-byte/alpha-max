@@ -10,6 +10,10 @@ import { spreadMaps } from './map-scale.js';
 import { addInteriors, addDevRoom } from './interiors.js';
 import { MAPS2 } from './maps2.js';
 import { MAPS3 } from './maps3.js';
+import { MAPS4 } from './maps4.js';
+import { MAPS5 } from './maps5.js';
+import { MAPS6 } from './maps6.js';
+import { MAPS7 } from './maps7.js';
 
 export const MAPS = {
   // ================================================================ 町1
@@ -757,6 +761,8 @@ export const MAPS = {
 Object.assign(MAPS, MAPS2);
 // 第3章「水」の惑星のマップ（maps3.js）
 Object.assign(MAPS, MAPS3);
+// 第4〜7章のマップ（maps4.js 〜 maps7.js）
+Object.assign(MAPS, MAPS4, MAPS5, MAPS6, MAPS7);
 
 for (const m of Object.values(MAPS)) {
   m.grid = parseRows(m.rows);
