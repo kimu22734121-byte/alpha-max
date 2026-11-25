@@ -78,6 +78,19 @@ const water = [...waterA, ...waterB];
 const fire = ['Am', 'Am', 'F', 'G', 'Am', 'Dm', 'E', 'E', 'F', 'G', 'Am', 'Am', 'Dm', 'E', 'Am', 'E'];       // 火：熱くて力強い短調
 const light = ['C', 'G/B', 'Am', 'Em', 'F', 'C/E', 'Dm', 'G', 'C', 'Em', 'F', 'G', 'Am', 'F', 'Gsus4 G', 'C'];  // 光：おごそかで明るい長調
 const dark = ['Dm', 'Dm', 'Bb', 'A', 'Gm', 'Dm', 'Eb', 'A', 'Dm', 'F', 'Gm', 'A', 'Bb', 'Gm', 'A', 'A'];     // 闇：静かで不気味な短調
+// 光（v1.1〜）：天へ昇る壮大な長調／闇（v1.1〜）：決戦前の張りつめた短調
+const light5 = ['C', 'G/B', 'Am', 'F', 'Dm', 'G', 'Esus4 E', 'Am', 'F', 'G', 'Em', 'Am', 'Dm', 'Bb', 'Gsus4 G', 'C'];
+const light5Mel = `o5 l4
+  c2 g e | d2. < b > | c e a g | f2. r |
+  d f a > c < | b2 g d | e2 g+ b | > c2. < r |
+  a > c f e < | d2 g2 | g b > e d < | c2 e2 |
+  f a > d c < | d f g a | g2 > d2 < | > c1 < |`;
+const dark6 = ['Dm', 'Dm', 'Bb', 'C', 'Gm', 'A', 'Dm', 'A', 'Bb', 'C', 'Am', 'Dm', 'Gm', 'Eb', 'A', 'A'];
+const dark6Mel = `o4 l4
+  d2 a2 | f2. e8 d8 | d2 f2 | e2. r |
+  g2 b-2 | a2. c+ | d2 f e | a2. r |
+  b-2 > d2 < | > c2. < g | a > c e d < | d1 |
+  b- > d g f < | g2 b- a | a2 > c+2 < | > d2. < r |`;
 const core = ['Cm', 'Ab', 'Fm', 'G', 'Cm', 'Db', 'Bb', 'G', 'Ab', 'Fm', 'Cm', 'G', 'Ab', 'Db', 'G', 'G'];    // マザーコアの世界：重く不安な短調
 const lastA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'Am', 'B'];
 const lastB = ['C', 'D', 'Bm', 'Em', 'Am', 'D', 'B', 'B'];
@@ -193,34 +206,31 @@ export const SONGS = {
       { inst: 'drums', vol: 0.75, mml: '[o4 c8 c8 d8 r8 c8 c8 d8 e8]16' },
     ],
   },
-  // 第5章「光」の惑星のフィールド
+  // 第5章「光」の惑星のフィールド（天上の聖域：おごそかで、天へ昇っていくような壮大な長調）
   field5: {
-    bpm: 88,
+    bpm: 108,
     tracks: [
-      { inst: 'flute', vol: 1.0, mml: `o5 l4
-        e g > c < b | d2. g | c e a g | e2. r |
-        f a > c < a | g2 e2 | f e d f | g1 |
-        e g > c d | e2 d2 | c < a > c < a | g2. r |
-        a > c f e | d < b g b | > c2 < g2 | > c1 < |` },
-      { inst: 'harp', vol: 0.6, mml: arp(light, 50, [0, 2, 4, 5, 4, 2, 1, 3]) },
-      { inst: 'strings', vol: 0.5, mml: pad(light, 57) },
-      { inst: 'warmpad', vol: 0.35, mml: pad(light, 45) },
-      { inst: 'ebass', vol: 0.55, mml: bass(light, { 4: 'R2 F4 O4', 2: 'R4 F4' }, 2) },
+      { inst: 'brass', vol: 0.95, mml: light5Mel },
+      { inst: 'strings', vol: 0.45, transpose: 12, mml: light5Mel },
+      { inst: 'harp', vol: 0.55, mml: arp(light5, 55, [0, 1, 2, 3, 4, 3, 2, 1]) },
+      { inst: 'warmpad', vol: 0.4, mml: pad(light5, 48) },
+      { inst: 'ebass', vol: 0.8, mml: bass(light5, { 4: 'R4 R4 F4 O4', 2: 'R4 F4' }, 2) },
+      { inst: 'drums', vol: 0.6, mml: '[o4 c4 g8 g8 c4 a8 a8]16' },
+      { inst: 'drums', vol: 0.5, mml: '[o4 b1 r1 r1 r1]4' },
     ],
   },
-  // 第6章「闇」の惑星のフィールド
+  // 第6章「闇」の惑星のフィールド（終焉の夜：決戦が近い、張りつめた速い短調）
   field6: {
-    bpm: 76,
+    bpm: 132,
     tracks: [
-      { inst: 'strings', vol: 0.9, mml: `o4 l4
-        d f a g | a2. f | d d b- a | a2. r |
-        g b- > d c < | a2 f2 | e- g b- a | a1 |
-        d f a > c < | a2 f2 | g b- > d c < | c+2. r |
-        > d < b- g b- | g e- d e- | d2 c+2 | d1 |` },
-      { inst: 'warmpad', vol: 0.45, mml: pad(dark, 45) },
-      { inst: 'harp', vol: 0.4, mml: arp(dark, 48, [0, 1, 2, 1, 3, 2, 1, 0]) },
-      { inst: 'ebass', vol: 0.6, mml: bass(dark, { 4: 'R1', 2: 'R2' }, 2) },
-      { inst: 'drums', vol: 0.3, mml: '[o4 c2 r4 c8 c8]16' },
+      { inst: 'brass', vol: 0.9, mml: dark6Mel },
+      { inst: 'strings', vol: 0.5, mml: `q7 ${arp(dark6, 50, [0, 1, 2, 1, 0, 1, 2, 3])}` },
+      { inst: 'guitar', vol: 0.5, mml: `q6 ${chug(dark6, 38)}` },
+      { inst: 'warmpad', vol: 0.3, mml: pad(dark6, 45) },
+      { inst: 'ebass', vol: 0.95, mml: `q6 ${bass(dark6, { 4: 'R8 R8 R8 R8 R8 R8 O8 R8', 2: 'R8 R8 O8 R8' }, 1)}` },
+      { inst: 'drums', vol: 0.8, mml: '[o4 c8 c8 d8 c8 c8 c8 d8 g8]16' },
+      { inst: 'drums', vol: 0.3, mml: '[o4 e8 e8 e8 e8 e8 e8 e8 e8]16' },
+      { inst: 'drums', vol: 0.5, mml: '[o4 b1 r1 r1 r1]4' },
     ],
   },
   // 第7章「マザーコアの世界」のフィールド

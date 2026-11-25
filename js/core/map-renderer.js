@@ -79,27 +79,27 @@ export const PALETTES = {
   },
   // 第5章「光」の惑星：白い石の遺跡・金色の草・水晶の岩山・光の空（z）
   light: {
-    sand: '#e8dcb8', sandSp: ['#dccfa8', '#f2e8c8', '#d8c898'],
-    rock: '#d8d4cc', rockSp: ['#c8c4bc', '#e8e4dc'], stoneD: '#b8b0a4', stoneL: '#fffaf0',
+    sand: '#e4d8e8', sandSp: ['#d8cce0', '#f0e8f2', '#e8d8a8'],
+    rock: '#d0cce0', rockSp: ['#c0bcd4', '#e4e0f0'], stoneD: '#b8b0a4', stoneL: '#fffaf0',
     metal: '#e0d8c4', metalD: '#c8bea8', metalL: '#fff8e4', metalB: '#e8c040',
     mount: ['#c8d8e8', '#a8c0d8', '#e8f4ff', '#ffffff'],
     wall: ['#d8ceb4', '#e8e0c8', '#b8ae94'],
     road: '#f0e4c0', roadSp: ['#e4d8b0', '#fff0d0'],
     grass: '#c8b040', flowers: ['#ffffff', '#ffe060', '#a8d8ff'],
     caveWall: ['#b8ae94', '#c8bea4', '#d8ceb4'],
-    voidCol: '#fff4d8', cliff: ['#d8ccb0', '#c8bca0', '#e8dcc0'],
+    voidCol: '#5a4aa8', cliff: ['#d8ccb0', '#b8a8c0', '#e8dcc0'],
   },
   // 第6章「闇」の惑星：夜の大地・紫の岩・黒い山・闇の谷（z）
   dark: {
-    sand: '#3a3448', sandSp: ['#2e2a3a', '#46405a', '#342e44'],
+    sand: '#3a3038', sandSp: ['#2e262e', '#463a44', '#3a2228'],
     rock: '#2a2636', rockSp: ['#201c2a', '#363046'], stoneD: '#18141e', stoneL: '#4a4460',
-    metal: '#3a3a4a', metalD: '#2e2e3c', metalL: '#4e4e60', metalB: '#9a7aff',
-    mount: ['#24202e', '#1a1622', '#3a3448', '#8a7aca'],
+    metal: '#3a3440', metalD: '#2e2832', metalL: '#4e4652', metalB: '#ff3a4a',
+    mount: ['#241a22', '#1a1218', '#3a2a34', '#c02a3a'],
     wall: ['#2a2636', '#363046', '#1a1622'],
     road: '#4e4860', roadSp: ['#423c54', '#5a546c'],
-    grass: '#3a5a4a', flowers: ['#9a7aff', '#6ad8ff'],
+    grass: '#4a2a32', flowers: ['#ff3a4a', '#ff8a5a'],
     caveWall: ['#141018', '#1e1a26', '#282234'],
-    voidCol: '#06040c', cliff: ['#1e1a26', '#2a2434', '#141018'],
+    voidCol: '#1a0206', cliff: ['#1e1418', '#2a1a20', '#140c10'],
   },
   // 第7章「マザーコアの世界」：脈打つ肉の大地・紫の血管・とげの山・底なしの穴（z）・酸の沼（8）
   core: {
@@ -586,7 +586,7 @@ function add3D(map, group, disposables, view) {
   const BC = {
     fire: { m3: 0x4a2a22, w4: 0x3a2a26, c24: 0x2e1c18, r1: 0x3a3236, r0: 0x5a4a44, trunk: 0x2a1a14, leaf: null, glow: 0xff5a1a },
     light: { m3: 0xc8d8ec, w4: 0xe0d6bc, c24: 0xd0c6ac, r1: 0xe0dcd4, r0: 0xf0e8d0, trunk: 0xe8e0c8, leaf: 0xf0d860, glow: 0xa8d8ff },
-    dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x3a4a5a, glow: 0x9a7aff },
+    dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x5a1a24, glow: 0xff3a4a },
     core: { m3: 0x3a1430, w4: 0x3a1a30, c24: 0x2a1022, r1: 0x3a1e30, r0: 0x5a2a48, trunk: 0x4a1a3a, leaf: 0xc83ab0, glow: 0xff6ad0 },
   }[map.biome];
   const kinds = {
