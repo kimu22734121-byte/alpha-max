@@ -48,6 +48,7 @@ const r3 = (v) => Math.round(v * 1000) / 1000;
 const Bx = (w, h, d) => geo(`b${r3(w)},${r3(h)},${r3(d)}`, () => new THREE.BoxGeometry(r3(w), r3(h), r3(d)));
 const Cy = (rt, rb, h, s = 8) => geo(`c${r3(rt)},${r3(rb)},${r3(h)},${s}`, () => new THREE.CylinderGeometry(r3(rt), r3(rb), r3(h), s));
 const Sp = (r, d = 1) => geo(`s${r3(r)},${d}`, () => new THREE.IcosahedronGeometry(r3(r), d));
+const Do = (r, d = 0) => geo(`d${r3(r)},${d}`, () => new THREE.DodecahedronGeometry(r3(r), d));
 const Co = (r, h, s = 8) => geo(`o${r3(r)},${r3(h)},${s}`, () => new THREE.ConeGeometry(r3(r), r3(h), s));
 const To = (r, t, rs = 6, ts = 12) => geo(`t${r3(r)},${r3(t)},${rs},${ts}`, () => new THREE.TorusGeometry(r3(r), r3(t), rs, ts));
 
@@ -317,9 +318,7 @@ function buildBody(colors, heavy = false) {
   socket(root, 'socket_head', 0, 0.82, 0.32);
   socket(root, 'socket_armR', -0.66 * k, 0.5, 0.05);
   socket(root, 'socket_armL', 0.66 * k, 0.5, 0.05);
-  socket(root, 'socket_back1', 0, 0.9, -0.42);
-  socket(root, 'socket_back2', -0.42 * k, 0.88, -0.42);
-  socket(root, 'socket_back3', 0.42 * k, 0.88, -0.42);
+  // 肩・背中の武器の取り付け点は mech.js が腕の付け根から計算する（顔の真後ろには付けない）
   return root;
 }
 
@@ -472,10 +471,7 @@ function buildBodySharp(colors, legend = false) {
   socket(root, 'socket_head', 0, 0.84, 0.16);
   socket(root, 'socket_armR', -0.52, 0.6, 0.02);
   socket(root, 'socket_armL', 0.52, 0.6, 0.02);
-  socket(root, 'socket_back1', 0, 0.86, -0.36);
-  // 伝説の機体は翼をじゃましないように、左右の背中武器を腰に付ける
-  socket(root, 'socket_back2', legend ? -0.46 : -0.36, legend ? 0.28 : 0.84, legend ? -0.15 : -0.3);
-  socket(root, 'socket_back3', legend ? 0.46 : 0.36, legend ? 0.28 : 0.84, legend ? -0.15 : -0.3);
+  // 肩・背中の武器の取り付け点は mech.js が腕の付け根から計算する（顔の真後ろには付けない）
   return root;
 }
 
@@ -587,6 +583,81 @@ function buildHammer(colors) {
   socket(root, 'muzzle', 0, 0, 1.1);
   return root;
 }
+// 特別機（アルファ・オメガ・ガイア）の専用武器。機体ごとの色と光で、専用のデザインにする（+z が前、muzzle が発射口）
+function buildSignature(colors, kind) {
+  const m = makeMats({ primary: 0xf4f2ea, secondary: 0x3a3e48, accent: 0xe8c24a, glow: 0x9fe8ff, dark: 0x22242a, ...colors });
+  const root = grp(null, 'weapon');
+  root.userData = { kind: 'weapon', weaponKind: kind };
+  if (kind === 'alpha_lance') {
+    // 細身の光の槍砲：白い砲身に金の輪、青白い光のライン
+    add(root, Bx(0.22, 0.2, 0.5), m('primary'), 0, 0, 0);
+    add(root, Cy(0.045, 0.06, 1.3, 8), m('primary'), 0, 0.02, 0.85, Math.PI / 2);
+    for (let i = 0; i < 3; i++) add(root, To(0.08, 0.015, 4, 12), m('accent'), 0, 0.02, 0.45 + i * 0.35);
+    for (const s2 of [-1, 1]) add(root, Bx(0.015, 0.03, 1.2), m('glow'), 0.05 * s2, 0.02, 0.8);
+    add(root, Co(0.05, 0.2, 6), m('glow'), 0, 0.02, 1.55, Math.PI / 2);
+    socket(root, 'muzzle', 0, 0.02, 1.65);
+  } else if (kind === 'alpha_halo') {
+    // 光の輪をまとう回転砲
+    add(root, Cy(0.11, 0.11, 0.36, 10), m('primary'), 0, 0, 0.05, Math.PI / 2);
+    const barrels = grp(root, 'barrels', 0, 0, 0.45);
+    for (let i = 0; i < 4; i++) { const a2 = (i / 4) * Math.PI * 2; add(barrels, Cy(0.022, 0.022, 0.55, 6), m('accent'), Math.cos(a2) * 0.06, Math.sin(a2) * 0.06, 0, Math.PI / 2); }
+    add(root, To(0.17, 0.02, 4, 18), m('glow'), 0, 0, 0.35);
+    add(root, To(0.13, 0.015, 4, 16), m('glow'), 0, 0, 0.6);
+    socket(root, 'muzzle', 0, 0, 0.75);
+  } else if (kind === 'alpha_aurora') {
+    // 翼のような板を持つミサイルポッド
+    add(root, Bx(0.46, 0.3, 0.45), m('primary'), 0, 0, 0);
+    for (let i = 0; i < 4; i++) add(root, Co(0.045, 0.08, 6), m('glow'), -0.15 + i * 0.1, 0.02, 0.25, Math.PI / 2);
+    for (const s2 of [-1, 1]) add(root, Bx(0.04, 0.32, 0.4), m('accent'), 0.26 * s2, 0.1, -0.02, 0, 0, 0.35 * s2);
+    socket(root, 'muzzle', 0, 0.05, 0.3);
+  } else if (kind === 'omega_buster') {
+    // 漆黒の双身砲と赤いライン
+    add(root, Bx(0.34, 0.26, 0.55), m('primary'), 0, 0, -0.05);
+    for (const s2 of [-1, 1]) { add(root, Bx(0.07, 0.09, 1.35), m('dark'), 0.1 * s2, 0.02, 0.8); add(root, Bx(0.015, 0.04, 1.25), m('glow'), 0.06 * s2, 0.02, 0.8); }
+    add(root, Bx(0.3, 0.04, 0.06), m('accent'), 0, 0.12, 0.5);
+    add(root, Sp(0.07, 0), m('glow'), 0, 0.02, 0.15);
+    socket(root, 'muzzle', 0, 0.02, 1.5);
+  } else if (kind === 'omega_storm') {
+    // 黒い大型ガトリング、赤く光る銃口
+    add(root, Cy(0.14, 0.14, 0.42, 8), m('primary'), 0, 0, 0.05, Math.PI / 2);
+    const barrels = grp(root, 'barrels', 0, 0, 0.5);
+    for (let i = 0; i < 8; i++) { const a2 = (i / 8) * Math.PI * 2; add(barrels, Cy(0.022, 0.022, 0.6, 6), m('dark'), Math.cos(a2) * 0.08, Math.sin(a2) * 0.08, 0, Math.PI / 2); }
+    add(barrels, To(0.1, 0.02, 4, 14), m('glow'), 0, 0, 0.3);
+    add(root, Bx(0.1, 0.06, 0.4), m('glow'), 0, 0.16, 0.05);
+    socket(root, 'muzzle', 0, 0, 0.85);
+  } else if (kind === 'omega_nova') {
+    // 赤い核を抱えたミサイルポッド
+    add(root, Bx(0.5, 0.36, 0.46), m('primary'), 0, 0, 0);
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) add(root, Cy(0.06, 0.06, 0.05, 8), m('dark'), -0.15 + i * 0.15, -0.07 + j * 0.15, 0.24, Math.PI / 2);
+    add(root, Sp(0.08, 1), m('glow'), 0, 0.22, 0);
+    add(root, Bx(0.52, 0.03, 0.03), m('glow'), 0, 0.19, 0.23);
+    socket(root, 'muzzle', 0, 0.05, 0.3);
+  } else if (kind === 'gaia_pile') {
+    // 岩のような装甲の杭打ち機
+    add(root, Bx(0.36, 0.36, 0.75), m('primary'), 0, 0, 0.25);
+    add(root, Do(0.2, 0), m('secondary'), 0, 0.2, 0.1);
+    const pile = grp(root, 'pile', 0, 0, 0.62);
+    add(pile, Cy(0.07, 0.07, 0.55, 8), m('accent'), 0, 0, 0.22, Math.PI / 2);
+    add(pile, Co(0.07, 0.24, 6), m('glow'), 0, 0, 0.6, Math.PI / 2);
+    socket(root, 'muzzle', 0, 0, 1.3);
+  } else if (kind === 'gaia_claymore') {
+    // 深紅の大剣（刃に溶岩のような光の筋）
+    add(root, Bx(0.08, 0.08, 0.25), m('dark'), 0, 0, -0.05);
+    add(root, Bx(0.36, 0.07, 0.08), m('accent'), 0, 0, 0.1);
+    add(root, Bx(0.24, 0.05, 1.2), m('secondary'), 0, 0, 0.75);
+    for (const s2 of [-1, 1]) add(root, Bx(0.02, 0.06, 1.1), m('glow'), 0.11 * s2, 0, 0.72);
+    add(root, Co(0.13, 0.25, 4), m('secondary'), 0, 0, 1.45, Math.PI / 2);
+    socket(root, 'muzzle', 0, 0, 1.5);
+  } else if (kind === 'gaia_quake') {
+    // 大地を揺らす振動槌（岩の頭と光る亀裂）
+    add(root, Cy(0.05, 0.05, 0.7, 6), m('dark'), 0, 0, 0.25, Math.PI / 2);
+    add(root, Do(0.22, 0), m('primary'), 0, 0, 0.7);
+    for (let i = 0; i < 3; i++) add(root, Bx(0.02, 0.3, 0.02), m('glow'), -0.08 + i * 0.08, 0, 0.82, 0.3 * (i - 1), 0, 0);
+    socket(root, 'muzzle', 0, 0, 0.9);
+  }
+  return root;
+}
+
 function buildPile(colors) {
   const m = makeMats({ primary: 0x4a4e56, ...colors });
   const root = grp(null, 'weapon');
@@ -1260,6 +1331,15 @@ export const MODEL_BUILDERS = {
   wpn_missile: (c) => buildWeapon(c, 'missile'),
   wpn_special: (c) => buildWeapon(c, 'special'),
   wpn_alpha_buster: (c) => buildWeapon(c, 'alpha_buster'),
+  wpn_alpha_lance: (c) => buildSignature(c, 'alpha_lance'),
+  wpn_alpha_halo: (c) => buildSignature(c, 'alpha_halo'),
+  wpn_alpha_aurora: (c) => buildSignature(c, 'alpha_aurora'),
+  wpn_omega_buster: (c) => buildSignature(c, 'omega_buster'),
+  wpn_omega_storm: (c) => buildSignature(c, 'omega_storm'),
+  wpn_omega_nova: (c) => buildSignature(c, 'omega_nova'),
+  wpn_gaia_pile: (c) => buildSignature(c, 'gaia_pile'),
+  wpn_gaia_claymore: (c) => buildSignature(c, 'gaia_claymore'),
+  wpn_gaia_quake: (c) => buildSignature(c, 'gaia_quake'),
   // 敵
   en_bot: buildEnBot,
   en_drone: buildEnDrone,

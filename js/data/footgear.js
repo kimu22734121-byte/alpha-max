@@ -109,35 +109,65 @@ export const FOOT_GEAR = {
   gina_w1: { name: '大剣「ベヒモス」', slot: 'weapon', cat: 'blade', atk: 84, hit: 4, target: 'group', only: 'gina', price: 0, sell: 0, tier: 7, stage: 1, model: 'fw_gina1', from: '第4章：傭兵の墓場の奥', desc: 'ジーナの背丈ほどもある大型ブレード。周りの敵をまとめてなぎ払う（グループ攻撃）' },
   gina_w2: { name: '大剣「ベヒモス・ラグナ」', slot: 'weapon', cat: 'blade', atk: 168, hit: 12, target: 'group', crit: 10, only: 'gina', price: 0, sell: 0, tier: 7, stage: 2, final: 'gina', model: 'fw_gina2', from: '大剣「ベヒモス」を進化（第6章）', desc: '刃に炎の筋が走る最終形。回転斬りの衝撃波で一列ごと吹き飛ばす（グループ攻撃・専用演出）' },
   // レン：作業用アーマー（4つそろえると「メカニック・マスター」）
-  ren_head: { name: 'マスターゴーグル', slot: 'head', def: 14, hit: 10, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第5章：古代工房の隠し部屋', desc: '機械の弱点が見えるゴーグル' },
-  ren_body: { name: 'ギアワークス・アーマー', slot: 'body', def: 34, hp: 40, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第5章：古代工房の奥', desc: '工具と小型アームを内蔵した作業用アーマー' },
-  ren_hands: { name: 'マニピュレーターグローブ', slot: 'hands', def: 10, atk: 10, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '細かい作業も力仕事もこなす機械の手' },
-  ren_feet: { name: 'マグネットブーツ', slot: 'feet', def: 10, eva: 6, spd: 6, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: 'どんな足場にも吸いつく磁力の靴' },
+  ren_head: { name: 'マスターゴーグル', stage: 1, slot: 'head', def: 14, hit: 10, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第5章：古代工房の隠し部屋', desc: '機械の弱点が見えるゴーグル' },
+  ren_body: { name: 'ギアワークス・アーマー', stage: 1, slot: 'body', def: 34, hp: 40, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第5章：古代工房の奥', desc: '工具と小型アームを内蔵した作業用アーマー' },
+  ren_hands: { name: 'マニピュレーターグローブ', stage: 1, slot: 'hands', def: 10, atk: 10, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '細かい作業も力仕事もこなす機械の手' },
+  ren_feet: { name: 'マグネットブーツ', stage: 1, slot: 'feet', def: 10, eva: 6, spd: 6, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: 'どんな足場にも吸いつく磁力の靴' },
   // シオン：パイロットスーツ（4つそろえると「エース・リンク」）
-  shion_head: { name: 'エースヘルメット', slot: 'head', def: 12, hit: 16, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第5章：宇宙軍の旧基地', desc: 'オメガの照準データを映すヘルメット' },
-  shion_body: { name: 'オメガリンク・スーツ', slot: 'body', def: 28, eva: 14, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第5章：宇宙軍の旧基地の奥', desc: '黒と赤のパイロットスーツ。オメガと神経をつなぐ' },
-  shion_hands: { name: 'トリガーグローブ', slot: 'hands', def: 8, hit: 12, crit: 6, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '引き金の重さが消える手袋' },
-  shion_feet: { name: 'スラスターブーツ', slot: 'feet', def: 8, eva: 12, spd: 10, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: '小さな推進器つきのブーツ' },
+  shion_head: { name: 'エースヘルメット', stage: 1, slot: 'head', def: 12, hit: 16, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第5章：宇宙軍の旧基地', desc: 'オメガの照準データを映すヘルメット' },
+  shion_body: { name: 'オメガリンク・スーツ', stage: 1, slot: 'body', def: 28, eva: 14, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第5章：宇宙軍の旧基地の奥', desc: '黒と赤のパイロットスーツ。オメガと神経をつなぐ' },
+  shion_hands: { name: 'トリガーグローブ', stage: 1, slot: 'hands', def: 8, hit: 12, crit: 6, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '引き金の重さが消える手袋' },
+  shion_feet: { name: 'スラスターブーツ', stage: 1, slot: 'feet', def: 8, eva: 12, spd: 10, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: '小さな推進器つきのブーツ' },
   // ジーナ：重厚アーマー（4つそろえると「バスティオン」）
-  gina_head: { name: 'バスティオン・ヘルム', slot: 'head', def: 18, hp: 20, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第5章：傭兵の墓場', desc: '角の生えた重いヘルム' },
-  gina_body: { name: 'バスティオン・アーマー', slot: 'body', def: 44, hp: 60, eva: -4, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第5章：傭兵の墓場の奥', desc: '要塞のような重装甲。大剣を背負う金具つき' },
-  gina_hands: { name: 'バスティオン・ガントレット', slot: 'hands', def: 14, atk: 14, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '大剣を振り回せる怪力の籠手' },
-  gina_feet: { name: 'バスティオン・グリーヴ', slot: 'feet', def: 14, hp: 20, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: '地面に根を張るような重い脚甲' },
+  gina_head: { name: 'バスティオン・ヘルム', stage: 1, slot: 'head', def: 18, hp: 20, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第5章：傭兵の墓場', desc: '角の生えた重いヘルム' },
+  gina_body: { name: 'バスティオン・アーマー', stage: 1, slot: 'body', def: 44, hp: 60, eva: -4, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第5章：傭兵の墓場の奥', desc: '要塞のような重装甲。大剣を背負う金具つき' },
+  gina_hands: { name: 'バスティオン・ガントレット', stage: 1, slot: 'hands', def: 14, atk: 14, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第6章：ボスのドロップ', desc: '大剣を振り回せる怪力の籠手' },
+  gina_feet: { name: 'バスティオン・グリーヴ', stage: 1, slot: 'feet', def: 14, hp: 20, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: '第6章：浮遊ドックの隠し部屋', desc: '地面に根を張るような重い脚甲' },
+  // ---- 専用防具の最終段階（第6章あたりで、ガレージの「専用装備の進化」で第1段階から進化）
+  ren_head2: { name: 'マスターゴーグルΩ', stage: 2, slot: 'head', def: 22, hit: 16, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: 'マスターゴーグルを進化（第6章）', desc: '機械の弱点が見えるゴーグル。最終段階：光のラインが走り、性能が大きく上がった' },
+  ren_body2: { name: 'ギアワークス・アーマーΩ', stage: 2, slot: 'body', def: 54, hp: 64, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: 'ギアワークス・アーマーを進化（第6章）', desc: '工具と小型アームを内蔵した作業用アーマー。最終段階：光のラインが走り、性能が大きく上がった' },
+  ren_hands2: { name: 'マニピュレーターグローブΩ', stage: 2, slot: 'hands', def: 16, atk: 16, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: 'マニピュレーターグローブを進化（第6章）', desc: '細かい作業も力仕事もこなす機械の手。最終段階：光のラインが走り、性能が大きく上がった' },
+  ren_feet2: { name: 'マグネットブーツΩ', stage: 2, slot: 'feet', def: 16, eva: 10, spd: 10, only: 'ren', set: 'ren', price: 0, sell: 0, tier: 7, from: 'マグネットブーツを進化（第6章）', desc: 'どんな足場にも吸いつく磁力の靴。最終段階：光のラインが走り、性能が大きく上がった' },
+  shion_head2: { name: 'エースヘルメット・ゼロ', stage: 2, slot: 'head', def: 19, hit: 26, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: 'エースヘルメットを進化（第6章）', desc: 'オメガの照準データを映すヘルメット。最終段階：光のラインが走り、性能が大きく上がった' },
+  shion_body2: { name: 'オメガリンク・スーツ・ゼロ', stage: 2, slot: 'body', def: 45, eva: 22, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: 'オメガリンク・スーツを進化（第6章）', desc: '黒と赤のパイロットスーツ。オメガと神経をつなぐ。最終段階：光のラインが走り、性能が大きく上がった' },
+  shion_hands2: { name: 'トリガーグローブ・ゼロ', stage: 2, slot: 'hands', def: 13, hit: 19, crit: 10, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: 'トリガーグローブを進化（第6章）', desc: '引き金の重さが消える手袋。最終段階：光のラインが走り、性能が大きく上がった' },
+  shion_feet2: { name: 'スラスターブーツ・ゼロ', stage: 2, slot: 'feet', def: 13, eva: 19, spd: 16, only: 'shion', set: 'shion', price: 0, sell: 0, tier: 7, from: 'スラスターブーツを進化（第6章）', desc: '小さな推進器つきのブーツ。最終段階：光のラインが走り、性能が大きく上がった' },
+  gina_head2: { name: 'バスティオン・ヘルム・ラグナ', stage: 2, slot: 'head', def: 29, hp: 32, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: 'バスティオン・ヘルムを進化（第6章）', desc: '角の生えた重いヘルム。最終段階：光のラインが走り、性能が大きく上がった' },
+  gina_body2: { name: 'バスティオン・アーマー・ラグナ', stage: 2, slot: 'body', def: 70, hp: 96, eva: -4, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: 'バスティオン・アーマーを進化（第6章）', desc: '要塞のような重装甲。大剣を背負う金具つき。最終段階：光のラインが走り、性能が大きく上がった' },
+  gina_hands2: { name: 'バスティオン・ガントレット・ラグナ', stage: 2, slot: 'hands', def: 22, atk: 22, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: 'バスティオン・ガントレットを進化（第6章）', desc: '大剣を振り回せる怪力の籠手。最終段階：光のラインが走り、性能が大きく上がった' },
+  gina_feet2: { name: 'バスティオン・グリーヴ・ラグナ', stage: 2, slot: 'feet', def: 22, hp: 32, only: 'gina', set: 'gina', price: 0, sell: 0, tier: 7, from: 'バスティオン・グリーヴを進化（第6章）', desc: '地面に根を張るような重い脚甲。最終段階：光のラインが走り、性能が大きく上がった' },
 };
 
-// 4つそろえたときのセット効果（頭・体・手・足）
+// 4つそろえたときのセット効果（頭・体・手・足）。4つとも最終段階（stage 2）なら final に強化される
 // look：見た目の色（体の専用防具を着ると色が変わり、4つそろうと光をまとう）
 export const SETS = {
-  ren: { name: 'メカニック・マスター', desc: '攻撃+10・修理の回復量1.5倍・戦闘のあとマシンの装甲が10%回復', bonus: { atk: 10 }, repairMul: 1.5, machineRegen: 0.1, look: { primary: 0xe8c24a, secondary: 0x5a3a1a, leather: 0x2a2a2a, metal: 0xffe08a }, aura: 0xffd86a },
-  shion: { name: 'エース・リンク', desc: '会心率+20%・回避+15・オメガ連動の威力がさらに上がる', bonus: { crit: 20, eva: 15 }, linkMul: 1.5, look: { primary: 0x14141c, secondary: 0x0a0a10, accent: 0xff2a3a }, aura: 0xff3a4a },
-  gina: { name: 'バスティオン', desc: '受けるダメージ25%減・最大体力+25%', dmgCut: 0.25, hpMul: 1.25, look: { primary: 0x6a6e78, secondary: 0x2a2c32, accent: 0xff7a2a }, aura: 0xff9a3a },
+  ren: { name: 'メカニック・マスター', desc: '攻撃+10・修理の回復量1.5倍・戦闘のあとマシンの装甲が10%回復', bonus: { atk: 10 }, repairMul: 1.5, machineRegen: 0.1,
+    final: { name: 'メカニック・マスターΩ', desc: '攻撃+25・修理2倍・戦闘のあとマシンの装甲20%回復＋【特殊】仲間全員の体力も20%回復', bonus: { atk: 25 }, repairMul: 2, machineRegen: 0.2, partyRegen: 0.2 }, look: { primary: 0xe8c24a, secondary: 0x5a3a1a, leather: 0x2a2a2a, metal: 0xffe08a }, aura: 0xffd86a },
+  shion: { name: 'エース・リンク', desc: '会心率+20%・回避+15・オメガ連動の威力がさらに上がる', bonus: { crit: 20, eva: 15 }, linkMul: 1.5,
+    final: { name: 'エース・リンク・ゼロ', desc: '会心率+35%・回避+25・オメガ連動2倍＋【特殊】毎ターン必ず最初に動ける', bonus: { crit: 35, eva: 25 }, linkMul: 2, firstStrike: true }, look: { primary: 0x14141c, secondary: 0x0a0a10, accent: 0xff2a3a }, aura: 0xff3a4a },
+  gina: { name: 'バスティオン', desc: '受けるダメージ25%減・最大体力+25%', dmgCut: 0.25, hpMul: 1.25,
+    final: { name: 'バスティオン・ラグナ', desc: '受けるダメージ40%減・最大体力+50%＋【特殊】倒れる攻撃を1回の戦闘で1度だけ体力1で耐える', dmgCut: 0.4, hpMul: 1.5, guts: true }, look: { primary: 0x6a6e78, secondary: 0x2a2c32, accent: 0xff7a2a }, aura: 0xff9a3a },
 };
 
-// 専用武器の進化（第1段階 → 最終段階）。第5章までに素材を集め、第6章で進化できる
+// 専用装備の進化（第1段階 → 最終段階）。武器も防具も同じ仕組み。第5章までに素材を集め、第6章で進化できる
+// 段階を増やすときは、最終段階の id をキーにもう1行足すだけ（to の先をさらに進化させられる）
 export const EVOLVE = {
   ren_w1: { to: 'ren_w2', mats: { relic: 3, core: 6, alloy: 30, cell: 20 }, gear: 60000 },
   shion_w1: { to: 'shion_w2', mats: { relic: 3, core: 6, cell: 30, alloy: 15 }, gear: 60000 },
   gina_w1: { to: 'gina_w2', mats: { relic: 3, core: 6, alloy: 30, bio: 20 }, gear: 60000 },
+  // 専用防具（頭・体・手・足）も武器と同じ仕組みで進化する
+  ren_head: { to: 'ren_head2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  ren_body: { to: 'ren_body2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  ren_hands: { to: 'ren_hands2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  ren_feet: { to: 'ren_feet2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  shion_head: { to: 'shion_head2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  shion_body: { to: 'shion_body2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  shion_hands: { to: 'shion_hands2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  shion_feet: { to: 'shion_feet2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  gina_head: { to: 'gina_head2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  gina_body: { to: 'gina_body2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  gina_hands: { to: 'gina_hands2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
+  gina_feet: { to: 'gina_feet2', mats: { relic: 1, core: 2, alloy: 10 }, gear: 20000 },
 };
 
 // キャラごとの得意な攻撃範囲（その範囲の武器は威力が上がる）

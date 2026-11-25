@@ -13,14 +13,24 @@ export const PARTS = {
   head_sharp: { name: 'シャープヘッドX1', slot: 'head', model: 'head_sharp', armor: 14, def: 2, wt: 2, hit: 9, scan: 4, price: 1400 },
   head_oracle: { name: 'オラクルアイ【限定】', slot: 'head', model: 'head_radar', armor: 30, def: 5, wt: 3, hit: 22, scan: 14, price: 0, limited: true },
   head_alpha: { name: 'アルファヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 14, scan: 8, price: 0, only: 'alpha' },
+  head_gaia: { name: 'ガイアヘッド', slot: 'head', model: 'head_heavy', armor: 60, def: 12, wt: 6, hit: 6, scan: 4, price: 0, only: 'gaia' },
   head_omega: { name: 'オメガヘッド', slot: 'head', model: 'head_legend', armor: 40, def: 8, wt: 3, hit: 12, scan: 8, price: 0, only: 'omega' },
 
   // ---- ボディ（フレーム）。マシンのタイプはボディで決まる ----
-  body_balance: { name: 'バランスフレームB1', slot: 'body', mtype: 'balance', model: 'body_std', armor: 130, def: 7, wt: 14, slots: 3, maxSlots: 5, price: 3000 },
-  body_heavy: { name: '重装フレームH1', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 190, def: 11, wt: 20, slots: 3, maxSlots: 5, price: 4200 },
-  body_sharp: { name: 'シャープフレームS1', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 95, def: 4, wt: 9, slots: 3, maxSlots: 5, price: 3800 },
-  body_alpha: { name: 'アルファフレーム', slot: 'body', mtype: 'legend', model: 'body_legend', armor: 260, def: 14, wt: 10, slots: 4, maxSlots: 5, price: 0, only: 'alpha' },
-  body_omega: { name: 'オメガフレーム', slot: 'body', mtype: 'legend', model: 'body_legend', armor: 300, def: 14, wt: 10, slots: 5, maxSlots: 5, price: 0, only: 'omega' },
+  body_balance: { name: 'バランスフレームB1', slot: 'body', mtype: 'balance', model: 'body_std', armor: 130, def: 7, wt: 14, slots: 3, maxSlots: 6, price: 3000 },
+  body_heavy: { name: '重装フレームH1', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 190, def: 11, wt: 20, slots: 3, maxSlots: 6, price: 4200 },
+  body_sharp: { name: 'シャープフレームS1', slot: 'body', mtype: 'sharp', model: 'body_sharp', armor: 95, def: 4, wt: 9, slots: 3, maxSlots: 6, price: 3800 },
+  // アルファの外装（専用の装甲）：封印が解けるたびに進化する（stages の番号＝封印の段階。数値と名前と光り方が変わる）
+  body_alpha: { name: 'アルファフレーム', slot: 'body', mtype: 'legend', model: 'body_legend', armor: 260, def: 14, wt: 10, slots: 4, maxSlots: 6, price: 0, only: 'alpha', coreSlot: true, evolveBy: 'seal',
+    stages: [
+      { name: '封じられた外装', armor: 180, def: 9 },
+      { name: '目覚めの外装', armor: 260, def: 14 },
+      { name: '白金の外装', armor: 340, def: 18 },
+      { name: '星光の外装', armor: 430, def: 22 },
+      { name: 'アルファマックス外装', armor: 560, def: 28, wingSpread: true },
+    ] },
+  body_gaia: { name: 'ガイアフレーム', slot: 'body', mtype: 'heavy', model: 'body_heavy', armor: 380, def: 20, wt: 18, slots: 5, maxSlots: 6, price: 0, only: 'gaia' },
+  body_omega: { name: 'オメガフレーム', slot: 'body', mtype: 'legend', model: 'body_legend', armor: 300, def: 14, wt: 10, slots: 6, maxSlots: 6, price: 0, only: 'omega' },
 
   // ---- 腕（右と左を別々に装備） ----
   arm_std: { name: '標準アーム', slot: 'arm', model: 'arm_std', armor: 22, def: 3, wt: 4, atkMul: 1.0, hit: 0, eva: 0, price: 500 },
@@ -30,6 +40,7 @@ export const PARTS = {
   arm_sharp: { name: 'シャープアームSA', slot: 'arm', model: 'arm_sharp', armor: 18, def: 2, wt: 2, atkMul: 1.0, hit: 6, eva: 6, price: 1800 },
   arm_titan: { name: 'タイタンアーム【限定】', slot: 'arm', model: 'arm_power', armor: 48, def: 7, wt: 7, atkMul: 1.35, hit: 2, eva: 0, power: true, price: 0, limited: true },
   arm_alpha: { name: 'アルファアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 10, eva: 8, power: true, price: 0, only: 'alpha' },
+  arm_gaia: { name: 'ガイアアーム', slot: 'arm', model: 'arm_power', armor: 70, def: 9, wt: 7, atkMul: 1.3, hit: 0, eva: -1, power: true, price: 0, only: 'gaia' },
   arm_omega: { name: 'オメガアーム', slot: 'arm', model: 'arm_sharp', armor: 45, def: 6, wt: 3, atkMul: 1.2, hit: 8, eva: 8, power: true, price: 0, only: 'omega' },
 
   // ---- 脚（左右セットで1パーツ。脚で乗り物の形が変わる） ----
@@ -41,6 +52,7 @@ export const PARTS = {
   legs_sharp: { name: 'シャープレッグSL', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 36, def: 4, wt: 5, eva: 12, spd: 3, price: 2800 },
   legs_jet: { name: 'ジェットホバー【限定】', slot: 'legs', model: 'legs_hover', legType: 'hover', armor: 55, def: 6, wt: 6, eva: 20, spd: 6, price: 0, limited: true },
   legs_alpha: { name: 'アルファレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 16, spd: 5, price: 0, only: 'alpha' },
+  legs_gaia: { name: 'ガイアレッグ', slot: 'legs', model: 'legs_biped', legType: 'biped', armor: 140, def: 16, wt: 12, eva: 2, spd: 1, price: 0, only: 'gaia' },
   legs_omega: { name: 'オメガレッグ', slot: 'legs', model: 'legs_sharp', legType: 'biped', armor: 90, def: 10, wt: 5, eva: 14, spd: 5, price: 0, only: 'omega' },
 
   // ---- エンジン（中に積む。見た目には出ない） ----
@@ -49,6 +61,7 @@ export const PARTS = {
   eng_heavy: { name: '重機用エンジンHX', slot: 'engine', cap: 80, en: 60, wt: 0, price: 4500 },
   eng_alpha: { name: 'アルファコア', slot: 'engine', cap: 70, en: 140, wt: 0, price: 0, only: 'alpha' },
   eng_omega: { name: 'オメガコア', slot: 'engine', cap: 85, en: 120, wt: 0, price: 0, only: 'omega' },
+  eng_gaia: { name: 'ガイアコア', slot: 'engine', cap: 110, en: 100, wt: 0, price: 0, only: 'gaia' },
 };
 
 // マシンのタイプ（ボディの mtype）。武器は共通で、タイプごとに得意な武器の相性がある
@@ -67,6 +80,7 @@ export const MODS = {
   frame: [ // フレーム強化 → 武器スロット +1
     { gear: 1500, materials: { scrap: 4, alloy: 1 } },
     { gear: 4000, materials: { alloy: 3, cell: 1 } },
+    { gear: 9000, materials: { alloy: 6, cell: 3, core: 1 } },
   ],
   engine: [ // エンジン強化 → 積める重さ +6
     { gear: 1000, materials: { scrap: 3 }, cap: 6 },
@@ -75,12 +89,20 @@ export const MODS = {
   ],
 };
 
-// 武器スロットの場所。0,1 は腕、2〜4 は背中
+// 武器スロットの場所（6か所＋アルファだけの胸のコア）
+// mount：arm＝腕用の武器（機銃・近接・特殊の一部）／back＝肩・背中用（主砲・ミサイル・特殊の一部）／core＝胸のコア（ステラ・ブレイカー専用）
+// 武器の mount が 'any' なら、通常の6か所のどこにでも付けられる（特別機の専用武器）
+// 顔の真後ろ（旧「背中・中央」）には何も付けない。肩の上は頭の横を通る間隔、背中は頭より後ろ・下
+// 開く順番：最初の3枠＝右腕・左腕・右肩、フレーム強化で左肩 → 背中・右 → 背中・左（最大6枠）
 export const SLOT_INFO = [
-  { name: '右腕', mount: 'arm', side: 'R', socket: 'hand' },
-  { name: '左腕', mount: 'arm', side: 'L', socket: 'hand' },
-  { name: '背中・中央', mount: 'back', socket: 'socket_back1' },
-  { name: '背中・右', mount: 'back', socket: 'socket_back2' },
-  { name: '背中・左', mount: 'back', socket: 'socket_back3' },
+  { name: '右腕', short: '右腕', mount: 'arm', side: 'R', place: 'hand', icon: '✋' },
+  { name: '左腕', short: '左腕', mount: 'arm', side: 'L', place: 'hand', icon: '✋' },
+  { name: '右肩の上', short: '右肩', mount: 'back', side: 'R', place: 'shoulder', icon: '◤' },
+  { name: '左肩の上', short: '左肩', mount: 'back', side: 'L', place: 'shoulder', icon: '◥' },
+  { name: '背中・右', short: '背右', mount: 'back', side: 'R', place: 'back', icon: '◣' },
+  { name: '背中・左', short: '背左', mount: 'back', side: 'L', place: 'back', icon: '◢' },
+  { name: '胸のコア（第7の専用スロット）', short: 'コア', mount: 'core', place: 'core', core: true, icon: '✦' },
 ];
+export const NORMAL_SLOTS = 6; // 通常の武器スロットの数（胸のコアは別）
+export const CORE_SLOT = 6;
 export const HEAVY_ARM_WEAPON = 6; // 重さがこれより大きい腕武器はパワーアームが必要

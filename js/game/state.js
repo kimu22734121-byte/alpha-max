@@ -1,7 +1,8 @@
 // ゲームの状態（セーブされる中身）と、ステータス計算などのルール
 import { CHARACTERS, LEVEL } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
-import { PARTS, MODS, SLOT_INFO, HEAVY_ARM_WEAPON, MACHINE_TYPES } from '../data/parts.js';
+import { PARTS, MODS, SLOT_INFO, HEAVY_ARM_WEAPON, MACHINE_TYPES, NORMAL_SLOTS } from '../data/parts.js';
+import { devSession } from '../data/debug.js';
 import { WEAPONS, UPGRADE } from '../data/weapons.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
 import { SETS, FAVORITE_RANGE, FAVORITE_BONUS } from '../data/footgear.js';
@@ -56,7 +57,9 @@ export const FOOT_SLOT_KEYS = ['weapon', 'head', 'body', 'hands', 'feet', 'acc']
 export function setOf(m) {
   const ids = ['head', 'body', 'hands', 'feet'].map((k) => FOOT_GEAR[m.equip[k]]);
   const set = ids[0]?.set;
-  return set && ids.every((g) => g?.set === set) ? SETS[set] : null;
+  if (!set || !ids.every((g) => g?.set === set)) return null;
+  // 4つとも最終段階なら、強化されたセット効果（数値アップ＋特殊効果）
+  return ids.every((g) => (g.stage || 1) >= 2) && SETS[set].final ? { ...SETS[set], ...SETS[set].final, stage: 2 } : SETS[set];
 }
 // その装備を装備できるか（専用装備は本人だけ）
 export const canWearFoot = (m, id) => { const g = FOOT_GEAR[id]; return !!g && (!g.only || g.only === m.id); };
@@ -92,6 +95,9 @@ export function memberStats(m) {
     repairMul: set?.repairMul || 1,
     machineRegen: set?.machineRegen || 0,
     regen: sum('regen'),
+    partyRegen: set?.partyRegen || 0,
+    firstStrike: !!set?.firstStrike,
+    guts: !!set?.guts,
     gearUp: sum('gearUp'),
   };
 }
@@ -116,7 +122,7 @@ export function createMachine(type, { key, owned = true, loc, test = false } = {
   const def = MACHINES[type];
   const id = key || `${type}_${G.uid++}`;
   const mc = {
-    id, type, owned, test, parts: { ...def.parts }, partInst: {}, slots: [null, null, null, null, null],
+    id, type, owned, test, parts: { ...def.parts }, partInst: {}, slots: [null, null, null, null, null, null, null],
     mods: { frame: 0, engine: 0 }, broken: false, loc: loc || { type: 'garage', town: G.lastTown || 'town1' },
   };
   for (const k of Object.keys(mc.parts)) mc.partInst[k] = { uid: `p${G.uid++}`, test };
@@ -158,15 +164,27 @@ export function typeBoost(mc, def) {
   return k;
 }
 
+// 封印の段階（アルファ）。展示台の機体は sealOverride で段階を切り替えて見られる
+export const sealOf = (mc) => (mc?.sealOverride ?? G.seal);
+// 段階で進化するパーツ（アルファの外装）：stages[段階] の値で上書きする
+export function partNow(id, mc) {
+  const p = PARTS[id];
+  if (!p?.stages) return p;
+  const st = p.stages[Math.min(p.stages.length - 1, p.evolveBy === 'seal' ? sealOf(mc) : 0)];
+  return { ...p, ...st, name: `${p.name}【${st.name}】`, stageName: st.name };
+}
+// アルファだけの胸のコア（第7の専用スロット）があるか
+export const hasCoreSlot = (mc) => !!PARTS[mc.parts.body]?.coreSlot;
+
 export function machineStats(mc) {
-  const p = Object.fromEntries(Object.entries(mc.parts).map(([k, v]) => [k, PARTS[v]]));
-  const mul = mc.type === 'alpha' ? sealInfo().mul : 1;
+  const p = Object.fromEntries(Object.entries(mc.parts).map(([k, v]) => [k, partNow(v, mc)]));
+  const mul = mc.type === 'alpha' ? (MACHINES.alpha.seal[sealOf(mc)] || MACHINES.alpha.seal[0]).mul : 1;
   const t = typeInfo(mc);
   const sum = (k) => ['head', 'body', 'armR', 'armL', 'legs'].reduce((a, s) => a + (p[s]?.[k] || 0), 0);
   const weapons = mc.slots.map((uid) => (uid ? weaponByUid(uid) : null));
   const wWt = weapons.reduce((a, w) => a + (w ? weaponWeight(mc, WEAPONS[w.id]) : 0), 0);
   const capMods = MODS.engine.slice(0, mc.mods.engine).reduce((a, m) => a + m.cap, 0);
-  const slots = Math.min(p.body.maxSlots || 5, (p.body.slots || 3) + mc.mods.frame);
+  const slots = Math.min(p.body.maxSlots || NORMAL_SLOTS, NORMAL_SLOTS, (p.body.slots || 3) + mc.mods.frame);
   const st = {
     maxArmor: Math.min(9999, Math.round(sum('armor') * mul)),
     def: Math.round(sum('def') * mul),
@@ -184,16 +202,21 @@ export function machineStats(mc) {
     armMul: { R: p.armR.atkMul || 1, L: p.armL.atkMul || 1 },
     power: { R: !!p.armR.power, L: !!p.armL.power },
     legType: p.legs.legType,
+    core: hasCoreSlot(mc),
   };
   st.overweight = st.weight > st.cap;
   return st;
 }
 
-export function canPilot(m, mc) {
+export function canPilot(m, mc) { return !pilotError(m, mc); }
+// 乗れないときの理由（乗れるなら null）
+export function pilotError(m, mc) {
   const def = MACHINES[mc.type];
-  if (mc.type === 'alpha' && (!mc.owned || G.seal < 1)) return false; // 封印中は動かない
-  if (def.pilot === 'mechanic') return CHARACTERS[m.id].role === 'mechanic';
-  return true;
+  if (mc.type === 'alpha' && (!mc.owned || sealOf(mc) < 1)) return 'アルファは封印されていて動かない';
+  if (devSession.anyPilot) return null; // 開発者の部屋のテスト用スイッチ
+  if (m.id === 'ren') return null; // 主人公のレンは、すべてのマシンに乗れる
+  if (def.pilots && !def.pilots.includes(m.id)) return `このマシンには乗れません（${def.name}は${def.pilots.map((k) => G.members[k]?.name || CHARACTERS[k].defaultName).join('・')}専用）`;
+  return null;
 }
 export const pilotOf = (mcId) => partyMembers().find((m) => m.machine === mcId) || null;
 
@@ -210,19 +233,29 @@ export function weaponEquippedOn(uid) {
   for (const mc of Object.values(G.machines)) { const i = mc.slots.indexOf(uid); if (i >= 0) return { mc, slot: i }; }
   return null;
 }
-export function weaponAtk(w) { return Math.round(WEAPONS[w.id].atk * (1 + UPGRADE.atkRate * (w.plus || 0))); }
+// 武器の威力。ステラ・ブレイカーは封印の段階で進化する（mc を渡すとその機体の段階）
+export function weaponAtk(w, mc) {
+  const def = WEAPONS[w.id];
+  const base = def.sealAtk ? def.sealAtk[Math.min(def.sealAtk.length - 1, mc ? sealOf(mc) : G.seal)] : def.atk;
+  return Math.round(base * (1 + UPGRADE.atkRate * (w.plus || 0)));
+}
+// 撃てない武器（ステラ・ブレイカーの封印中）
+export const weaponLocked = (w, mc) => { const def = WEAPONS[w.id]; return !!def.sealAtk && !def.sealAtk[mc ? sealOf(mc) : G.seal]; };
 export const weaponLabel = (w) => `${WEAPONS[w.id].name}${w.plus ? `+${w.plus}` : ''}`;
 
 // slot に武器を付けられるか
 export function checkMount(mc, slot, w) {
   const st = machineStats(mc);
-  if (slot >= st.slots) return 'このスロットはまだ使えない（フレーム強化で増える）';
+  const info = SLOT_INFO[slot];
+  if (info.core && !st.core) return '胸のコアはアルファだけの専用スロットだ';
+  if (!info.core && slot >= st.slots) return 'このスロットはまだ使えない（フレーム強化で増える）';
   if (!w) return null;
   const def = WEAPONS[w.id];
-  const info = SLOT_INFO[slot];
-  if (def.mount !== info.mount) return info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付ける' : '背中には主砲やミサイルを付ける';
+  if (info.core && def.mount !== 'core') return '胸のコアにはステラ・ブレイカーしか付けられない';
+  if (!info.core && def.mount === 'core') return 'ステラ・ブレイカーは胸のコア（第7の専用スロット）に付ける';
+  if (def.mount !== 'any' && def.mount !== info.mount && !info.core) return info.mount === 'arm' ? '腕には機銃・近接・特殊兵器（腕用）を付ける' : '肩と背中には主砲・ミサイル・特殊兵器（背中用）を付ける';
   if (def.only && mc.type !== def.only) return `${MACHINES[def.only].name}専用の武器だ`;
-  if (info.mount === 'arm' && def.wt > HEAVY_ARM_WEAPON && !st.power[info.side]) return '重すぎる。パワーアームが必要だ';
+  if (info.mount === 'arm' && def.mount !== 'any' && def.wt > HEAVY_ARM_WEAPON && !st.power[info.side]) return '重すぎる。パワーアームが必要だ';
   const cur = mc.slots[slot] ? weaponWeight(mc, WEAPONS[weaponByUid(mc.slots[slot]).id]) : 0;
   if (st.weight - cur + weaponWeight(mc, def) > st.cap) return '重量オーバー（エンジン強化で積める重さが増える）';
   return null;

@@ -10,6 +10,7 @@ import { FOOT_GEAR, FOOT_CATS, SETS } from '../data/footgear.js';
 import { setOf } from '../game/state.js';
 
 // ---- 形と材質の使い回し ----
+let LIT = false; // 最終段階の専用防具を作っている間は光を強く
 const GEO = new Map(), MAT = new Map();
 const geo = (key, make) => { if (!GEO.has(key)) GEO.set(key, make()); return GEO.get(key); };
 const box = (w, h, d) => geo(`b${w},${h},${d}`, () => new THREE.BoxGeometry(w, h, d));
@@ -17,6 +18,7 @@ const sph = (r, half = false) => geo(`s${r},${half}`, () => new THREE.SphereGeom
 const tor = (r, t) => geo(`t${r},${t}`, () => new THREE.TorusGeometry(r, t, 4, 14));
 const cone = (r, h) => geo(`c${r},${h}`, () => new THREE.ConeGeometry(r, h, 6));
 function mat(color, glow = 0) {
+  glow = glow && LIT ? glow * 1.8 : glow;
   const k = `${color}:${glow}`;
   if (!MAT.has(k)) MAT.set(k, new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: glow ? 0.4 : 0.7, metalness: glow ? 0.3 : 0.15, emissive: glow ? color : 0x000000, emissiveIntensity: glow }));
   return MAT.get(k);
@@ -37,7 +39,8 @@ export function lookOf(id) {
   if (!g) return null;
   const [color, accent] = TIER_COLORS[Math.min(6, g.tier || 1)] || TIER_COLORS[1];
   // 各キャラ専用の最強装備：白と金に光るライン
-  const base = g.only ? { color: 0xf4f2ea, accent: 0xe8c24a, glow: AURA[g.only], legend: true } : { color, accent, glow: (g.tier || 1) >= 5 ? 0x7af0ff : 0 };
+  // 最終段階（stage 2）はさらに強く光る
+  const base = g.only ? { color: 0xf4f2ea, accent: 0xe8c24a, glow: AURA[g.only], legend: true, stage2: (g.stage || 1) >= 2 } : { color, accent, glow: (g.tier || 1) >= 5 ? 0x7af0ff : 0 };
   if (g.look) return { ...base, ...g.look };
   const n = g.name;
   let kind;
@@ -51,6 +54,7 @@ export function lookOf(id) {
 
 // ---- 部位ごとの部品 ----
 function headPiece(head, L) {
+  LIT = !!L.stage2;
   const c = mat(L.color), a = mat(L.accent), gl = L.glow ? mat(L.glow, 1.6) : a;
   const g = new THREE.Group(); g.name = 'gearHead';
   if (L.kind === 'cap') { put(g, sph(0.226, true), c, 0, 0.2, -0.01).scale.set(1, 0.7, 1); put(g, box(0.26, 0.02, 0.14), a, 0, 0.21, 0.19); }
@@ -67,6 +71,7 @@ function headPiece(head, L) {
   head.add(g);
 }
 function bodyPiece(torso, L, b) {
+  LIT = !!L.stage2;
   if (L.kind === 'none') return;
   const c = mat(L.color), a = mat(L.accent), gl = L.glow ? mat(L.glow, 1.6) : a;
   const g = new THREE.Group(); g.name = 'gearBody';
@@ -82,6 +87,7 @@ function bodyPiece(torso, L, b) {
   torso.add(g);
 }
 function handPiece(arm, L, b) {
+  LIT = !!L.stage2;
   const c = mat(L.color), a = mat(L.accent), gl = L.glow ? mat(L.glow, 1.4) : a;
   const g = new THREE.Group(); g.name = 'gearHand';
   put(g, sph(0.07 * b), c, 0, -0.26, 0.01);
@@ -89,6 +95,7 @@ function handPiece(arm, L, b) {
   arm.add(g);
 }
 function footPiece(leg, L, b) {
+  LIT = !!L.stage2;
   const c = mat(L.color), a = mat(L.accent), gl = L.glow ? mat(L.glow, 1.6) : a;
   const g = new THREE.Group(); g.name = 'gearFoot';
   put(g, box(0.165 * b, 0.13, 0.24), c, 0, -0.205, 0.03);
@@ -97,6 +104,7 @@ function footPiece(leg, L, b) {
   leg.add(g);
 }
 function accPiece(obj, torso, head, L, b) {
+  LIT = false;
   const c = mat(L.color), a = mat(L.accent), gl = mat(L.glow || 0x9fe8ff, 1.4);
   if (L.kind === 'cape') { const cape = put(torso, box(0.36 * b, 0.46, 0.02), c, 0, 0.06, -0.14 * Math.min(b, 1.2), 0.12); cape.name = 'cape'; }
   else if (L.kind === 'scarf') { put(torso, tor(0.15 * b, 0.035), c, 0, 0.32, 0, Math.PI / 2); put(torso, box(0.06, 0.16, 0.03), c, 0.05, 0.22, -0.13, 0.2); }

@@ -1,6 +1,6 @@
 // マシン用武器の表（5カテゴリ × 10種類 = 50種類）
 // cat: cannon=主砲 / mg=機銃 / missile=ミサイル / special=特殊兵器
-// mount: back=背中のスロット / arm=腕のスロット
+// mount: back=肩・背中のスロット / arm=腕のスロット / any=通常の6か所のどこでも（特別機の専用武器） / core=アルファの胸のコア（ステラ・ブレイカー）
 // target: one=単体 / group=敵グループ / all=敵全体
 // elem: elec=電気（機械に強い） / fire=火（宇宙生物に強い）
 // tier: 登場する章（1=第1章「土」）。第1弾で手に入るのは tier 1 のみ
@@ -16,9 +16,6 @@ export const WEAPONS = {
   pc2: { name: 'プラズマキャノンPC-2', cat: 'cannon', mount: 'back', target: 'one', atk: 132, hit: -4, wt: 17, price: 26000, tier: 4, model: 'wpn_cannon', color: 0xa03aa0, size: 1.25 },
   hrg: { name: 'ヘビーレールガン', cat: 'cannon', mount: 'back', target: 'one', atk: 170, hit: 8, wt: 20, price: 42000, tier: 5, model: 'wpn_cannon', color: 0x1a2a5a, size: 1.35, elem: 'elec' },
   gpc: { name: 'ギガプラズマ', cat: 'cannon', mount: 'back', target: 'one', atk: 230, hit: -6, wt: 24, price: 70000, tier: 6, model: 'wpn_cannon', color: 0xd04ad0, size: 1.45 },
-  // ---- オメガ専用（only: 'omega'）。単体・グループ・全体のどれにも対応する特別な武器 ----
-  omega_buster: { name: 'オメガバスター', cat: 'cannon', mount: 'back', target: 'one', atk: 150, hit: 25, wt: 9, price: 0, tier: 7, model: 'wpn_alpha_buster', color: 0x1a1a22, size: 0.95, unique: true, only: 'omega', elem: 'elec', glow: 0xff2a3a, noRule: true },
-  abuster: { name: 'アルファバスター', cat: 'cannon', mount: 'back', target: 'one', atk: 400, hit: 20, wt: 18, price: 0, tier: 7, model: 'wpn_alpha_buster', color: 0xe8e8f0, size: 1.0, unique: true, only: 'alpha' },
 
   // ---------------- 機銃（敵グループをまとめて攻撃） ----------------
   mg7: { name: '7mmマシンガン', cat: 'mg', mount: 'arm', target: 'group', atk: 11, hit: 5, wt: 3, price: 250, tier: 1, model: 'wpn_gatling', color: 0x5a5f68, size: 0.8 },
@@ -30,7 +27,6 @@ export const WEAPONS = {
   v30: { name: '30mmバルカン', cat: 'mg', mount: 'arm', target: 'group', atk: 52, hit: 0, wt: 9, price: 21000, tier: 4, model: 'wpn_gatling', color: 0x3a3a3a, size: 1.2 },
   plg: { name: 'パルスガトリング', cat: 'mg', mount: 'arm', target: 'group', atk: 68, hit: 10, wt: 9, price: 36000, tier: 5, model: 'wpn_gatling', color: 0x4a6aca, size: 1.2, elem: 'elec' },
   hvg: { name: 'ヘビーバルカン', cat: 'mg', mount: 'arm', target: 'all', atk: 80, hit: 0, wt: 12, price: 60000, tier: 6, model: 'wpn_gatling', color: 0x2a2a2a, size: 1.35 },
-  omega_storm: { name: 'オメガストーム', cat: 'mg', mount: 'arm', target: 'group', atk: 62, hit: 20, wt: 5, price: 0, tier: 7, model: 'wpn_gatling', color: 0x1a1a22, size: 1.0, unique: true, only: 'omega', glow: 0xff2a3a, noRule: true },
   stormr: { name: 'ストームレイザー', cat: 'mg', mount: 'arm', target: 'all', atk: 120, hit: 20, wt: 8, price: 0, tier: 7, model: 'wpn_gatling', color: 0x8ae8ff, size: 1.2, unique: true },
 
   // ---------------- ミサイル（命中が高い） ----------------
@@ -43,7 +39,6 @@ export const WEAPONS = {
   cm3: { name: 'クラスターミサイルCM-3', cat: 'missile', mount: 'back', target: 'all', atk: 58, hit: 26, wt: 14, price: 27000, tier: 4, model: 'wpn_missile', color: 0x9a4a1a, size: 1.2 },
   sm2: { name: 'スマートミサイルII', cat: 'missile', mount: 'back', target: 'one', atk: 120, hit: 50, wt: 14, price: 44000, tier: 5, model: 'wpn_missile', color: 0x2a6aaa, size: 1.25 },
   nova: { name: 'ノヴァミサイル', cat: 'missile', mount: 'back', target: 'all', atk: 110, hit: 30, wt: 18, price: 72000, tier: 6, model: 'wpn_missile', color: 0xe0a020, size: 1.35 },
-  omega_nova: { name: 'オメガノヴァ', cat: 'missile', mount: 'back', target: 'all', atk: 72, hit: 40, wt: 8, price: 0, tier: 7, model: 'wpn_missile', color: 0x2a0a10, size: 1.0, unique: true, only: 'omega', en: 20, glow: 0xff2a3a, noRule: true },
   galaxia: { name: 'ギャラクシアン', cat: 'missile', mount: 'back', target: 'all', atk: 180, hit: 60, wt: 14, price: 0, tier: 7, model: 'wpn_missile', color: 0xf0f0ff, size: 1.3, unique: true },
 
   // ---------------- 特殊兵器（属性つき。エネルギーを使う） ----------------
@@ -75,6 +70,29 @@ export const WEAPONS = {
 // 攻撃の範囲（技ではなく武器ごとに決まる）
 // 全体の武器は1体あたりの威力を低め・エネルギー消費を多めに、単体の武器は威力を高めにする
 // （ザコ戦は全体、ボス戦は単体の大ダメージ、と使い分けられるように）
+// ================================================================ 特別機の専用武器（only でその機体だけ）
+// 強さの目安（noRule：範囲ルールをかけない数値）。同じ時期の通常の武器より1〜2割上。最強クラスにはしない
+//   アルファ＝バランス型（どの範囲も少し上）／オメガ＝単体が強い（第1章で手に入る）／ガイア＝グループが強い（第2章以降）
+// rank：専用武器の強さの順位（1＝最強）。sig：発射の演出の種類（battle.js の signatureFire）
+Object.assign(WEAPONS, {
+  // ---- アルファ（白と金・青白い光）。第一封印の解放（第1章の最後）から使える
+  alpha_lance: { name: 'ルミナス・ランス', cat: 'cannon', mount: 'any', target: 'one', atk: 210, hit: 20, wt: 10, price: 0, tier: 4, model: 'wpn_alpha_lance', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', elem: 'elec', noRule: true, rank: 2, sig: 'lance', sfx: 'beam' },
+  alpha_halo: { name: 'ヘイロー・ガトリング', cat: 'mg', mount: 'any', target: 'group', atk: 74, hit: 22, wt: 6, price: 0, tier: 4, model: 'wpn_alpha_halo', color: 0xf4f2ea, glow: 0xffd86a, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 6, sig: 'halo', sfx: 'laser' },
+  alpha_aurora: { name: 'オーロラ・ミサイル', cat: 'missile', mount: 'any', target: 'all', atk: 50, hit: 40, wt: 8, en: 18, price: 0, tier: 4, model: 'wpn_alpha_aurora', color: 0xf4f2ea, glow: 0x9fe8ff, size: 1.0, unique: true, only: 'alpha', noRule: true, rank: 8, sig: 'aurora', sfx: 'missile' },
+  // ---- オメガ（漆黒と赤）。第1章の地下で手に入る
+  omega_buster: { name: 'オメガバスター', cat: 'cannon', mount: 'any', target: 'one', atk: 152, hit: 25, wt: 9, price: 0, tier: 3, model: 'wpn_omega_buster', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', elem: 'elec', noRule: true, rank: 4, sig: 'crimson', sfx: 'cannon' },
+  omega_storm: { name: 'オメガストーム', cat: 'mg', mount: 'any', target: 'group', atk: 58, hit: 20, wt: 5, price: 0, tier: 3, model: 'wpn_omega_storm', color: 0x15151c, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 7, sig: 'storm', sfx: 'mg' },
+  omega_nova: { name: 'オメガノヴァ', cat: 'missile', mount: 'any', target: 'all', atk: 40, hit: 40, wt: 8, en: 18, price: 0, tier: 3, model: 'wpn_omega_nova', color: 0x2a0a10, glow: 0xff2a3a, size: 1.0, unique: true, only: 'omega', noRule: true, rank: 10, sig: 'nova', sfx: 'missile' },
+  // ---- ガイア（深紅と鋼の赤・大地）。第2章以降の隠し場所
+  gaia_pile: { name: 'テラ・パイル', cat: 'melee', style: 'pile', pierce: true, mount: 'any', target: 'one', atk: 175, hit: 8, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_pile', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 3, sig: 'terra', sfx: 'press' },
+  gaia_claymore: { name: 'ガイア・クレイモア', cat: 'melee', style: 'blade', mount: 'any', target: 'group', atk: 135, hit: 6, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_claymore', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', elem: 'fire', noRule: true, rank: 5, sig: 'claymore', sfx: 'metalhit' },
+  gaia_quake: { name: 'アース・クエイク', cat: 'special', mount: 'any', target: 'all', atk: 44, hit: 30, wt: 10, en: 20, price: 0, tier: 4, model: 'wpn_gaia_quake', color: 0x6a3a2a, glow: 0xff9a3a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 9, sig: 'quake', sfx: 'press' },
+  // ---- アルファの第7の専用スロット（胸のコア）にだけ付く、ゲーム中で最強の武器
+  // 範囲は撃つ前に切り替える（modes の倍率：単体が最大、全体が最小）。威力は封印の段階で進化（sealAtk[封印] が単体の威力。0 は壊れていて使えない）
+  stella: { name: 'ステラ・ブレイカー', cat: 'cannon', mount: 'core', target: 'one', modes: { one: 1.0, group: 0.72, all: 0.52 }, sealAtk: [0, 300, 430, 580, 820], atk: 300, hit: 50, wt: 0, en: 30, price: 0, tier: 7, model: null, color: 0xf4f2ea, glow: 0xbff4ff, unique: true, only: 'alpha', noRule: true, rank: 1, sig: 'stella', sfx: 'beam',
+    stageNames: ['封印（壊れていて撃てない）', '目覚めの光', '白金の光', '星光の奔流', 'アルファマックス・ステラ'] },
+});
+
 export const RANGES = {
   one: { name: '単体', short: '単', atkRate: 1.15, enAdd: 0 },
   group: { name: 'グループ', short: 'G', atkRate: 1.0, enAdd: 0 },

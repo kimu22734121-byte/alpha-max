@@ -2,7 +2,8 @@
 // 第1章：仲間用の通常マシン3台（バランス・シャープ・重厚）＋シークレット「オメガ」＋伝説の機体「アルファ」
 // 全体では通常マシン8〜10台＋特別な2台（アルファ・オメガ）が目標
 // タイプはボディ（parts.js の mtype）で決まる。脚を替えると戦車型・バイク型などにもなる
-// pilot: mechanic=メカニック専用 / any=誰でも乗れる
+// pilots: 乗れるキャラ（書かなければ誰でも乗れる）。主人公のレンだけは全部のマシンに乗れる（state.js の canPilot）
+// weapons: 武器スロット6か所（右腕・左腕・右肩・左肩・背中右・背中左）＋アルファだけ7つ目（胸のコア）
 // start: 最初の置き場所 / owned: 最初から持っているか（false なら加入・発見イベントで手に入る）
 export const MACHINES = {
   hound: {
@@ -12,7 +13,7 @@ export const MACHINES = {
     owned: true,
     colors: { primary: 0xd9893a, secondary: 0x5a5f68, accent: 0xf0c040, glow: 0x7af0ff },
     parts: { head: 'head_sensor', body: 'body_balance', armR: 'arm_std', armL: 'arm_std', legs: 'legs_biped', engine: 'eng_turbo' },
-    weapons: [{ id: 'mg7' }, null, { id: 'sc1' }, null, null],
+    weapons: [{ id: 'mg7' }, null, { id: 'sc1' }, null, null, null],
     start: { type: 'garage', town: 'town1' },
   },
   falco: {
@@ -22,7 +23,7 @@ export const MACHINES = {
     owned: false,
     colors: { primary: 0x2c416e, secondary: 0xe8eef5, accent: 0x7ad0ff, glow: 0x7af0ff },
     parts: { head: 'head_sharp', body: 'body_sharp', armR: 'arm_sharp', armL: 'arm_sharp', legs: 'legs_sharp', engine: 'eng_v6' },
-    weapons: [{ id: 'lm1' }, { id: 'hblade' }, { id: 'hm1' }, null, null],
+    weapons: [{ id: 'lm1' }, { id: 'hblade' }, { id: 'hm1' }, null, null, null],
     start: { type: 'garage', town: 'town2' },
   },
   goliath: {
@@ -32,18 +33,19 @@ export const MACHINES = {
     owned: false,
     colors: { primary: 0x5a6438, secondary: 0x34362c, accent: 0xc0402c, glow: 0xffb04a },
     parts: { head: 'head_heavy', body: 'body_heavy', armR: 'arm_power', armL: 'arm_heavy', legs: 'legs_tread', engine: 'eng_heavy' },
-    weapons: [{ id: 'v20' }, { id: 'gt1' }, { id: 'c75' }, null, null],
+    weapons: [{ id: 'v20' }, { id: 'gt1' }, { id: 'c75' }, null, null, null],
     start: { type: 'garage', town: 'town3' },
   },
   omega: {
     name: 'オメガ',
     desc: 'レンの家の地下に眠っていた漆黒の機体。アルファの兄弟機',
     pilot: 'any',
+    pilots: ['ren', 'shion'], // オメガ＝シオンの最強機（レンも乗れる）
     owned: false,
     secret: true, // 初心者救済用のシークレットマシン（制限なしで誰でも乗れる）
     colors: { primary: 0x15161b, secondary: 0x2a2c33, accent: 0xc4cad4, glow: 0xff2a3a, dark: 0x0c0c10 },
     parts: { head: 'head_omega', body: 'body_omega', armR: 'arm_omega', armL: 'arm_omega', legs: 'legs_omega', engine: 'eng_omega' },
-    weapons: [{ id: 'omega_storm' }, { id: 'lzblade' }, { id: 'omega_buster' }, { id: 'omega_nova' }, { id: 'hm2' }],
+    weapons: [{ id: 'omega_storm' }, { id: 'lzblade' }, { id: 'omega_buster' }, { id: 'omega_nova' }, { id: 'hm2' }, null],
     start: { type: 'map', map: 'basement', x: 11, y: 4 },
     particle: 0xff3a4a,
   },
@@ -52,11 +54,12 @@ export const MACHINES = {
     desc: '伝説の機体。メカニック専用。封印が解けるたびに力を取り戻す',
     fixedName: true,
     pilot: 'mechanic',
+    pilots: ['ren'], // アルファ＝レンの最強機（レン専用）
     owned: false, // 第1章では修理中（封印で動かない）。グラインドタイタンを倒すと目覚める
     colors: { primary: 0xf2f2f6, secondary: 0xd8dce4, accent: 0xd8aa3a, glow: 0x9fe8ff, dark: 0x3a3e48 },
     brokenColors: { primary: 0x8a8478, secondary: 0x6e685e, accent: 0x6a5a3a, glow: 0x30383c, dark: 0x2a2a2a },
     parts: { head: 'head_alpha', body: 'body_alpha', armR: 'arm_alpha', armL: 'arm_alpha', legs: 'legs_alpha', engine: 'eng_alpha' },
-    weapons: [{ id: 'lm1' }, { id: 'lzblade' }, { id: 'rg1' }, { id: 'hm1' }, null],
+    weapons: [{ id: 'alpha_halo' }, { id: 'lzblade' }, { id: 'alpha_lance' }, { id: 'alpha_aurora' }, null, null, { id: 'stella' }],
     start: { type: 'shop', town: 'town1' },
     particle: 0x9fe8ff,
     seal: [
@@ -74,52 +77,65 @@ export const MACHINES = {
     name: 'ブルドッグ', desc: '分厚い装甲の戦車型。重厚タイプ', pilot: 'any', owned: false, chapter: 2,
     colors: { primary: 0x6a5a3a, secondary: 0x3a3428, accent: 0xd8a030, glow: 0xffb04a },
     parts: { head: 'head_heavy', body: 'body_heavy', armR: 'arm_heavy', armL: 'arm_heavy', legs: 'legs_tread', engine: 'eng_heavy' },
-    weapons: [{ id: 'gt1' }, { id: 'hammer1' }, { id: 'c105' }, null, null],
+    weapons: [{ id: 'gt1' }, { id: 'hammer1' }, { id: 'c105' }, null, null, null],
   },
   swift: {
     name: 'スウィフト', desc: 'タイヤで走るバイク型。シャープタイプ', pilot: 'any', owned: false, chapter: 2,
     colors: { primary: 0xc8302a, secondary: 0x2a2a30, accent: 0xf0f0f0, glow: 0x7af0ff },
     parts: { head: 'head_sharp', body: 'body_sharp', armR: 'arm_light', armL: 'arm_light', legs: 'legs_wheel', engine: 'eng_turbo' },
-    weapons: [{ id: 'lm1' }, { id: 'hblade' }, { id: 'hm1' }, null, null],
+    weapons: [{ id: 'lm1' }, { id: 'hblade' }, { id: 'hm1' }, null, null, null],
   },
   bastion: {
     name: 'バスティオン', desc: '四本脚で踏ん張る砲台型。重厚タイプ', pilot: 'any', owned: false, chapter: 3,
     colors: { primary: 0x5a6a7a, secondary: 0x2a3038, accent: 0xe0c050, glow: 0x9fe8ff },
     parts: { head: 'head_radar', body: 'body_heavy', armR: 'arm_power', armL: 'arm_power', legs: 'legs_quad', engine: 'eng_heavy' },
-    weapons: [{ id: 'v20' }, { id: 'gt1' }, { id: 'rg1' }, null, null],
+    weapons: [{ id: 'v20' }, { id: 'gt1' }, { id: 'rg1' }, null, null, null],
   },
   mantis: {
     name: 'マンティス', desc: '鎌のようなブレードを振るう四脚。シャープタイプ', pilot: 'any', owned: false, chapter: 3,
     colors: { primary: 0x5a8a3a, secondary: 0x2a3a20, accent: 0xd8f080, glow: 0xaaff6a },
     parts: { head: 'head_sharp', body: 'body_sharp', armR: 'arm_sharp', armL: 'arm_sharp', legs: 'legs_quad', engine: 'eng_v6' },
-    weapons: [{ id: 'lzblade' }, { id: 'hblade' }, { id: 'hm1' }, null, null],
+    weapons: [{ id: 'lzblade' }, { id: 'hblade' }, { id: 'hm1' }, null, null, null],
   },
   drifter: {
     name: 'ドリフター', desc: '水の上も進めるホバー型。バランスタイプ', pilot: 'any', owned: false, chapter: 3,
     colors: { primary: 0x2a7a9a, secondary: 0xd8e4ea, accent: 0xf0a040, glow: 0x6af0ff },
     parts: { head: 'head_radar', body: 'body_balance', armR: 'arm_std', armL: 'arm_light', legs: 'legs_hover', engine: 'eng_turbo' },
-    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null],
+    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null, null],
   },
   rhino: {
     name: 'ライノ', desc: '突進が得意な重装二脚。重厚タイプ', pilot: 'any', owned: false, chapter: 4,
     colors: { primary: 0x7a7a72, secondary: 0x3e3e3a, accent: 0xc04030, glow: 0xff7a4a },
     parts: { head: 'head_heavy', body: 'body_heavy', armR: 'arm_heavy', armL: 'arm_power', legs: 'legs_biped', engine: 'eng_heavy' },
-    weapons: [{ id: 'pile1' }, { id: 'v20' }, { id: 'c75' }, null, null],
+    weapons: [{ id: 'pile1' }, { id: 'v20' }, { id: 'c75' }, null, null, null],
   },
   sparrow: {
     name: 'スパロウ', desc: '索敵の得意な軽量偵察機。シャープタイプ', pilot: 'any', owned: false, chapter: 2,
     colors: { primary: 0xe8d8a0, secondary: 0x4a4a3a, accent: 0x3a8ad0, glow: 0x7af0ff },
     parts: { head: 'head_radar', body: 'body_sharp', armR: 'arm_light', armL: 'arm_light', legs: 'legs_sharp', engine: 'eng_v6' },
-    weapons: [{ id: 'mg7' }, { id: 'lm1' }, { id: 'hm1' }, null, null],
+    weapons: [{ id: 'mg7' }, { id: 'lm1' }, { id: 'hm1' }, null, null, null],
   },
   mule: {
     name: 'ミュール', desc: '荷物も武器もたくさん積める四脚の運び屋。バランスタイプ', pilot: 'any', owned: false, chapter: 2,
     colors: { primary: 0xb0883a, secondary: 0x4a3a2a, accent: 0x8ad0a0, glow: 0x9fffd0 },
     parts: { head: 'head_sensor', body: 'body_balance', armR: 'arm_power', armL: 'arm_std', legs: 'legs_quad', engine: 'eng_heavy' },
-    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null],
+    weapons: [{ id: 'gt1' }, { id: 'flm1' }, { id: 'rpod' }, null, null, null],
+  },
+  // ---------------- ガイア：3機目の特別機（ジーナの最強機）。重厚タイプ、深紅と鋼の赤。近接とグループ攻撃が得意 ----------------
+  // 第1章では手に入らない（第2章以降の隠し場所に眠っている。町の人がそれとなくヒントをくれる）
+  gaia: {
+    name: 'ガイア',
+    desc: '大地の名を持つ深紅の重装機。アルファ・オメガに続く3機目の特別機。ジーナの最強機',
+    pilot: 'any',
+    pilots: ['ren', 'gina'],
+    owned: false,
+    special: true, chapter: 2,
+    colors: { primary: 0x9a2a22, secondary: 0x4a4a52, accent: 0xd8a040, glow: 0xff7a2a, dark: 0x2a1a18 },
+    parts: { head: 'head_gaia', body: 'body_gaia', armR: 'arm_gaia', armL: 'arm_gaia', legs: 'legs_gaia', engine: 'eng_gaia' },
+    weapons: [{ id: 'gaia_claymore' }, { id: 'gaia_pile' }, { id: 'gaia_quake' }, { id: 'c105' }, null, null],
+    particle: 0xff7a3a,
   },
 };
 
 // 光の強さ（開発者の部屋で調整できる）。書いていないマシンは 1
 for (const def of Object.values(MACHINES)) def.glowK ??= 1;
-

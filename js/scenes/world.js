@@ -18,7 +18,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, partyMembers, machineStats, machineName, canPilot, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
+  G, partyMembers, machineStats, machineName, canPilot, sealOf, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
@@ -52,14 +52,18 @@ function getGlowTex() {
 
 export function machineSpec(mc) {
   const def = MACHINES[mc.type];
-  // アルファは封印中はくすんだ色で光らない。封印が解けるたびに光が増える
-  const sealed = mc.type === 'alpha' && G.seal < 1;
+  // アルファは封印中はくすんだ色で光らない。封印が解けるたびに光が増え、完全解放で翼が広がる（展示台は sealOverride で段階を切り替えられる）
+  const seal = sealOf(mc);
+  const sealed = mc.type === 'alpha' && seal < 1;
+  const body = partNow(mc.parts.body, mc);
   return {
     parts: mc.parts,
     colors: sealed ? def.brokenColors : def.colors,
     weapons: mc.slots.map((uid) => (uid ? weaponByUid(uid) : null)),
+    sealStage: mc.type === 'alpha' ? seal : 0,
+    wingSpread: !!body?.wingSpread,
     // 光の強さ：アルファは封印の段階、ほかは glowK（開発者の部屋で調整できる。1 のときはそのまま）
-    glow: mc.type === 'alpha' ? def.seal[G.seal].glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,
+    glow: mc.type === 'alpha' ? def.seal[seal].glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,
   };
 }
 export const inMachine = (m) => !!(m.machine && G.machines[m.machine]?.loc.type === 'party');

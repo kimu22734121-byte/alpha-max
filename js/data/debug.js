@@ -7,4 +7,4 @@ export const DEV_ROOM = {
 };
 
 // 扉が開いているか（ゲームを起動している間だけ。セーブデータには残さない）
-export const devSession = { open: false };
+export const devSession = { open: false, anyPilot: false }; // anyPilot：誰でも全部のマシンに乗れる（テスト用スイッチ）

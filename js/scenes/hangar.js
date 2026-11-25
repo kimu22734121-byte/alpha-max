@@ -11,18 +11,18 @@ import { PARTS, SLOT_INFO, MODS } from '../data/parts.js';
 import { WEAPONS } from '../data/weapons.js';
 import { MAPS } from '../data/maps.js';
 import {
-  G, partyMembers, machineStats, machineName, weaponByUid, weaponLabel, weaponAtk, canPilot, TEST_MARK,
+  G, partyMembers, machineStats, machineName, weaponByUid, weaponLabel, weaponAtk, canPilot, pilotError, TEST_MARK,
 } from '../game/state.js';
 import { buildMachineModel } from '../models/mech.js';
 import { machineSpec } from './world.js';
 import { compareTable, partDesc, rangeBadge, partSlots, weaponSlots } from './menus.js';
 
 // ---------------- 並べ替え・絞り込みの材料 ----------------
-const KIND = (mc) => (MACHINES[mc.type].secret ? 'secret' : mc.type === 'alpha' ? 'legend' : 'normal');
+const KIND = (mc) => (MACHINES[mc.type].secret ? 'secret' : mc.type === 'alpha' || MACHINES[mc.type].special ? 'legend' : 'normal');
 const KIND_NAME = { normal: '通常', legend: '伝説', secret: 'シークレット' };
 function machinePower(mc) {
   const st = machineStats(mc);
-  const atk = mc.slots.reduce((a, uid) => { const w = uid && weaponByUid(uid); return a + (w ? weaponAtk(w) : 0); }, 0);
+  const atk = mc.slots.reduce((a, uid) => { const w = uid && weaponByUid(uid); return a + (w ? weaponAtk(w, mc) : 0); }, 0);
   return Math.round(st.maxArmor + st.def * 4 + st.hit * 2 + st.eva * 2 + atk * 2);
 }
 const partPower = (p) => Math.round((p.armor || 0) + (p.def || 0) * 4 + (p.hit || 0) * 2 + (p.eva || 0) * 2 + (p.spd || 0) * 4 + (p.cap || 0) * 3 + (p.en || 0) * 2 + ((p.atkMul || 1) - 1) * 200 + (p.slots || 0) * 20);
@@ -188,13 +188,14 @@ export function machineViewer(world, mc) {
         const here = mc.loc.type === 'garage' && mc.loc.town === town;
         const riding = who && who.machine === mc.id;
         const canRide = who && canPilot(who, mc) && !mc.broken;
+        const why = who ? pilotError(who, mc) : null;
         side.innerHTML = `<div class="vw-info">${esc(st.typeName)}タイプ・${KIND_NAME[KIND(mc)]}　${esc(where(mc))}<br>${esc(modText(mc))}　装甲${mc.armor}/${st.maxArmor}</div>
           <div class="vw-who">乗る人：${partyMembers().map((m) => `<button class="chip${m === who ? ' on' : ''}" data-m="${m.id}">${esc(m.name)}</button>`).join('')}</div>
           <div class="cmp-head">使用中 → この機体</div>${compareTable(rows)}
           <div class="cmp-head">パーツ</div><div class="vw-list">${Object.entries(mc.parts).map(([k, id]) => `<div>${{ head: '頭', body: 'ボディ', armR: '右腕', armL: '左腕', legs: '脚', engine: 'エンジン' }[k]}：${esc(PARTS[id].name)}${mc.partInst?.[k]?.test ? ` ${TEST_MARK}` : ''}</div>`).join('')}</div>
-          <div class="cmp-head">武器</div><div class="vw-list">${SLOT_INFO.map((info, i) => { const w = mc.slots[i] && weaponByUid(mc.slots[i]); return `<div>${info.name}：${w ? `${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}` : '<small>なし</small>'}</div>`; }).join('')}</div>
+          <div class="cmp-head">武器</div><div class="vw-list">${SLOT_INFO.map((info, i) => { if (info.core && !st.core) return ''; const w = mc.slots[i] && weaponByUid(mc.slots[i]); return `<div><b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b> ${info.name}：${w ? `${esc(weaponLabel(w))} ${WEAPONS[w.id].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[w.id])}` : '<small>なし</small>'}</div>`; }).join('')}</div>
           <div class="vw-btns">
-            ${here ? `<button class="shop-act vw-ride"${riding || !canRide ? ' disabled' : ''}>${riding ? `${esc(who.name)}が使用中` : !canRide ? (mc.broken ? '大破している（修理が必要）' : 'この人は乗れない') : '乗り換える'}</button>` : '<button class="shop-act vw-move">このガレージに移す</button>'}
+            ${here ? `<button class="shop-act vw-ride"${riding || !canRide ? ' disabled' : ''}>${riding ? `${esc(who.name)}が使用中` : !canRide ? (mc.broken ? '大破している（修理が必要）' : esc(why || 'この人は乗れない')) : '乗り換える'}</button>` : '<button class="shop-act vw-move">このガレージに移す</button>'}
             <button class="menu-item vw-parts"${here ? '' : ' disabled'}>パーツを付け替える</button><button class="menu-item vw-weapons"${here ? '' : ' disabled'}>武器を付け替える</button><button class="menu-item vw-close">閉じる</button>
           </div>`;
         for (const c of side.querySelectorAll('.vw-who .chip')) c.addEventListener('click', (e) => { e.stopPropagation(); audio.sfx('cursor'); who = G.members[c.dataset.m]; draw(); });

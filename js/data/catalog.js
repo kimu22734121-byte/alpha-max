@@ -12,7 +12,7 @@ import { ENEMIES } from './enemies.js';
 export const CATALOG = {
   machines: { name: 'マシン', table: MACHINES, file: 'js/data/machines.js（MACHINES）' },
   parts: { name: 'マシンのパーツ', table: PARTS, file: 'js/data/parts.js（PARTS）', groupBy: 'slot', groups: { head: '頭', body: 'ボディ', arm: '腕（右・左）', legs: '脚', engine: 'エンジン' } },
-  weapons: { name: 'マシンの武器', table: WEAPONS, file: 'js/data/weapons.js（WEAPONS）', groupBy: 'mount', groups: { arm: '腕の武器', back: '背中の武器' } },
+  weapons: { name: 'マシンの武器', table: WEAPONS, file: 'js/data/weapons.js（WEAPONS）', groupBy: 'mount', groups: { arm: '腕の武器', back: '肩・背中の武器', any: '特別機の専用武器（6か所どこでも）', core: '胸のコアの武器（アルファ）' } },
   foot: { name: '生身の装備', table: FOOT_GEAR, file: 'js/data/footgear.js（FOOT_GEAR）', groupBy: 'slot', groups: Object.fromEntries(Object.entries(FOOT_SLOTS).map(([k, v]) => [k, v.name])) },
   items: { name: '道具', table: ITEMS, file: 'js/data/items.js（ITEMS）' },
   mats: { name: '素材', table: MATERIALS, file: 'js/data/items.js（MATERIALS）' },

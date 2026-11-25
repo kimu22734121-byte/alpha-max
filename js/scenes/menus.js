@@ -22,7 +22,7 @@ import {
   G, partyMembers, memberStats, machineStats, machineName, canPilot, expToNext, addGear, addItem, addFoot, addWeapon, addPart,
   weaponByUid, weaponEquippedOn, weaponAtk, weaponLabel, equipWeapon, checkMount, equipPart, checkPart, hasMats, matsText, addMat,
   healParty, repairMachine, machinesInGarage, sealInfo, typeBoost, FOOT_SLOT_KEYS, canWearFoot,
-  partCount, removePart, testTag, TEST_MARK, testFootCount, addTest, resetTestItems, createMachine,
+  partCount, removePart, testTag, TEST_MARK, testFootCount, addTest, resetTestItems, createMachine, pilotError, hasCoreSlot, weaponLocked,
 } from '../game/state.js';
 import { compareView } from './compare.js';
 import { buildMachineModel } from '../models/mech.js';
@@ -175,6 +175,7 @@ async function bar() {
       'マスター「廃工場の奥は、マシンに乗ったまま入れる。生身じゃとても無理だろうな」',
       'マスター「全員まとめて治せるメガリカバリー、ボス戦の前に持っていきな」',
       'マスター「傭兵の墓場って知ってるか？ 背丈ほどの大剣が眠ってるそうだ。光の惑星の“古代の結晶”で、もっと化けるって噂もある」',
+      'マスター「白い機体と黒い機体……それに“赤い巨人”の話もある。風の吹く星の大地の底で、深紅の重装機が眠ってるんだと。乗りこなせるのは、よっぽど腕っぷしの強いやつだけだろうな」',
     ],
   }[currentTown()] || ['マスター「いらっしゃい」'];
   const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート' }[currentTown()] || '酒場';
@@ -321,7 +322,7 @@ function mountCompare(def) {
   for (const mc of partyMachines()) {
     if (def.only && def.only !== mc.type) { rows.push(`<tr><th>${esc(machineName(mc))}</th><td colspan="4"><small>専用ではないので付けられない</small></td></tr>`); continue; }
     const st = machineStats(mc);
-    const slots = [...Array(st.slots).keys()].filter((i) => SLOT_INFO[i].mount === def.mount);
+    const slots = [...Array(st.slots).keys()].filter((i) => fitsSlot(SLOT_INFO[i], def));
     if (!slots.length) continue;
     const slot = slots.find((i) => !mc.slots[i]) ?? slots[0];
     const cur = mc.slots[slot] ? weaponByUid(mc.slots[slot]) : null;
@@ -469,6 +470,11 @@ async function sellMenu() {
   });
 }
 
+// 武器がその場所に合うか（any は通常の6か所どこでも、core は胸のコアだけ）
+export const fitsSlot = (info, def) => (info.core ? def.mount === 'core' : def.mount === 'any' || def.mount === info.mount);
+// その機体で使う武器スロットの一覧（胸のコアはアルファだけ）
+export const slotsOf = (mc) => SLOT_INFO.map((info, i) => ({ info, i })).filter(({ info }) => !info.core || hasCoreSlot(mc));
+
 // ---------------- 専用武器の進化（第1段階 → 最終段階） ----------------
 // 第4章あたりで第1段階が手に入り、第5章までに素材を集め、第6章あたりでメカニックのレンが進化させる
 const ownedStage1 = () => Object.keys(EVOLVE).filter((id) => ownCount.f(id) > 0);
@@ -477,27 +483,29 @@ async function evolveMenu() {
     const list = ownedStage1();
     if (!list.length) return;
     const id = await ui.menu({
-      title: '専用武器の進化', wide: true, desc: true, header: 'メカニックのレンが、集めた素材で専用武器を最終段階へ進化させる',
+      title: '専用装備の進化', wide: true, desc: true, header: 'メカニックのレンが、集めた素材で専用の武器・防具を次の段階へ進化させる',
       items: list.map((wid) => {
         const ev = EVOLVE[wid], to = FOOT_GEAR[ev.to];
         const need = Object.entries(ev.mats).map(([k, n]) => `${esc(MATERIALS[k].name)} ${G.inv.mats[k] || 0}/${n}`).join('　');
         const ok = Object.entries(ev.mats).every(([k, n]) => (G.inv.mats[k] || 0) >= n) && G.gear >= ev.gear;
-        return { label: `${esc(FOOT_GEAR[wid].name)} → ${esc(to.name)}`, value: wid, disabled: !ok, right: ok ? '<b class="ok">進化できる</b>' : '<small>素材が足りない</small>',
+        return { label: `${FOOT_SLOTS[FOOT_GEAR[wid].slot].icon} ${esc(FOOT_GEAR[wid].name)} → ${esc(to.name)}`, value: wid, disabled: !ok, right: ok ? '<b class="ok">進化できる</b>' : '<small>素材が足りない</small>',
           desc: `${need}　${GEAR}${fmt(G.gear)}/${fmt(ev.gear)}<br>${footDesc(to)}` };
       }),
     });
     if (!id) return;
-    const ev = EVOLVE[id];
-    if (!(await ui.confirm(`${esc(FOOT_GEAR[id].name)}を進化させますか？（素材と ${fmt(ev.gear)} ギアを使います）`, '進化させる', 'やめる'))) continue;
+    const ev = EVOLVE[id], slot = FOOT_GEAR[id].slot;
+    // 進化前と進化後を3Dで並べて比べる（装備している人、いなければ持ち主のキャラで）
+    const wearer = Object.values(G.members).find((m) => m.equip[slot] === id);
+    const who = wearer || G.members[FOOT_GEAR[id].only] || G.members.ren;
+    const before = { ...who, equip: { ...who.equip, [slot]: id } }, after = { ...who, equip: { ...who.equip, [slot]: ev.to } };
+    const ok = await compareView({ title: `${esc(FOOT_GEAR[id].name)} → ${esc(FOOT_GEAR[ev.to].name)}`, before: () => buildCharModel(before), after: () => buildCharModel(after), stats: compareTable(footRows(before, slot, ev.to)) + `<div class="note">素材と ${fmt(ev.gear)} ギアを使います</div>`, okLabel: '進化させる' });
+    if (!ok) continue;
     for (const [k, n] of Object.entries(ev.mats)) addMat(k, -n);
     addGear(-ev.gear);
-    // 装備中ならそのまま最終段階を装備、持ち物ならすり替え
-    const wearer = Object.values(G.members).find((m) => m.equip.weapon === id);
-    if (wearer) wearer.equip.weapon = ev.to; else { addFoot(id, -1); addFoot(ev.to, 1); }
-    await ui.fade(true, 0.3, '#fff6d0');
+    // 装備中ならそのまま次の段階を装備、持ち物ならすり替え
+    if (wearer) wearer.equip[slot] = ev.to; else { addFoot(id, -1); addFoot(ev.to, 1); }
     audio.sfx('levelup');
-    await ui.fade(false, 0.6);
-    ui.banner(`${esc(FOOT_GEAR[ev.to].name)}`, '専用武器が最終段階に進化した！');
+    ui.banner(`${esc(FOOT_GEAR[ev.to].name)}`, '専用装備が進化した！');
     autosave();
   }
 }
@@ -527,7 +535,7 @@ async function garage(world) {
         { label: 'パーツ交換', value: 'parts' },
         { label: '武器強化', value: 'upgrade' },
         { label: '改造（フレーム・エンジン）', value: 'mod' },
-        ...(ownedStage1().length ? [{ label: '専用武器の進化', value: 'evolve' }] : []),
+        ...(ownedStage1().length ? [{ label: '専用装備の進化（武器・防具）', value: 'evolve' }] : []),
         { label: '乗る人を決める', value: 'pilot' },
         { label: 'レッカー回収', value: 'tow' },
         { label: 'セーブ', value: 'save' },
@@ -751,7 +759,7 @@ function slotAtk(mc, slot, w) {
   if (!w) return null;
   const st = machineStats(mc), def = WEAPONS[w.id];
   const arm = slot === 0 ? st.armMul.R : slot === 1 ? st.armMul.L : 1;
-  return Math.round(weaponAtk(w) * arm * st.mul * typeBoost(mc, def));
+  return Math.round(weaponAtk(w, mc) * arm * st.mul * typeBoost(mc, def));
 }
 function weaponCompare(mc, slot, newUid) {
   const cur = mc.slots[slot] ? weaponByUid(mc.slots[slot]) : null;
@@ -845,15 +853,16 @@ async function depart(world, here) {
 export async function weaponSlots(mc) {
   for (;;) {
     const st = machineStats(mc);
-    const items = SLOT_INFO.map((info, i) => {
+    const items = slotsOf(mc).map(({ info, i }) => {
       const w = mc.slots[i] ? weaponByUid(mc.slots[i]) : null;
-      const locked = i >= st.slots;
-      return { label: `${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${rangeBadge(WEAPONS[w.id])}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: w ? weaponDesc(WEAPONS[w.id], w) : (info.mount === 'arm' ? '腕には機銃・特殊兵器（腕用）・ブレードを付けられる' : '背中には主砲・ミサイル・特殊兵器（背中用）を付けられる') };
+      const locked = !info.core && i >= st.slots;
+      const hint = info.core ? '胸のコア（第7の専用スロット）：ステラ・ブレイカーだけを付けられる。ほかの6か所の数は減らない' : info.mount === 'arm' ? '腕には機銃・近接・特殊兵器（腕用）を付けられる' : info.place === 'shoulder' ? '肩の上：主砲やミサイルなど見せ場の武器に向く（頭の横を通るので顔に重ならない）' : '背中：主砲・ミサイル・特殊兵器（背中用）を付けられる';
+      return { label: `<b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b> ${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${WEAPONS[w.id].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[w.id])}${weaponLocked(w, mc) ? ' <small>（封印中）</small>' : ''}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: (w ? weaponDesc(WEAPONS[w.id], w, mc) + '<br>' : '') + `<small>${hint}</small>` };
     });
-    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/5`, wide: true, desc: true, items });
+    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/6${st.core ? '＋胸のコア' : ''}`, wide: true, desc: true, items });
     if (slot == null) return;
     const info = SLOT_INFO[slot];
-    const cands = ownedWeapons().filter((w) => WEAPONS[w.id].mount === info.mount && mc.slots[slot] !== w.uid);
+    const cands = ownedWeapons().filter((w) => fitsSlot(info, WEAPONS[w.id]) && mc.slots[slot] !== w.uid);
     const list = cands.map((w) => {
       const on = weaponEquippedOn(w.uid);
       const err = checkMount(mc, slot, w);
@@ -969,7 +978,7 @@ async function pilotMenu(here) {
   const m = await ui.menu({ title: '誰の乗るマシンを決める？', items: partyMembers().map((mm) => ({ label: esc(mm.name), right: mm.machine ? esc(machineName(G.machines[mm.machine])) : '生身', value: mm })) });
   if (!m) return;
   const owned = Object.values(G.machines).filter((mc) => mc.owned);
-  const items = owned.map((mc) => ({ label: esc(machineName(mc)) + testTag(mc), right: pilotName(mc), value: mc.id, disabled: !canPilot(m, mc), desc: !canPilot(m, mc) ? 'メカニック専用の機体だ' : '' }));
+  const items = owned.map((mc) => ({ label: esc(machineName(mc)) + testTag(mc), right: pilotName(mc), value: mc.id, disabled: !canPilot(m, mc), desc: pilotError(m, mc) ? `<b class="warn">${esc(pilotError(m, mc))}</b>` : '' }));
   items.push({ label: '生身で戦う', value: '__foot' });
   const id = await ui.menu({ title: `${esc(m.name)}が乗るマシン`, desc: true, items });
   if (!id) return;
@@ -994,11 +1003,13 @@ async function towMenu(town, shop) {
 }
 
 // ---------------- 説明文 ----------------
-export function weaponDesc(w, inst) {
+export function weaponDesc(w, inst, mc) {
+  if (w.sealAtk) return `胸のコア専用・アルファ専用　範囲を切り替え（単体${Math.round(w.modes.one * 100)}%・グループ${Math.round(w.modes.group * 100)}%・全体${Math.round(w.modes.all * 100)}%）<br>封印の段階で進化：${w.sealAtk.map((a, i) => `${esc(w.stageNames[i])} ${a || '―'}`).join(' → ')}${mc ? `<br>いまの威力（単体）：<b>${weaponAtk(inst || { id: 'stella' }, mc)}</b>` : ''}`;
   const tgt = { one: '単体', group: 'グループ', all: '全体' }[w.target];
   const el = w.elem ? `　属性:${w.elem === 'elec' ? '<b class="elec">電気</b>' : '<b class="fire">火</b>'}` : '';
-  const atk = inst ? weaponAtk(inst) : w.atk;
-  return `${WEAPON_CATS[w.cat].name}（${w.mount === 'arm' ? '腕' : '背中'}）　攻撃${atk}　命中${w.hit >= 0 ? '+' : ''}${w.hit}　重さ${w.wt}　${tgt}${el}${w.en ? `　EN${w.en}` : ''}`;
+  const atk = inst ? weaponAtk(inst, mc) : w.atk;
+  const where = { arm: '腕', back: '肩・背中', any: 'どこでも' }[w.mount] || '';
+  return `${WEAPON_CATS[w.cat].name}（${where}）　攻撃${atk}　命中${w.hit >= 0 ? '+' : ''}${w.hit}　重さ${w.wt}　${tgt}${el}${w.en ? `　EN${w.en}` : ''}${w.only ? `<br><b class="excl">${esc(MACHINES[w.only].name)}専用</b>${w.rank ? `　専用武器の強さ ${w.rank}位` : ''}` : ''}`;
 }
 export function footDesc(f) {
   const n = (k, label, unit = '') => (f[k] ? `　${label}${f[k] > 0 ? '+' : ''}${f[k]}${unit}` : '');
@@ -1216,7 +1227,7 @@ async function machineList() {
   await ui.panel(`
     <p>${esc(def.desc || '')}</p>
     <p><b>${esc(st.typeName)}タイプ</b>：<small>${esc(MACHINE_TYPES[st.type].desc)}</small></p>
-    ${mc.type === 'alpha' ? `<p>メカニック専用。状態：<b>${esc(sealInfo().name)}</b></p>` : `<p class="note">${def.pilot === 'any' ? '誰でも乗れる' : 'メカニック専用'}</p>`}
+    <p class="note">乗れる人：${def.pilots ? def.pilots.map((k) => esc(G.members[k]?.name || CHARACTERS[k].defaultName)).join('・') : 'だれでも'}${mc.type === 'alpha' ? `　状態：<b>${esc(sealInfo().name)}</b>` : ''}</p>
     <table class="kv"><tr><th>装甲</th><td>${mc.armor}/${st.maxArmor}${mc.broken ? ' <b class="warn">大破</b>' : ''}</td><th>EN</th><td>${mc.en}/${st.maxEn}</td></tr>
     <tr><th>防御</th><td>${st.def}</td><th>重さ</th><td>${st.weight}/${st.cap}</td></tr></table>
     <div class="cols"><table class="kv">${parts}</table><table class="kv">${ws}</table></div>

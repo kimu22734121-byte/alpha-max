@@ -13,15 +13,15 @@ import { WEAPONS, WEAPON_CATS } from '../data/weapons.js';
 import { FOOT_GEAR, FOOT_SLOTS } from '../data/footgear.js';
 import { CHARACTERS } from '../data/characters.js';
 import { MAPS } from '../data/maps.js';
-import { DEV_ROOM } from '../data/debug.js';
+import { DEV_ROOM, devSession } from '../data/debug.js';
 import {
-  G, addTest, resetTestItems, machineStats, memberStats, TEMP_WEAPONS, partCount, testFootCount, FOOT_SLOT_KEYS,
+  G, addTest, resetTestItems, machineStats, memberStats, TEMP_WEAPONS, partCount, testFootCount, FOOT_SLOT_KEYS, partNow,
 } from '../game/state.js';
 import { buildMachineModel } from '../models/mech.js';
 import { buildCharModel } from '../models/char-look.js';
 import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
-import { rangeBadge, weaponDesc, partDesc, footDesc, editTuningRow, exportTuningUI } from './menus.js';
+import { rangeBadge, weaponDesc, partDesc, footDesc, editTuningRow, exportTuningUI, fitsSlot } from './menus.js';
 
 // =====================================================================
 // 入手端末（42）
@@ -86,12 +86,14 @@ export async function devStore() {
         { label: `素材（${N()}個ずつ）`, value: 'mats' },
         { label: 'ギア（お金）', value: 'gear' },
         { separator: true, label: '' },
+        { label: `誰でも全部のマシンに乗れる（テスト用）：<b class="${devSession.anyPilot ? 'ok' : 'warn'}">${devSession.anyPilot ? 'オン' : 'オフ'}</b>`, value: 'anyPilot' },
         { label: '<b class="warn">入手したものを全部リセット</b>', value: 'reset' },
         { label: '出る', value: null },
       ],
     });
     if (!v) return;
     if (v === 'machines') await addMachines();
+    if (v === 'anyPilot') { devSession.anyPilot = !devSession.anyPilot; audio.sfx('ok'); ui.toast(`乗れるキャラの制限：${devSession.anyPilot ? 'なし（テスト用）' : 'いつも通り'}`); }
     if (v === 'parts' || v === 'weapons' || v === 'foot') await pickGroup(v);
     if (v === 'items' || v === 'mats') await addFrom(v);
     if (v === 'gear') {
@@ -125,7 +127,7 @@ async function addMachines() {
 // 展示台（38・41）
 // =====================================================================
 // ロボットの展示台の組み合わせ（ゲームを起動している間だけ。セーブには入らない）
-const robot = { type: 'hound', parts: { ...MACHINES.hound.parts }, weapons: MACHINES.hound.weapons.map((w) => w?.id || null) };
+const robot = { type: 'hound', seal: 1, parts: { ...MACHINES.hound.parts }, weapons: MACHINES.hound.weapons.map((w) => w?.id || null) };
 const chara = { id: 'ren', equip: null };
 let tmpId = 0;
 function tempMachine() {
@@ -135,7 +137,8 @@ function tempMachine() {
     TEMP_WEAPONS.set(uid, { uid, id: wid, plus: 0 });
     return uid;
   });
-  const mc = { id: '__test', type: robot.type, owned: true, parts: { ...robot.parts }, partInst: {}, slots, mods: { frame: 3, engine: 5 }, broken: false, loc: { type: 'party' } };
+  while (slots.length < 7) slots.push(null);
+  const mc = { id: '__test', type: robot.type, owned: true, parts: { ...robot.parts }, partInst: {}, slots, mods: { frame: 3, engine: 5 }, broken: false, loc: { type: 'party' }, sealOverride: robot.type === 'alpha' ? robot.seal : undefined };
   const st = machineStats(mc);
   mc.armor = st.maxArmor; mc.en = st.maxEn;
   return mc;
@@ -207,13 +210,23 @@ export async function robotStation(world) {
           const id = await ui.menu({ title: '機体を選ぶ（パーツと武器も入れ替わる）', wide: true, items: entries('machines').map(([k, d]) => ({ label: esc(d.name), value: k, right: `<small>${esc(d.desc)}</small>` })) });
           if (!id) return false;
           robot.type = id; robot.parts = { ...MACHINES[id].parts }; robot.weapons = MACHINES[id].weapons.map((w) => w?.id || null);
+          while (robot.weapons.length < 7) robot.weapons.push(null);
           return true;
         },
         tune: () => editTuningRow('machines', robot.type),
-      }, { head: 'パーツ（数値＝そのパーツの装甲・重さ・スピード・スロット数など）' }];
+      }];
+      if (robot.type === 'alpha') out.push({
+        label: '封印', value: `段階${robot.seal}：${esc(MACHINES.alpha.seal[robot.seal].name)}`,
+        pick: async () => {
+          const v = await ui.menu({ title: 'アルファの封印の段階（見た目・外装・ステラ・ブレイカーが変わる）', items: MACHINES.alpha.seal.map((st, k) => ({ label: `段階${k}：${esc(st.name)}`, value: String(k), right: k === robot.seal ? '今' : '' })) });
+          if (v == null) return false;
+          robot.seal = Number(v); return true;
+        },
+      });
+      out.push({ head: 'パーツ（数値＝そのパーツの装甲・重さ・スピード・スロット数など）' });
       for (const [k, name, slot] of ROBOT_ROWS) {
         out.push({
-          label: name, value: esc(PARTS[robot.parts[k]].name),
+          label: name, value: esc(partNow(robot.parts[k], { sealOverride: robot.type === 'alpha' ? robot.seal : undefined }).name),
           pick: async () => {
             const id = await ui.menu({ title: `${name}を付け替える`, wide: true, desc: true, items: entries('parts', slot).map(([pid, p]) => ({ label: esc(p.name), value: pid, right: pid === robot.parts[k] ? '今' : '', desc: partDesc(p) })) });
             if (!id) return false;
@@ -224,11 +237,13 @@ export async function robotStation(world) {
       }
       out.push({ head: '武器（数値＝威力・EN消費・重さ・範囲など）' });
       SLOT_INFO.forEach((info, i) => {
+        if (info.core && !PARTS[robot.parts.body].coreSlot) return; // 胸のコアはアルファのボディだけ
         const wid = robot.weapons[i];
         out.push({
-          label: info.name, value: wid ? `${esc(WEAPONS[wid].name)} ${rangeBadge(WEAPONS[wid])}` : '<small>なし</small>',
+          label: `<b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b>${info.short}`, value: wid ? `${esc(WEAPONS[wid].name)} ${WEAPONS[wid].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[wid])}` : '<small>なし</small>',
           pick: async () => {
-            const id = await ui.menu({ title: `${info.name}の武器`, wide: true, desc: true, items: [{ label: '外す', value: '__none' }, ...entries('weapons', info.mount).map(([w, d]) => ({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${rangeBadge(d)}`, value: w, right: w === wid ? '今' : '', desc: weaponDesc(d) }))] });
+            const list = Object.entries(WEAPONS).filter(([, d]) => !d.devOnly && fitsSlot(info, d) && (!d.only || d.only === robot.type || !info.core));
+            const id = await ui.menu({ title: `${info.name}の武器`, wide: true, desc: true, items: [{ label: '外す', value: '__none' }, ...list.map(([w, d]) => ({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${d.modes ? '' : rangeBadge(d)}${d.only ? ` <b class="excl">${esc(MACHINES[d.only].name)}専用</b>` : ''}`, value: w, right: w === wid ? '今' : '', desc: weaponDesc(d) }))] });
             if (!id) return false;
             robot.weapons[i] = id === '__none' ? null : id; return true;
           },

@@ -10,11 +10,12 @@ import { BattleFX } from './battle-fx.js';
 import { ENEMIES, BOUNTIES, ELEMENT_RATE, WEAKNESS } from '../data/enemies.js';
 import { MAPS } from '../data/maps.js';
 import { WEAPONS, WEAPON_CATS } from '../data/weapons.js';
+import { SLOT_INFO } from '../data/parts.js';
 import { CHARACTERS } from '../data/characters.js';
 import { MATERIALS, ITEMS } from '../data/items.js';
 import { MACHINES } from '../data/machines.js';
 import {
-  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost,
+  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost, weaponLocked, sealOf,
 } from '../game/state.js';
 import { inMachine, machineSpec } from './world.js';
 import { buildCharModel } from '../models/char-look.js';
@@ -328,7 +329,12 @@ export class BattleScene {
       this.updateHud();
       const items = [];
       if (u.mc) {
-        u.mc.slots.forEach((uid, i) => { if (uid) { const w = weaponByUid(uid), d = WEAPONS[w.id]; items.push({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${rangeBadge(d)}`, right: `威力${d.atk}`, value: { slot: i } }); } });
+        u.mc.slots.forEach((uid, i) => {
+          if (!uid) return;
+          const w = weaponByUid(uid), d = WEAPONS[w.id];
+          if (d.modes) { for (const k of Object.keys(d.modes)) items.push({ label: `✦ ${esc(d.name)} ${rangeBadge({ target: k })}`, right: weaponLocked(w, u.mc) ? '<small>封印中</small>' : `威力${Math.round(weaponAtk(w, u.mc) * d.modes[k])}`, value: { slot: i, mode: k }, disabled: weaponLocked(w, u.mc) }); return; }
+          items.push({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${rangeBadge(d)}`, right: `威力${weaponAtk(w, u.mc)}`, value: { slot: i } });
+        });
         items.push({ label: '全砲門一斉発射', value: { allfire: true } });
       } else items.push({ label: `${esc(memberStats(u.m).weapon.name || '素手')}で攻撃 ${rangeBadge({ target: memberStats(u.m).weapon.target || 'one' })}`, value: { slot: null } });
       items.push({ label: '展示台にもどる', value: 'back' });
@@ -337,10 +343,10 @@ export class BattleScene {
       for (const e of this.enemies) { e.hp = e.maxHp; e.alive = true; e.obj.visible = true; setOpacity(e.obj, 1); e.obj.position.copy(e.home); e.obj.rotation.set(0, 0, 0); }
       if (u.mc) { u.mc.en = machineStats(u.mc).maxEn; }
       const def = v.slot != null && u.mc ? WEAPONS[weaponByUid(u.mc.slots[v.slot]).id] : memberStats(u.m).weapon;
-      const kind = def?.target || 'one';
+      const kind = v.mode || def?.target || 'one';
       const alive = this.aliveEnemies();
       const target = kind === 'all' ? { all: true } : kind === 'group' ? { group: alive[0].key } : { unit: alive[0] };
-      await this.doParty(u, v.allfire ? { type: 'allfire' } : { type: 'attack', slot: v.slot, target });
+      await this.doParty(u, v.allfire ? { type: 'allfire' } : { type: 'attack', slot: v.slot, target, mode: v.mode });
       const total = this.enemies.reduce((a, e) => a + (e.maxHp - e.hp), 0);
       this.log(`合計 ${total.toLocaleString()} のダメージ（${this.enemies.filter((e) => e.hp < e.maxHp).length}体に命中）`);
       this.camIdle = false; await this.camDefault(0.5); this.camIdle = true;
@@ -409,9 +415,15 @@ export class BattleScene {
         const w = await this.chooseWeapon(u);
         if (w == null) continue;
         const def = WEAPONS[weaponByUid(u.mc.slots[w]).id];
-        const target = await this.chooseTarget(def.target);
+        // ステラ・ブレイカー：撃つ前に範囲（単体・グループ・全体）を切り替える
+        let mode = null;
+        if (def.modes) {
+          mode = await ui.menu({ title: `${esc(def.name)}：範囲を選ぶ`, className: 'battle-cmd', items: Object.entries(def.modes).map(([k, r]) => ({ label: `${rangeBadge({ target: k })} ${{ one: '単体に集中（最大威力）', group: 'グループをなぎ払う', all: '全体に降り注ぐ' }[k]}`, right: `威力${Math.round(weaponAtk(weaponByUid(u.mc.slots[w]), u.mc) * r)}`, value: k })) });
+          if (!mode) continue;
+        }
+        const target = await this.chooseTarget(mode || def.target);
         if (target === undefined) continue;
-        return { type: 'attack', slot: w, target, skill };
+        return { type: 'attack', slot: w, target, skill, mode };
       }
       const fw = memberStats(u.m).weapon;
       const target = await this.chooseTarget(fw.target || 'one');
@@ -424,7 +436,8 @@ export class BattleScene {
     const items = u.mc.slots.map((uid, i) => {
       if (!uid) return null;
       const w = weaponByUid(uid), def = WEAPONS[w.id];
-      return { label: `${WEAPON_CATS[def.cat].icon} ${esc(weaponLabel(w))} ${rangeBadge(def)}`, right: def.en ? `EN${def.en}` : '', value: i, disabled: (def.en || 0) > u.mc.en };
+      const locked = weaponLocked(w, u.mc);
+      return { label: `${SLOT_INFO[i].core ? '✦ ' : `${WEAPON_CATS[def.cat].icon} `}${esc(weaponLabel(w))} ${def.modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(def)}`, right: locked ? '<small>封印中</small>' : def.en ? `EN${def.en}` : '', value: i, disabled: locked || (def.en || 0) > u.mc.en };
     }).filter(Boolean);
     if (!items.length) { await ui.say('武器を積んでいない！'); return null; }
     return ui.menu({ title: '武器', className: 'battle-cmd wide', items });
@@ -495,7 +508,7 @@ export class BattleScene {
     const order = [];
     for (const c of cmds) {
       const st = memberStats(c.u.m);
-      order.push({ kind: 'party', u: c.u, cmd: c, spd: (c.type === 'guard' ? 999 : st.spd + (c.u.mc ? 2 + machineStats(c.u.mc).spd : 0) + rand(0, 4)) });
+      order.push({ kind: 'party', u: c.u, cmd: c, spd: (c.type === 'guard' || st.firstStrike ? 999 : st.spd + (c.u.mc ? 2 + machineStats(c.u.mc).spd : 0) + rand(0, 4)) });
     }
     for (const e of this.aliveEnemies()) for (let k = 0; k < (e.def.acts || 1); k++) order.push({ kind: 'enemy', e, spd: e.def.spd + rand(0, 4) - k * 3 });
     order.sort((a, b) => b.spd - a.spd);
@@ -589,7 +602,7 @@ export class BattleScene {
     const skillName = cmd.skill ? CHARACTERS[u.m.id].skill.name : null;
     this.log(`${name}の${skillName ? `${skillName}！ ` : ''}${def ? `${def.name}！` : '攻撃！'}`);
     this.camIdle = false;
-    const ctx = { u, def, w, skill: cmd.skill };
+    const ctx = { u, def, w, skill: cmd.skill, mode: cmd.mode, slot: cmd.slot };
     if (!def) await this.footAttack(u, targets, ctx);
     else await this.fireWeapon(u, cmd.slot, def, targets, ctx);
     await this.returnHome(u);
@@ -758,7 +771,108 @@ export class BattleScene {
     for (const e of targets) await this.applyHit(u, e, { ...ctx, finalCrit: true }, 0.08);
   }
 
+  // ---- 特別機（アルファ・オメガ・ガイア）の専用武器：武器ごとに専用の発射演出と効果音 ----
+  async signatureFire(u, slot, def, targets, ctx, fast) {
+    const from = () => this.muzzleOf(u, slot);
+    const c = this.centerOf(targets);
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const hits = async (pause = 0.1) => { for (const e of targets) await this.applyHit(u, e, ctx, pause); };
+    switch (def.sig) {
+      case 'stella': await this.stellaFire(u, slot, def, targets, ctx, fast); return;
+      case 'lance': // アルファ：白と金の光の槍
+        if (!fast) await this.orbit(u, c, side * 0.45, 0.9, 0.5, side);
+        audio.sfx('charge'); this.fx.flash(from(), 0xbff4ff, 1.4, 0.3); await wait(0.15);
+        for (const e of targets) { audio.sfx('beam'); await this.fx.beam(from(), this.hitPoint(e), 0xf4f2ea, 0.22, 0.35); this.fx.ring(this.hitPoint(e), 0xffd86a, 2.2, 0.5); this.fx.explosion(this.hitPoint(e), 1.2, 0x9fe8ff); }
+        await hits(0.2); return;
+      case 'halo': { // アルファ：光の輪をまとう連射
+        this.fx.ring(this.partyPoint(u), 0xffd86a, 2.2, 0.6);
+        const shots = [];
+        await this.strafe(u, c, fast ? 1.2 : 2.4, fast ? 0.5 : 0.85, side, (step) => { audio.sfx('laser'); targets.forEach((e) => shots.push(this.fx.tracers(from(), this.hitPoint(e), step % 2 ? 0xffd86a : 0x9fe8ff, 2, 0.3))); });
+        await Promise.all(shots); await hits(0.12); return;
+      }
+      case 'aurora': { // アルファ：オーロラ色のミサイル
+        const shots = targets.map((e, i) => this.fx.missile(from(), this.hitPoint(e), i * 0.06).then(() => { audio.sfx('explosion'); this.fx.explosion(this.hitPoint(e), 1.0, i % 2 ? 0xffd86a : 0x9fe8ff); this.fx.ring(this.hitPoint(e), 0xbff4ff, 1.6, 0.4); }));
+        audio.sfx('missile'); await Promise.all(shots); await hits(0.08); return;
+      }
+      case 'crimson': // オメガ：跳び上がって撃つ赤い双身砲
+        if (!fast) await tween(0.3, (k) => { u.obj.position.y = Math.sin(k * Math.PI * 0.5) * 1.6; this.camFollow(u, c, side, 0.2); }, Ease.out);
+        for (const e of targets) { audio.sfx('cannon'); audio.sfx('beam'); await this.fx.beam(from(), this.hitPoint(e), 0xff2a3a, 0.2, 0.35); this.fx.explosion(this.hitPoint(e), 1.6, 0xff3a4a); }
+        if (!fast) await tween(0.25, (k) => { u.obj.position.y = 1.6 * (1 - k); }, Ease.in);
+        await hits(0.2); return;
+      case 'storm': { // オメガ：赤い弾の嵐
+        const shots = [];
+        await this.strafe(u, c, fast ? 1.4 : 2.8, fast ? 0.5 : 0.9, side, () => { audio.sfx('mg'); targets.forEach((e) => shots.push(this.fx.tracers(from(), this.hitPoint(e), 0xff3a4a, 3, 0.4))); });
+        await Promise.all(shots); await hits(0.12); return;
+      }
+      case 'nova': { // オメガ：赤い核の爆発
+        audio.sfx('missile');
+        await Promise.all(targets.map((e, i) => this.fx.missile(from(), this.hitPoint(e), i * 0.05)));
+        audio.sfx('explosion'); this.fx.flash(c.clone().add(V(0, 1, 0)), 0xff3a4a, 5, 0.4);
+        for (const e of targets) { this.fx.explosion(this.hitPoint(e), 1.3, 0xff2a3a); this.fx.ring(this.hitPoint(e), 0xff6a6a, 2, 0.5); }
+        await hits(0.08); return;
+      }
+      case 'terra': { // ガイア：岩の杭を打ちこみ、地面が割れる
+        for (const e of targets) {
+          const ep = e.obj.position.clone(); ep.y = 0;
+          audio.sfx('charge'); await this.dash(u, ep.clone().add(V(side * 0.6, 0, 1.6)), fast ? 0.18 : 0.3, ep);
+          audio.sfx('press'); this.fx.flash(this.hitPoint(e), 0xff7a2a, 3, 0.25); this.fx.ring(ep.clone().add(V(0, 0.1, 0)), 0xff7a2a, 3.2, 0.5); this.fx.debris(ep.clone().add(V(0, 0.3, 0)), 10, 0x7a4a2a, 4); this.fx.shake = 1.1;
+          await this.applyHit(u, e, ctx, 0.12);
+        }
+        return;
+      }
+      case 'claymore': { // ガイア：深紅の大剣で回転斬り
+        audio.sfx('charge'); await this.dash(u, c.clone().add(V(0, 0, 1.7)), fast ? 0.18 : 0.3, c);
+        audio.sfx('metalhit');
+        await tween(0.45, (k) => { u.obj.rotation.y = Math.PI + k * Math.PI * 4; });
+        this.fx.ring(c.clone().add(V(0, 0.5, 0)), 0xff7a2a, 4, 0.5);
+        for (const e of targets) { this.fx.claw(this.hitPoint(e), 0xffb080); this.fx.explosion(this.hitPoint(e), 0.9, 0xff5a2a); }
+        audio.sfx('flame'); await hits(0.1); return;
+      }
+      case 'quake': // ガイア：跳び上がって大地をたたき、全体に衝撃波
+        await tween(0.3, (k) => { u.obj.position.y = Math.sin(k * Math.PI * 0.5) * 2; }, Ease.out);
+        await tween(0.12, (k) => { u.obj.position.y = 2 * (1 - k); }, Ease.in);
+        audio.sfx('press'); audio.sfx('explosion'); this.fx.shake = 1.5;
+        for (let i = 0; i < 3; i++) this.fx.ring(u.obj.position.clone().add(V(0, 0.1, -i * 1.5)), 0xff9a3a, 4 + i * 3, 0.7);
+        for (const e of targets) { this.fx.debris(this.hitPoint(e), 8, 0x7a4a2a, 4); this.fx.smoke(e.obj.position.clone().add(V(0, 0.3, 0)), 1.4, 1, 0x8a6a4a); }
+        await hits(0.08); return;
+      default: break;
+    }
+  }
+
+  // ステラ・ブレイカー：胸のコアに光の粒子が吸い込まれる溜め → 封印の段階に合わせた太さの光
+  async stellaFire(u, slot, def, targets, ctx, fast) {
+    const stage = sealOf(u.mc);
+    const core = () => this.muzzleOf(u, slot);
+    if (!fast) { this.camIdle = false; await this.camTo(u.obj.position.clone().add(V(1.6, 2.2, 2.6)), core(), 0.35); }
+    audio.sfx('charge');
+    const n = 10 + stage * 6;
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const sp = this.fx.sprite(i % 3 ? 0xbff4ff : 0xffd86a, 0.15 + Math.random() * 0.1);
+      const a = Math.random() * Math.PI * 2, r = 1.2 + Math.random() * 1.2;
+      sp.userData.from = core().add(V(Math.cos(a) * r, Math.sin(a) * r * 0.7 + 0.3, Math.random() - 0.2));
+      parts.push(sp);
+    }
+    await tween(fast ? 0.35 : 0.7 + stage * 0.08, (k) => {
+      const to = core();
+      for (const sp of parts) { sp.position.lerpVectors(sp.userData.from, to, k * k); sp.material.opacity = 0.4 + k * 0.6; }
+      setGlow(u.obj, 1.4 + k * (2 + stage));
+    });
+    for (const sp of parts) { this.fx.scene.remove(sp); sp.material.dispose(); }
+    timeScale.k = fast ? 1 : 0.5;
+    audio.sfx('beam'); audio.sfx('levelup');
+    this.fx.flash(core(), 0xffffff, 2 + stage, 0.4);
+    const width = 0.12 + stage * 0.08;
+    await Promise.all(targets.map((e, i) => wait(i * 0.04).then(() => this.fx.beam(core(), this.hitPoint(e), stage >= 4 ? 0xfff4c0 : 0xbff4ff, width, 0.5))));
+    for (const e of targets) { this.fx.explosion(this.hitPoint(e), 1.2 + stage * 0.3, 0x9fe8ff); this.fx.ring(this.hitPoint(e), 0xffd86a, 2 + stage * 0.5, 0.6); }
+    timeScale.k = 1;
+    this.fx.shake = 0.6 + stage * 0.2;
+    setGlow(u.obj, MACHINES.alpha.seal[stage]?.glow ?? 1.4);
+    for (const e of targets) await this.applyHit(u, e, ctx, 0.08);
+  }
+
   async fireWeapon(u, slot, def, targets, ctx, fast = false) {
+    if (def.sig) { await this.signatureFire(u, slot, def, targets, ctx, fast); return; }
     const from = () => this.muzzleOf(u, slot);
     const big = def.unique;
     const c = this.centerOf(targets);
@@ -885,7 +999,7 @@ export class BattleScene {
     if (ctx.def) {
       const ms = machineStats(u.mc);
       const arm = ctx.slot === 0 ? ms.armMul.R : ctx.slot === 1 ? ms.armMul.L : 1;
-      atk = weaponAtk(ctx.w) * arm * ms.mul * typeBoost(u.mc, ctx.def) + st.atk * 0.3;
+      atk = weaponAtk(ctx.w, u.mc) * (ctx.def.modes ? ctx.def.modes[ctx.mode || 'one'] : 1) * arm * ms.mul * typeBoost(u.mc, ctx.def) + st.atk * 0.3;
       if (ctx.skill === 'rampage') atk *= 1.5;
       if (ctx.allfire) atk *= 1.2;
     } else {
@@ -974,20 +1088,31 @@ export class BattleScene {
       requestAnimationFrame(loop);
     };
     loop();
-    const slots = u.mc.slots.map((uid, i) => (uid ? i : -1)).filter((i) => i >= 0);
+    const slots = u.mc.slots.map((uid, i) => (uid && !weaponLocked(weaponByUid(uid), u.mc) ? i : -1)).filter((i) => i >= 0);
+    // アルファマックス：翼が光で大きく広がる
+    const maxForm = u.mc.type === 'alpha' && sealOf(u.mc) >= 4;
+    if (maxForm) {
+      const wings = u.obj.userData.wings || [];
+      audio.sfx('levelup');
+      await tween(0.6, (k) => { for (const wg of wings) if (wg) wg.scale.setScalar(1.35 + k * 0.9); });
+      this.fx.flash(u.obj.position.clone().add(V(0, 2, 0)), 0xbff4ff, 7, 0.6);
+      for (let i = 0; i < 4; i++) this.fx.ring(u.home.clone().add(V(0, 0.4 + i * 0.7, 0)), i % 2 ? 0xffd86a : 0x9fe8ff, 3 + i, 0.8);
+    }
     for (const slot of slots) {
       const w = weaponByUid(u.mc.slots[slot]);
       const def = WEAPONS[w.id];
       const alive = this.aliveEnemies();
       if (!alive.length) break;
       const targets = def.target === 'one' ? [pick(alive)] : def.target === 'group' ? alive.filter((e) => e.key === pick(alive).key) : alive;
-      const ctxA = { u, def, w, allfire: true, slot };
+      const ctxA = { u, def, w, allfire: true, slot, mode: def.modes ? 'all' : null };
+      if (def.modes) targets.splice(0, targets.length, ...alive); // コアのステラは一斉発射では全体に
       const saved = this.camFollow;
       this.camFollow = () => {}; // 一斉発射中はカメラを回したままにする
       await this.fireWeapon(u, slot, def, targets, ctxA, true);
       this.camFollow = saved;
     }
     spin = false;
+    if (maxForm) for (const wg of u.obj.userData.wings || []) if (wg) wg.scale.setScalar(1.35);
     // 最後の一撃はスローモーションで見せる
     if (!this.aliveEnemies().length) { timeScale.k = 0.35; await wait(0.25); timeScale.k = 1; }
     setGlow(u.obj, base);
@@ -1113,6 +1238,7 @@ export class BattleScene {
         this.fx.number(p, `${dmg}`, 'hurt');
         if (t.m.hp > 0) this.knockback(t, big || dmg >= st.maxHp * 0.3);
         this.log(`${t.m.name}に${dmg}のダメージ！`);
+        if (t.m.hp <= 0 && st.guts && !t.gutsUsed) { t.gutsUsed = true; t.m.hp = 1; this.log(`${t.m.name}は踏みとどまった！（バスティオン・ラグナ）`); this.fx.ring(this.partyPoint(t), 0xff9a3a, 2.5, 0.6); }
         if (t.m.hp <= 0) {
           t.m.ko = true;
           this.log(`${t.m.name}は気絶した……`);
@@ -1209,6 +1335,7 @@ export class BattleScene {
     for (const u of this.aliveParty()) {
       const st = memberStats(u.m);
       if (st.regen > 0) { const h = Math.round(st.maxHp * st.regen); u.m.hp = Math.min(st.maxHp, u.m.hp + h); lines.push(`${u.m.name}の自動救急パックが体力を${h}回復した。`); }
+      if (st.partyRegen > 0) for (const p of this.aliveParty()) { const mx = memberStats(p.m).maxHp; p.m.hp = Math.min(mx, p.m.hp + Math.round(mx * st.partyRegen)); }
       if (st.machineRegen > 0) for (const p of this.party) if (p.mc && !p.mc.broken) { const mx = machineStats(p.mc).maxArmor; p.mc.armor = Math.min(mx, p.mc.armor + Math.round(mx * st.machineRegen)); }
     }
     for (const [id, n] of Object.entries(mats)) { addMat(id, n); lines.push(`${MATERIALS[id].name}を${n}個ひろった。`); }
