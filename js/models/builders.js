@@ -1129,6 +1129,51 @@ function buildEnBird(colors) {
   return root;
 }
 
+// 水の惑星の甲殻生物：機械の甲羅を背負ったカニ（大きなハサミ）
+function buildEnCrab(colors) {
+  const m = makeMats({ primary: 0xc85a3a, secondary: 0x6a3a2a, organic: 0x8a4ac8, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy' };
+  const body = grp(root, 'torso', 0, 0.45, 0);
+  const shell = add(body, Sp(0.5, 1), m('primary'), 0, 0.05, 0); shell.scale.set(1.3, 0.55, 1);
+  add(body, Bx(0.7, 0.2, 0.5), m('metal'), 0, 0.3, -0.1);
+  add(body, Cy(0.08, 0.08, 0.3, 6), m('dark'), 0.2, 0.5, -0.15);
+  add(body, Sp(0.16, 1), m('organic'), 0, 0.05, 0.35);
+  for (const sx of [-1, 1]) {
+    add(body, Cy(0.03, 0.03, 0.2, 4), m('dark'), 0.12 * sx, 0.2, 0.42);
+    add(body, Sp(0.05, 0), m('glow'), 0.12 * sx, 0.31, 0.42);
+    // ハサミ
+    const arm = grp(body, sx < 0 ? 'wingL' : 'wingR', 0.55 * sx, 0.0, 0.3);
+    add(arm, Bx(0.4, 0.12, 0.14), m('secondary'), 0.15 * sx, 0, 0.1, 0, 0.5 * sx, 0);
+    add(arm, Bx(0.32, 0.2, 0.26), m('primary'), 0.32 * sx, 0.02, 0.35);
+    add(arm, Bx(0.08, 0.06, 0.26), m('primary'), 0.32 * sx, 0.14, 0.5);
+    // 足
+    for (let i = 0; i < 3; i++) add(body, Bx(0.5, 0.06, 0.06), m('secondary'), 0.55 * sx, -0.22, -0.25 + i * 0.22, 0, 0, -0.6 * sx);
+  }
+  return root;
+}
+// 水の惑星のうなぎ型の宇宙生物：長い体がうねる（tentacle で揺れる）。空中を泳ぐ
+function buildEnEel(colors) {
+  const m = makeMats({ primary: 0x2a6a8a, secondary: 0x1a3a4a, organic: 0x4ae0d0, ...colors });
+  const root = grp(null, 'enemy');
+  root.userData = { kind: 'enemy', flying: true };
+  const core = grp(root, 'core', 0, 1.0, 0);
+  const head = add(core, Sp(0.28, 1), m('primary'), 0, 0, 0.3); head.scale.set(0.9, 0.8, 1.4);
+  add(core, Bx(0.3, 0.06, 0.3), m('dark'), 0, -0.12, 0.6);
+  for (const sx of [-1, 1]) add(core, Sp(0.05, 0), m('glow'), 0.12 * sx, 0.1, 0.55);
+  add(core, Co(0.1, 0.3, 4), m('organic'), 0, 0.25, 0.1, -0.4, 0, 0);
+  let parent = core, z = 0;
+  for (let i = 0; i < 6; i++) {
+    const seg = grp(parent, `tentacle${i}`, 0, 0, i === 0 ? -0.05 : -0.32);
+    const r = 0.24 - i * 0.03;
+    const sgm = add(seg, Sp(r, 1), m(i % 2 ? 'secondary' : 'primary'), 0, 0, -0.16); sgm.scale.set(1, 0.9, 1.3);
+    add(seg, Bx(0.04, r * 1.2, 0.18), m('organic'), 0, r * 0.8, -0.16);
+    parent = seg; z -= 0.3;
+  }
+  add(parent, Bx(0.4, 0.04, 0.25), m('organic'), 0, 0, -0.4);
+  return root;
+}
+
 function buildEnCrawler(colors) {
   const m = makeMats({ organic: 0xa04a6a, primary: 0x7a3a50, ...colors });
   const root = grp(null, 'enemy');
@@ -1376,6 +1421,8 @@ export const MODEL_BUILDERS = {
   boss_skywraith: buildBossSkyWraith,
   boss_titan: buildBossTitan,
   en_bird: buildEnBird,
+  en_crab: buildEnCrab,
+  en_eel: buildEnEel,
 };
 
 export function buildModel(id, colors) {

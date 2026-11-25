@@ -196,8 +196,24 @@ async function bar() {
       'マスター「メガリカバリーは持ったか？ 塔の番人は1ターンに2回動くぞ」',
       'マスター「南西の崩れた岩の奥に、古い格納庫があるって噂だ。赤い機体が眠ってるとか……」',
     ],
+    // 第3章「水」の惑星
+    town7: [
+      'マスター「水の星へようこそ。島と島の間は、東の地下水路を通っていくんだ」',
+      'マスター「南の砂浜のでっかいカニ、シェルクラッシャー。あの甲羅は火で焼くと割れやすいぞ」',
+      'マスター「北の浅い海は、水中仕様のマシンなら海の底を歩いて渡れるらしい」',
+    ],
+    town8: [
+      'マスター「ドック工房のルカに頼めば、マシンに水中ユニットを付けてくれる。材料さえあればな」',
+      'マスター「東の海上プラントは、海賊と宇宙生物の巣だ。生身で行くことになるぞ」',
+      'マスター「北西の海の底の渦に、大うなぎがいる。ミサイルで狙え」',
+    ],
+    town9: [
+      'マスター「北東の水没都市には、海の寄生体の親玉がいるって話だ」',
+      'マスター「ドームの整備長マリンが、新しい機体の乗り手を探してたぞ」',
+      'マスター「白、黒、赤の三機が、この海の底に何かを封じた……そんな昔話がある」',
+    ],
   }[currentTown()] || ['マスター「いらっしゃい」'];
-  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム' }[currentTown()] || '酒場';
+  const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム', town7: '灯台下', town8: '潮だまり', town9: 'ブルーホール' }[currentTown()] || '酒場';
   for (;;) {
     const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
     if (!v) return;
@@ -232,6 +248,50 @@ function join(id, machineId) {
   }
   autosave();
 }
+
+// 宇宙船の行き先（星ごと）。need＝行けるようになる封印の段階、flag＝はじめて着いたら立つフラグ
+// 新しい星（章）はここに1つ足せば船長の行き先に並ぶ
+const SHUTTLE_ROUTES = [
+  { planet: 'earth', town: 'town3', at: [24.5, 26.5], label: '土の惑星（ウェイポイント）', lines: ['宇宙船は星の海を飛び立った。', '目指すは、なつかしい土の惑星――。'] },
+  {
+    planet: 'wind', town: 'town4', at: [24.5, 8.5], label: '風の惑星（ブリーズヒル）', need: 1, flag: 'ch2Started',
+    lines: ['宇宙船は土の惑星を飛び立った。', '星図が示すのは、風の吹く惑星――。', '雲の海に浮かぶ島々が、近づいてくる。'],
+    talk: (r, cap) => [
+      { name: r, text: '船長さん！ アルファのモニターに、この星図が出たんだ。' },
+      { name: cap, text: 'どれどれ……こいつは驚いた。「風の惑星」への航路じゃないか。空に島が浮かぶ、風の強い星だ。' },
+      { name: cap, text: 'いいだろう、乗せてってやる。マシンも貨物室に積んでいけるぞ。' },
+    ],
+    arrive: async (r, cap) => {
+      await ui.say([
+        { name: cap, text: '着いたぞ。ここが風の惑星、風車の丘の町ブリーズヒルだ。' },
+        { name: r, text: 'うわあ……空に島が浮いてる！ 地面の下は、ぜんぶ雲の海だ！' },
+        { name: G.members.shion.name, text: '……風が強い。アルファの星図は、この星の北東を指している。' },
+        { name: G.members.gina.name, text: 'まずはハンターオフィスで手配書だね。稼ぎながら進もうじゃないか！' },
+        { name: '', text: '（仲間のマシンはブリーズヒルのガレージに運ばれた。転送台で第1章の町にも戻れます）' },
+      ]);
+      ui.banner('第2章「風」の惑星', '空に浮かぶ島々と、止まらない風の星');
+    },
+  },
+  {
+    planet: 'water', town: 'town7', at: [23.5, 9.5], label: '水の惑星（シーゲート）', need: 2, flag: 'ch3Started',
+    lines: ['宇宙船は風の惑星を飛び立った。', '二つ目の封印が示した星図は、青い海の惑星――。', '海に浮かぶ人工島が、近づいてくる。'],
+    talk: (r, cap) => [
+      { name: r, text: '船長さん、また新しい星図だ！ 青い……海ばっかりの星みたい。' },
+      { name: cap, text: '「水の惑星」だな。九割が海で、人工島に町がある。船で行けるのは港町シーゲートまでだ。' },
+      { name: cap, text: 'よし、まかせとけ。風の星の次は、水の星だ！' },
+    ],
+    arrive: async (r, cap) => {
+      await ui.say([
+        { name: cap, text: '着いたぞ。ここが水の惑星、人工島の港町シーゲートだ。' },
+        { name: r, text: '海だ……！ どこまでも青い。島がぽつぽつ浮かんでる！' },
+        { name: G.members.gina.name, text: '潮の匂いがするね。泳ぐのは得意じゃないけど、マシンなら大丈夫だろ？' },
+        { name: G.members.shion.name, text: '……星図は北の海を指している。海の底に、何かがある。' },
+        { name: '', text: '（仲間のマシンはシーゲートのガレージに運ばれた。転送台でほかの星の町にも戻れます）' },
+      ]);
+      ui.banner('第3章「水」の惑星', '海に浮かぶ人工島と、海の底に沈んだ都市の星');
+    },
+  },
+];
 
 // NPCから始まるイベント（world.js から呼ばれる）
 export async function runEvent(name, world) {
@@ -281,53 +341,82 @@ export async function runEvent(name, world) {
     join('gina', 'goliath');
     await ui.say(`重厚タイプのマシン「ゴライアス」がガレージに入った。（${g}が乗ります）`);
   }
-  // 宇宙船の船長キール：ウェイポイント（土の惑星）とブリーズヒル（風の惑星）を行き来する
+  // 宇宙船の船長キール：惑星と惑星を結ぶ定期便。行き先は SHUTTLE_ROUTES（封印の段階 need で次の星が増える）
   if (name === 'shuttleCaptain') {
     const cap = '船長キール';
-    const here = currentTown();
-    if (here === 'town3') {
-      if (G.seal < 1) {
-        await ui.say([
-          { name: cap, text: 'おれの船は星と星を結ぶ定期便……だったんだが、今は飛ばしてない。' },
-          { name: cap, text: '行き先の星図がないんだ。宇宙生物のせいで航路がめちゃくちゃでな。' },
-        ]);
-        return;
-      }
-      if (!G.flags.ch2Talk) {
-        G.flags.ch2Talk = true;
-        await ui.say([
-          { name: r, text: '船長さん！ アルファのモニターに、この星図が出たんだ。' },
-          { name: cap, text: 'どれどれ……こいつは驚いた。「風の惑星」への航路じゃないか。空に島が浮かぶ、風の強い星だ。' },
-          { name: cap, text: 'いいだろう、乗せてってやる。マシンも貨物室に積んでいけるぞ。' },
-        ]);
-      }
-      const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「どこへ飛ぶ？」`, items: [{ label: '風の惑星へ飛ぶ', value: 'go' }, { label: 'やめる', value: null }] });
-      if (v !== 'go') return;
-      const first = !G.flags.ch2Started;
-      await flow.flyTo({
-        to: 'town4', at: [24.5, 8.5], from: 'earth', planet: 'wind',
-        lines: ['宇宙船は土の惑星を飛び立った。', '星図が示すのは、風の吹く惑星――。', '雲の海に浮かぶ島々が、近づいてくる。'],
-        after: first ? async () => {
-          G.flags.ch2Started = true;
-          const s2 = G.members.shion.name, g = G.members.gina.name;
-          await ui.say([
-            { name: cap, text: '着いたぞ。ここが風の惑星、風車の丘の町ブリーズヒルだ。' },
-            { name: r, text: 'うわあ……空に島が浮いてる！ 地面の下は、ぜんぶ雲の海だ！' },
-            { name: s2, text: '……風が強い。アルファの星図は、この星の北東を指している。' },
-            { name: g, text: 'まずはハンターオフィスで手配書だね。稼ぎながら進もうじゃないか！' },
-            { name: '', text: '（仲間のマシンはブリーズヒルのガレージに運ばれた。転送台で第1章の町にも戻れます）' },
-          ]);
-          ui.banner('第2章「風」の惑星', '空に浮かぶ島々と、止まらない風の星');
-        } : null,
-      });
+    const here = planetOfTown(currentTown())?.id;
+    if (G.seal < 1) {
+      await ui.say([
+        { name: cap, text: 'おれの船は星と星を結ぶ定期便……だったんだが、今は飛ばしてない。' },
+        { name: cap, text: '行き先の星図がないんだ。宇宙生物のせいで航路がめちゃくちゃでな。' },
+      ]);
       return;
     }
-    if (here === 'town4') {
-      const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「土の惑星へ戻るかい？ 転送台でも行けるがな」`, items: [{ label: '土の惑星へ飛ぶ（ウェイポイント）', value: 'go' }, { label: 'やめる', value: null }] });
-      if (v !== 'go') return;
-      await flow.flyTo({ to: 'town3', at: [24.5, 26.5], from: 'wind', planet: 'earth', lines: ['宇宙船は風の惑星を飛び立った。', '目指すは、なつかしい土の惑星――。'] });
+    // まだ行っていない次の星の星図を、アルファが映したとき
+    const next = SHUTTLE_ROUTES.find((rt) => rt.need && G.seal >= rt.need && !G.flags[rt.flag]);
+    if (next && !G.flags[`${next.flag}Talk`]) {
+      G.flags[`${next.flag}Talk`] = true;
+      await ui.say(next.talk(r, cap));
+    }
+    // 新しい星ほど上に並べる
+    const routes = SHUTTLE_ROUTES.filter((rt) => rt.planet !== here && G.seal >= (rt.need || 0)).sort((a, b) => (b.need || 0) - (a.need || 0));
+    const v = await ui.menu({ title: '宇宙船（定期便）', header: `${cap}「どこへ飛ぶ？」`, items: [...routes.map((rt) => ({ label: `${rt.label}へ飛ぶ`, value: rt.planet })), { label: 'やめる', value: null }] });
+    const rt = routes.find((x) => x.planet === v);
+    if (!rt) return;
+    const first = rt.flag && !G.flags[rt.flag];
+    await flow.flyTo({
+      to: rt.town, at: rt.at, from: here || 'earth', planet: rt.planet,
+      lines: rt.lines,
+      after: first ? async () => { G.flags[rt.flag] = true; await rt.arrive(r, cap); } : null,
+    });
+    return;
+  }
+  // 水上集落のドック工房：マシンに水中ユニットを付ける（シェルクラッシャーの甲羅が必要）
+  if (name === 'diveWorkshop') {
+    const lk = 'ルカ';
+    if (G.flags.diveUnit) { await ui.say({ name: lk, text: '水中ユニットの調子はどうだい？ 北の浅い海なら、海の底を歩いていけるよ。' }); return; }
+    if (!G.bounties.shellcrusher) {
+      await ui.say([
+        { name: lk, text: 'マシンを水の中で動かしたい？ 水中ユニットなら作れるよ。' },
+        { name: lk, text: 'ただ、水圧に耐える板がいるんだ。南の砂浜のでっかいカニ……シェルクラッシャーの甲羅がちょうどいいんだけどねえ。' },
+        { name: '', text: '（シェルクラッシャーを倒すと、水中ユニットを作ってもらえる）' },
+      ]);
       return;
     }
+    await ui.say([
+      { name: lk, text: 'その甲羅……シェルクラッシャーを倒したのかい!? すごいじゃないか！' },
+      { name: lk, text: 'よし、まかせな。あんたたちのマシン、ぜんぶ水の中で動けるようにしてやる。' },
+      { name: r, text: '手伝うよ！ メカニックの腕の見せどころだ！' },
+    ]);
+    await ui.fade(true, 0.4);
+    audio.sfx('repair');
+    await new Promise((res) => setTimeout(res, 800));
+    await ui.fade(false, 0.4);
+    G.flags.diveUnit = true;
+    audio.sfx('levelup');
+    ui.banner('水中ユニットを付けた！', 'マシンに乗っていれば、北の浅い海の底を歩ける');
+    await ui.say({ name: lk, text: 'できたよ。まんなかの島の北の浜から、海の中へ下りていけるはずさ。' });
+    autosave();
+    return;
+  }
+  // 海上ドームの整備長：砲台型マシン「バスティオン」を譲ってくれる
+  if (name === 'bastionGift') {
+    const mr = '整備長マリン';
+    if (!G.flags.bastionGot) {
+      await ui.say([
+        { name: mr, text: 'あんたたちが噂のメカニック一行ね。ドームの防衛用に作った機体があるの。' },
+        { name: mr, text: '砲台型の「バスティオン」。足は遅いけど、主砲をたくさん積めるわ。水没都市に行くなら使って。' },
+        { name: r, text: 'ありがとう！ 大事に整備するよ！' },
+      ]);
+      createMachine('bastion', { loc: { type: 'garage', town: 'town9' } });
+      G.flags.bastionGot = true;
+      audio.sfx('levelup');
+      ui.banner('バスティオンを手に入れた！', 'アクアドームのガレージに入った（砲台型）');
+      autosave();
+      return;
+    }
+    await ui.say({ name: mr, text: 'バスティオンの調子はどう？ 水没都市の奥は暗いから気をつけてね。' });
+    return;
   }
   // 空港の整備長ハヤテ：偵察機スパロウを譲ってくれる
   if (name === 'sparrowGift') {

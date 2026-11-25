@@ -313,6 +313,144 @@ export const ENEMIES = {
     drops: [['core', 1, 3], ['relic', 1, 1]], loot: [['stormcore', 1], ['rg2', 1]],
     desc: '嵐の塔の中枢「風の制御コア」を守る番人。1ターンに2回動く',
   },
+
+  // ================================================================ 第3章「水」の惑星
+  // ---------------- 蒼海諸島（フィールド, 6種類＋北の海の強い版・海の底の敵） ----------------
+  reefcrab: {
+    name: 'リーフクラブ', model: 'en_crab', type: 'bio',
+    hp: 180, atk: 36, def: 18, hit: 86, eva: 4, spd: 9, exp: 90, gear: 40, fx: 'claw',
+    drops: [['bio', 0.6, 1], ['alloy', 0.08, 1]],
+    desc: '機械の部品を甲羅にしたカニの宇宙生物。かたい',
+  },
+  jellydrone: {
+    name: 'クラゲドローン', model: 'en_drone', type: 'machine', flying: true, colors: { primary: 0xe8d8f0, secondary: 0x8a5aca, organic: 0xff8ad8, glow: 0xff8ad8 },
+    hp: 150, atk: 34, def: 14, hit: 88, eva: 16, spd: 15, exp: 74, gear: 130, fx: 'laser',
+    drops: [['scrap', 0.6, 1], ['cell', 0.15, 1]],
+    desc: 'クラゲのような触手を垂らした海の観測ドローン',
+  },
+  seaworm: {
+    name: 'シーワーム', model: 'en_crawler', type: 'bio', colors: { primary: 0x2a8ab8, organic: 0x6ad8e8, organicGlow: 0x1a4a6a },
+    hp: 200, atk: 38, def: 14, hit: 86, eva: 6, spd: 9, exp: 96, gear: 26, fx: 'bite', scale: 1.25,
+    drops: [['bio', 0.6, 1]],
+    desc: '砂浜の下から飛び出す、青く光る大きな虫',
+  },
+  diverpirate: {
+    name: '海賊の潜水兵', model: 'npc_pirate', type: 'pirate', colors: { primary: 0x1a4a6a, accent: 0xe8c040 },
+    hp: 210, atk: 40, def: 17, hit: 87, eva: 10, spd: 11, exp: 92, gear: 200, fx: 'shot',
+    drops: [['scrap', 0.4, 1]], loot: [['harpoongun', 0.03], ['kitL', 0.15]],
+    desc: '潜水服を着た宇宙海賊。海から上がってくる',
+  },
+  buoybot: {
+    name: 'ブイボット', model: 'en_bot', type: 'machine', colors: { primary: 0xe8c040, secondary: 0xd84a2a, organic: 0x4ab0e0 },
+    hp: 240, atk: 41, def: 21, hit: 82, eva: 3, spd: 7, exp: 104, gear: 220, fx: 'claw', scale: 1.15,
+    drops: [['scrap', 0.8, 2], ['alloy', 0.2, 1]], loot: [['arm_hydro', 0.02]],
+    desc: '海の浮標を整備していたロボット。宇宙生物に取りつかれた',
+  },
+  flyingfish: {
+    name: 'スカイフィッシュ', model: 'en_bird', type: 'bio', flying: true, colors: { primary: 0x6ab8e8, secondary: 0x2a6a9a, organic: 0xe8f4ff, glow: 0xffe060 },
+    hp: 150, atk: 37, def: 12, hit: 88, eva: 20, spd: 18, exp: 86, gear: 30, fx: 'bite', scale: 0.85,
+    drops: [['bio', 0.6, 1]],
+    desc: 'ひれを翼にして海の上を飛ぶ魚の宇宙生物',
+  },
+  armorcrab: {
+    name: 'アーマークラブ', model: 'en_crab', type: 'bio', colors: { primary: 0x5a6a7a, secondary: 0x2a3440, organic: 0xff6a4a, glow: 0xff6a4a },
+    hp: 300, atk: 46, def: 26, hit: 86, eva: 3, spd: 9, exp: 140, gear: 60, fx: 'claw', scale: 1.2,
+    drops: [['bio', 0.6, 1], ['alloy', 0.2, 1]],
+    desc: '鉄の板を何枚も背負った、北の海のカニ',
+  },
+  stormeel: {
+    name: 'ストームイール', model: 'en_eel', type: 'bio', flying: true,
+    hp: 260, atk: 46, def: 16, hit: 88, eva: 14, spd: 16, exp: 136, gear: 44, fx: 'bite',
+    drops: [['bio', 0.7, 1], ['cell', 0.1, 1]],
+    desc: '電気をまとって空中を泳ぐうなぎの宇宙生物',
+  },
+  // ---------------- 潮騒の地下水路（マシンで進む, 3種類） ----------------
+  cavecrab: {
+    name: 'ケイブクラブ', model: 'en_crab', type: 'bio', colors: { primary: 0x6a6a7a, organic: 0x4ae0d0, glow: 0x4ae0d0 }, scale: 0.9,
+    hp: 230, atk: 42, def: 22, hit: 86, eva: 4, spd: 8, exp: 110, gear: 40, fx: 'claw',
+    drops: [['bio', 0.6, 1]],
+    desc: '暗い水路にすむ、目の光るカニ',
+  },
+  glowslug: {
+    name: 'グローナメクジ', model: 'en_blob', type: 'bio', colors: { organic: 0x6ae8a0, organicGlow: 0x1a6a4a },
+    hp: 260, atk: 40, def: 14, hit: 86, eva: 3, spd: 6, exp: 118, gear: 36, fx: 'bite', scale: 0.85,
+    drops: [['bio', 0.7, 2]],
+    desc: '水路の壁をはう、緑に光る軟体生物',
+  },
+  pipebot: {
+    name: 'パイプボット', model: 'en_bot', type: 'machine', colors: { primary: 0x5a7a8a, secondary: 0x2a3a44, organic: 0x4ae0d0 },
+    hp: 300, atk: 44, def: 24, hit: 84, eva: 2, spd: 7, exp: 124, gear: 260, fx: 'claw', scale: 1.2,
+    drops: [['scrap', 0.8, 2], ['cell', 0.2, 1]],
+    desc: '水路を掃除していた作業ロボット',
+  },
+  // ---------------- 海上プラント（生身専用, 3種類＋小ボス） ----------------
+  plantdiver: {
+    name: 'プラントの海賊', model: 'npc_pirate', type: 'pirate', colors: { primary: 0x3a3a4a, accent: 0xe8c040 },
+    hp: 230, atk: 32, def: 13, hit: 87, eva: 10, spd: 12, exp: 110, gear: 180, fx: 'shot',
+    drops: [['scrap', 0.4, 1]], loot: [['kitL', 0.2]],
+    desc: 'プラントを占拠した宇宙海賊',
+  },
+  oilslime: {
+    name: 'オイルスライム', model: 'en_blob', type: 'bio', colors: { organic: 0x2a2a34, organicGlow: 0x8a4aca },
+    hp: 260, atk: 30, def: 12, hit: 86, eva: 4, spd: 6, exp: 120, gear: 30, fx: 'bite', scale: 0.85,
+    drops: [['bio', 0.6, 1], ['cell', 0.1, 1]],
+    desc: 'プラントの油を吸って黒くなった不定形の生物',
+  },
+  rigturret: {
+    name: 'プラント砲台', model: 'en_turret', type: 'machine', colors: { primary: 0xa85a2a, glow: 0xff8a3a },
+    hp: 280, atk: 34, def: 18, hit: 90, eva: 0, spd: 8, exp: 114, gear: 240, fx: 'shot',
+    drops: [['scrap', 0.7, 2]],
+    desc: 'プラントの防衛砲台。宇宙生物が根を張っている',
+  },
+  abysssquid: {
+    name: 'アビススクイッド', model: 'en_spider', type: 'bio', boss: true, flag: 'plantBoss', colors: { primary: 0xc84a8a, organic: 0xff8ad8, glow: 0x6ae8ff },
+    hp: 2600, atk: 38, def: 16, hit: 90, eva: 8, spd: 13, exp: 2600, gear: 2200, fx: 'bite', scale: 1.6,
+    skills: [{ name: 'すみの嵐', mul: 0.85, target: 'all', chance: 0.3, fx: 'beam' }, { name: '八本足のしめつけ', mul: 1.7, target: 'one', chance: 0.25, fx: 'press' }],
+    drops: [['core', 1, 2], ['bio', 1, 4]], loot: [['inkcloak', 1], ['megaheal', 1]],
+    desc: 'プラントの貯水槽に巣くう巨大なイカの宇宙生物（生身で戦う小ボス）',
+  },
+  // ---------------- 水没都市（最後のダンジョン, 3種類＋ストームイール） ----------------
+  abyssknight: {
+    name: 'アビスナイト', model: 'en_bot', type: 'machine', colors: { primary: 0x2a4a5a, secondary: 0x14242c, organic: 0x4ae0d0, glow: 0x4ae0d0 },
+    hp: 380, atk: 52, def: 30, hit: 86, eva: 3, spd: 8, exp: 170, gear: 330, fx: 'press', scale: 1.35,
+    drops: [['scrap', 0.9, 2], ['alloy', 0.3, 1]],
+    desc: '水没した都市を守っていた警備ロボット',
+  },
+  lanterneel: {
+    name: 'ランタンイール', model: 'en_eel', type: 'bio', flying: true, colors: { primary: 0x14242c, secondary: 0x0a1418, organic: 0xffe060, glow: 0xffe060 },
+    hp: 320, atk: 50, def: 18, hit: 88, eva: 14, spd: 16, exp: 160, gear: 50, fx: 'bite',
+    drops: [['bio', 0.7, 1], ['relic', 0.04, 1]],
+    desc: '暗い海の底で光をともして獲物を誘う',
+  },
+  deepslime: {
+    name: 'ディープスライム', model: 'en_blob', type: 'bio', colors: { organic: 0x2a6aca, organicGlow: 0x0a1a4a },
+    hp: 340, atk: 48, def: 16, hit: 87, eva: 6, spd: 8, exp: 164, gear: 44, fx: 'bite',
+    drops: [['bio', 0.7, 2]],
+    desc: '深い海の水圧に耐える、青黒い不定形の生物',
+  },
+
+  // ---------------- 第3章の賞金首 ----------------
+  shellcrusher: {
+    name: 'シェルクラッシャー', model: 'en_crab', type: 'bio', boss: true, bounty: 'shellcrusher', colors: { primary: 0xd8a040, secondary: 0x6a4a2a, organic: 0x8a4ac8, glow: 0xff4a4a },
+    hp: 3400, atk: 42, def: 26, hit: 88, eva: 2, spd: 10, exp: 2400, gear: 1800, fx: 'claw', scale: 2.0,
+    skills: [{ name: 'ハサミのたたきつけ', mul: 1.8, target: 'one', chance: 0.3, fx: 'press' }, { name: '甲羅の回転', mul: 0.9, target: 'all', chance: 0.2, fx: 'drill' }],
+    drops: [['core', 1, 2], ['alloy', 1, 3]], loot: [['shellbreaker', 1]],
+    desc: '沈んだ採掘機の甲羅を背負った巨大ガニ。南の砂浜に出る',
+  },
+  vortexeel: {
+    name: 'ヴォルテックスイール', model: 'en_eel', type: 'bio', boss: true, bounty: 'vortexeel', flying: true, colors: { primary: 0x3a2a6a, secondary: 0x1a1432, organic: 0x6ae8ff, glow: 0xffe060 },
+    hp: 5200, atk: 48, def: 20, hit: 90, eva: 14, spd: 17, exp: 3600, gear: 2600, fx: 'bite', scale: 2.0,
+    skills: [{ name: '渦潮', mul: 1.0, target: 'all', chance: 0.3, fx: 'beam' }, { name: '放電のかみつき', mul: 1.8, target: 'one', chance: 0.25, fx: 'laser' }],
+    drops: [['core', 1, 2], ['cell', 1, 3]], loot: [['eelwhip', 1]],
+    desc: '海の底の渦の中にひそむ巨大なうなぎ。水中ユニットがないと近づけない',
+  },
+  abyssleviathan: {
+    name: 'アビスリヴァイア', model: 'en_eel', type: 'bio', boss: true, bounty: 'abyssleviathan', final: true, flying: true, colors: { primary: 0x0e2a3a, secondary: 0x06141c, organic: 0x9a4aff, glow: 0x6ae8ff },
+    hp: 8800, atk: 56, def: 30, hit: 92, eva: 6, spd: 12, exp: 7000, gear: 4000, fx: 'bite', acts: 2, scale: 3.0,
+    skills: [{ name: '深淵の大渦', mul: 1.0, target: 'all', chance: 0.25, fx: 'beam' }, { name: '海を裂くかみつき', mul: 2.0, target: 'one', chance: 0.2, fx: 'drill' }, { name: '水圧の波', mul: 0.75, target: 'all', chance: 0.15, fx: 'press' }],
+    drops: [['core', 1, 3], ['relic', 1, 2]], loot: [['abysscore', 1], ['aquacannon', 1]],
+    desc: '水没した都市の最深部にすむ、海の寄生体の親玉。1ターンに2回動く',
+  },
 };
 
 // 賞金首（ハンターオフィスの手配書）
@@ -324,6 +462,10 @@ export const BOUNTIES = {
   windraptor: { enemy: 'windraptor', reward: 9000, where: '疾風高原 風車の丘の西の空', rank: 'B', chapter: 2, note: '巨大な猛禽の宇宙生物。火がよく効く。全体攻撃に注意' },
   aerofort: { enemy: 'aerofort', reward: 14000, where: '疾風高原 北のがけの上空', rank: 'A', chapter: 2, note: '空賊の砲艦の成れの果て。電気がよく効く。装甲が厚いので主砲で' },
   coreguardian: { enemy: 'coreguardian', reward: 24000, where: '嵐の塔 最上階', rank: 'S', chapter: 2, note: '風の制御コアの番人。1ターンに2回動く。回復アイテムを多めに' },
+  // 第3章「水」の惑星
+  shellcrusher: { enemy: 'shellcrusher', reward: 16000, where: '蒼海諸島 南の島の砂浜', rank: 'A', chapter: 3, note: '巨大なカニ。防御がとても高いので、パイルバンカーや主砲で。火がよく効く' },
+  vortexeel: { enemy: 'vortexeel', reward: 24000, where: '蒼海諸島 北西の海の底（水中ユニットが必要）', rank: 'S', chapter: 3, note: '海の底の渦にひそむ大うなぎ。素早い。ミサイルなら当たりやすい' },
+  abyssleviathan: { enemy: 'abyssleviathan', reward: 40000, where: '水没都市 最深部', rank: 'SS', chapter: 3, note: '海の寄生体の親玉。1ターンに2回動く。回復アイテムを多めに' },
 };
 
 export const ELEMENT_RATE = 1.6; // 弱点属性のダメージ倍率

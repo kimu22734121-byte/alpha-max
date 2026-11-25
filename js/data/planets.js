@@ -4,6 +4,7 @@
 export const PLANETS = [
   { id: 'earth', chapter: 1, name: '土の惑星', main: 'town1', towns: ['town1', 'town2', 'town3'] },
   { id: 'wind', chapter: 2, name: '風の惑星', main: 'town4', towns: ['town4', 'town5', 'town6'] },
+  { id: 'water', chapter: 3, name: '水の惑星', main: 'town7', towns: ['town7', 'town8', 'town9'] },
 ];
 export const planetOfTown = (town) => PLANETS.find((p) => p.towns.includes(town)) || null;
 export const ALL_TOWNS = PLANETS.flatMap((p) => p.towns);

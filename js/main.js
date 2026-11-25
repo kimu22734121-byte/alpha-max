@@ -145,8 +145,61 @@ flow.onBossDefeated = async (def) => {
     ui.banner('嵐の塔 起動キーを手に入れた', '嵐の塔のゲートが開けられるようになった');
   } else if (def.bounty === 'coreguardian') {
     await endingChapter2();
+  } else if (def.bounty === 'shellcrusher') {
+    await ui.say([
+      { name: r, text: 'かったい甲羅だった……！ でも、この甲羅の板、すごく丈夫だぞ。' },
+      { name: G.members.gina.name, text: 'タイドウォークのドック工房に持っていけば、何か作ってくれるんじゃないかい？' },
+      { name: '', text: '（シェルクラッシャーの甲羅を手に入れた。タイドウォークのドック工房で水中ユニットを作ってもらえる）' },
+    ]);
+  } else if (def.bounty === 'vortexeel') {
+    await ui.say([
+      { name: r, text: '渦が消えていく……！ 大うなぎもやっつけたぞ！' },
+      { name: '', text: '渦の底に、古い石板が沈んでいた。「白き翼は光を、黒き刃は闇を、赤き拳は大地を守る」と刻まれている。' },
+    ]);
+  } else if (def.flag === 'plantBoss') {
+    G.flags.abyssKey = true;
+    audio.sfx('levelup');
+    await ui.say([
+      { name: '', text: 'アビススクイッドが崩れ落ちると、貯水槽の底で何かが光った。' },
+      { name: '', text: 'プラントの所長の認識票と、「水没都市 隔壁の鍵」を手に入れた！' },
+      { name: '', text: '所長の手帳には、走り書きが残っていた。「沈んだ都市の奥で、マザーコアの“声”を聞いた」' },
+      { name: G.members.shion.name, text: '……北東の水没都市。そこに親玉がいる。' },
+    ]);
+    ui.banner('水没都市 隔壁の鍵を手に入れた', '北東の水没都市の入口が開けられるようになった');
+  } else if (def.bounty === 'abyssleviathan') {
+    await endingChapter3();
   }
 };
+
+async function endingChapter3() {
+  const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
+  G.seal = Math.max(G.seal, 3);
+  audio.sfx('seal');
+  await ui.say([
+    { name: '', text: 'アビスリヴァイアが崩れ落ちると、水没都市の奥の大きな扉が、静かに開いた。' },
+    { name: '', text: '扉の奥には、海の水を青く光らせる古い装置――「海の記憶装置」が眠っていた。' },
+    { name: '', text: 'アルファが装置に近づくと、胸のコアが共鳴するように輝きはじめた。' },
+    { name: '', text: '三つ目の封印がはじけ飛ぶ。白金の装甲に星の光が走り、翼の先から青い光の粒子がこぼれ落ちた。' },
+  ]);
+  ui.banner('アルファ 第三封印 解放', '星光の外装・ステラ・ブレイカーがさらに強くなった');
+  await wait(2.6);
+  await ui.say([
+    { name: '', text: '記憶装置が、遠い昔の映像を映し出した。白・黒・赤の三機が、巨大な影と戦っている。' },
+    { name: '', text: '「マザーコアは星から星へ、マシンに種をまいて広がる。三機の力を一つにしなければ、止められない」' },
+    { name: r, text: '三機の力を、一つに……。アルファとオメガとガイアは、いっしょに戦うために作られたんだ。' },
+    { name: s, text: '……オメガがレンの家に隠されていたのも、そのため、かもしれない。' },
+    { name: g, text: '謎がどんどん大きくなるね。でも、あたしたちならやれるさ！' },
+    { name: '', text: 'アルファのモニターに、次の星図が浮かび上がった。赤く燃える、溶岩の惑星――。' },
+  ]);
+  audio.playSong('title', { restart: true });
+  await ui.panel(`<div class="ending">
+    <div class="ending-big">第3章「水」の惑星　クリア！</div>
+    <p>アルファは三つ目の封印を取り戻し、星の光をまとった。</p>
+    <p>三機の兄弟機の使命と、マザーコアの謎を追い、旅は次の惑星へ――</p>
+    <p class="note">To be continued…　（このまま第3章を遊び続けられます。転送台や宇宙船でほかの星にも行けます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+  audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
+  autosave();
+}
 
 async function endingChapter2() {
   const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;

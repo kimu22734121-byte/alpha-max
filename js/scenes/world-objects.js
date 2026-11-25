@@ -20,7 +20,7 @@ const BUILDING_STYLE = {
   market: { style: 'twostory', colors: { primary: 0xd8c890, secondary: 0x8a3a2a, accent: 0xe8c040 } },
 };
 // 町ごとに少し色合いを変える
-const TOWN_TINT = { town1: 1.0, town2: 0.85, town3: 0.95, town4: 1.15, town5: 1.1, town6: 1.0 };
+const TOWN_TINT = { town1: 1.0, town2: 0.85, town3: 0.95, town4: 1.15, town5: 1.1, town6: 1.0, town7: 1.15, town8: 1.0, town9: 1.1 };
 
 // ---------------- 建物の上に浮かぶアイコン ----------------
 const iconCache = {};
@@ -373,6 +373,90 @@ const STRUCT = {
     for (let i = 0; i < 3; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.8 + i * 0.25, 0.03, 4, 24), glow); r.rotation.x = Math.PI / 2 + i * 0.4; rg.add(r); }
     return g;
   },
+  // ---------------- 第3章「水」の惑星 ----------------
+  // 町7：港町（桟橋・倉庫・回る灯台）
+  harbor() {
+    const g = new THREE.Group();
+    const wall = M(0xe8e4d8), roof = M(0x2a6a9a), win = GLOW(0xffe0a0, 1.3), wood = M(0x7a5a3a), lamp = GLOW(0xffd070, 2);
+    house(g, 1.0, 0.8, 0.8, -1.4, -1.4, wall, roof, win, 'gable');
+    house(g, 1.4, 1.0, 0.9, 0.6, -1.5, M(0xc8b090), M(0x8a3a2a), win);
+    house(g, 0.8, 0.7, 0.7, -0.4, -2.7, wall, roof, win, 'gable');
+    for (const [x, z, w] of [[-2.4, -0.4, 1.6], [2.2, -0.6, 1.8]]) { box(g, w, 0.08, 0.5, wood, x, 0.05, z); for (let i = 0; i < 3; i++) cyl(g, 0.05, 0.05, 0.5, 5, wood, x - w / 2 + 0.2 + i * (w - 0.4) / 2, -0.15, z + 0.2); }
+    g.add(lighthouseObj(1.0, 2.0, -2.8));
+    box(g, 0.6, 0.3, 0.4, M(0xd84a3a), -2.6, 0.2, -0.4);
+    gate(g, wood, lamp, 1.5, 1.3);
+    return g;
+  },
+  // 町8：水上集落（高床の家と桟橋）
+  stilts() {
+    const g = new THREE.Group();
+    const wood = M(0x8a6a44), wood2 = M(0x6a4a2a), roof = M(0x4a8a5a), win = GLOW(0xffd88a, 1.3), lamp = GLOW(0xffb060, 2);
+    for (const [x, z, k] of [[-1.5, -1.5, 1], [0.4, -2.4, 1.2], [1.6, -1.2, 0.9], [-0.6, -3.4, 0.8]]) {
+      for (const [dx, dz] of [[-0.35, -0.3], [0.35, -0.3], [-0.35, 0.3], [0.35, 0.3]]) cyl(g, 0.05, 0.05, 1.0, 5, wood2, x + dx * k, 0.1, z + dz * k);
+      box(g, 1.0 * k, 0.08, 0.9 * k, wood, x, 0.6, z);
+      const hb = new THREE.Group(); hb.position.y = 0.6; g.add(hb);
+      house(hb, 0.8 * k, 0.6 * k, 0.7 * k, x, z, M(0xd8c8a0), roof, win, 'gable');
+    }
+    box(g, 0.4, 0.06, 3.0, wood, 0, 0.3, -1.0);
+    gate(g, wood2, lamp, 1.4, 1.2);
+    return g;
+  },
+  // 町9：海上ドーム都市（青いガラスのドームとリング）
+  aquadome() {
+    const g = new THREE.Group();
+    const metal = M(0xb8c8d0, { metalness: 0.6, roughness: 0.3 }), glow = GLOW(0x4ae0ff, 2), win = GLOW(0xbfeaff, 1.5);
+    cyl(g, 3.0, 3.2, 0.5, 18, metal, 0, 0.1, -2.0);
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(2.8, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x8ad8ff, transparent: true, opacity: 0.3, metalness: 0.6, roughness: 0.1, depthWrite: false }));
+    dome.position.set(0, 0.35, -2.0); g.add(dome);
+    for (let i = 0; i < 4; i++) { const r = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.04, 4, 28, Math.PI), metal); r.rotation.y = (i / 4) * Math.PI; r.position.set(0, 0.35, -2.0); g.add(r); }
+    house(g, 0.8, 1.6, 0.8, -0.8, -2.2, metal, M(0x2a4a5a), win);
+    house(g, 0.7, 1.1, 0.7, 0.8, -1.6, metal, M(0x2a4a5a), win);
+    cyl(g, 0.12, 0.18, 2.8, 8, metal, 0.2, 1.7, -2.8);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(3.1, 0.06, 6, 32), glow); ring.rotation.x = Math.PI / 2; ring.position.set(0, 0.38, -2.0); g.add(ring); ring.userData.blink = true;
+    gate(g, metal, glow, 1.5, 1.3);
+    return g;
+  },
+  // 海上プラント（鉄の脚で立つ採掘リグ。炎の煙突）
+  rig() {
+    const g = new THREE.Group();
+    const steel = M(0x6a7480, { metalness: 0.6 }), rust = M(0xa85a2a, { metalness: 0.4 }), hazard = M(0xe8c020), fire = GLOW(0xff8a3a, 2.4);
+    for (const [x, z] of [[-1.6, -1.0], [1.6, -1.0], [-1.6, -3.0], [1.6, -3.0]]) cyl(g, 0.15, 0.2, 2.2, 6, steel, x, 0.2, z);
+    box(g, 4.0, 0.25, 2.8, rust, 0, 1.3, -2.0);
+    box(g, 1.8, 1.0, 1.2, steel, -0.8, 1.9, -2.4);
+    for (let i = 0; i < 5; i++) box(g, 0.3, 0.1, 0.05, i % 2 ? hazard : M(0x1a1a1a), -1.4 + i * 0.3, 1.5, -0.6);
+    // 掘削やぐら
+    for (const s2 of [-1, 1]) box(g, 0.08, 2.6, 0.08, steel, 1.0 + s2 * 0.3, 2.7, -2.0, 0, s2 * 0.1);
+    box(g, 0.7, 0.08, 0.08, steel, 1.0, 3.6, -2.0);
+    cyl(g, 0.1, 0.12, 1.6, 6, steel, -1.6, 2.2, -1.2, 0, 0.3);
+    const f = cyl(g, 0.15, 0.02, 0.4, 6, fire, -1.85, 3.1, -1.2); f.userData.blink = true;
+    box(g, 0.6, 0.06, 1.6, steel, 0, 0.7, -0.2, 0, 0, -0.5);
+    g.userData.smoke = [[-1.9, 3.3, -1.2]];
+    return g;
+  },
+  // 水没した都市の入口（傾いて海から突き出たビル）
+  sunken() {
+    const g = new THREE.Group();
+    const conc = M(0x7a8a90), conc2 = M(0x5a6a72), algae = M(0x3a7a5a), glow = GLOW(0x4ae0d0, 1.6);
+    box(g, 1.3, 3.4, 1.2, conc, -1.3, 1.0, -2.0, 0, 0.2);
+    box(g, 1.0, 2.4, 1.0, conc2, 1.2, 0.6, -2.6, 0.4, -0.25);
+    box(g, 0.9, 1.6, 0.9, conc, 0.1, 0.3, -3.3, 0.2, 0.1);
+    for (let i = 0; i < 4; i++) box(g, 0.18, 0.2, 0.03, glow, -1.6 + (i % 2) * 0.5, 1.4 + Math.floor(i / 2) * 0.6, -1.39, 0, 0.2).userData.blink = i === 0;
+    box(g, 1.4, 0.08, 1.3, algae, -1.3, 0.05, -2.0);
+    box(g, 1.4, 1.1, 0.12, M(0x0a1418), 0, 0.3, -0.8);
+    gate(g, conc2, glow, 1.6, 1.2);
+    return g;
+  },
+  // 灯台（フィールドの飾り）
+  lighthouse() { const g = new THREE.Group(); g.add(lighthouseObj(1.3, 0, 0)); return g; },
+  // ブイ（海に浮かぶ飾り。ゆれる）
+  buoy() {
+    const g = new THREE.Group();
+    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.6, 8), M(0xe84a2a)); b.position.y = 0.2; g.add(b);
+    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.6, 4), M(0x3a3a3a)); t.position.y = 0.8; g.add(t);
+    const l = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 4), GLOW(0xffe060, 2)); l.position.y = 1.1; l.userData.blink = true; g.add(l);
+    g.userData.bob = 0.12;
+    return g;
+  },
   // 1本だけの風車（フィールドの飾り）
   mill() { const g = new THREE.Group(); g.add(windmillObj(1.3, 0, 0)); return g; },
   // 嵐の塔：らせんの塔のまわりを雲と稲妻が回る
@@ -425,6 +509,18 @@ const STRUCT = {
     return g;
   },
 };
+// 灯台（白と赤のしま模様、上で光が回る）
+function lighthouseObj(k, x, z) {
+  const g = new THREE.Group();
+  for (let i = 0; i < 4; i++) { const c = new THREE.Mesh(new THREE.CylinderGeometry((0.32 - i * 0.04) * k, (0.36 - i * 0.04) * k, 0.7 * k, 10), M(i % 2 ? 0xd84a3a : 0xf4f0e6)); c.position.y = (0.35 + i * 0.7) * k; g.add(c); }
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * k, 0.26 * k, 0.4 * k, 10), new THREE.MeshStandardMaterial({ color: 0xfff0a0, emissive: 0xffe060, emissiveIntensity: 1.8 })); top.position.y = 3.0 * k; g.add(top);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32 * k, 0.4 * k, 10), M(0x3a3a3a)); cap.position.y = 3.4 * k; g.add(cap);
+  const beam = new THREE.Group(); beam.position.y = 3.0 * k; beam.userData.spinY = true; g.add(beam);
+  const ray = new THREE.Mesh(new THREE.ConeGeometry(0.35 * k, 3.0 * k, 8, 1, true), new THREE.MeshBasicMaterial({ color: 0xfff4b0, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
+  ray.rotation.z = Math.PI / 2; ray.position.x = 1.5 * k; beam.add(ray);
+  g.position.set(x, 0, z);
+  return g;
+}
 // 風車（塔と4枚の羽。羽は spin で回る）
 function windmillObj(k, x, z) {
   const g = new THREE.Group();

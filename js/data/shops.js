@@ -113,7 +113,7 @@ export const SHOPS = {
     weapon: {
       keeper: '武器屋のカザミ',
       greet: '島の上は狭いけど、品ぞろえは負けないよ。',
-      machine: ['rg2', 'lm2', 'cm2', 'emp2', 'flm2', 'pzblade', 'haxe'],
+      machine: ['rg2', 'lm2', 'cm2', 'galemissile', 'emp2', 'flm2', 'windblade', 'pzblade', 'haxe'],
       foot: ['shockrod', 'gustlauncher', 'windcutter', 'skyjacket', 'windboots'],
     },
     parts: {
@@ -140,7 +140,7 @@ export const SHOPS = {
     weapon: {
       keeper: '武器商人ガスト',
       greet: '飛行船で運ばれてきた最新型だ。嵐の塔に挑むなら、これくらいは積んでいきな。',
-      machine: ['rg2', 'sm1', 'lm2', 'emp2', 'pzblade', 'v30', 'gigahammer'],
+      machine: ['rg2', 'sm1', 'galemissile', 'lm2', 'emp2', 'windblade', 'pzblade', 'v30', 'gigahammer'],
       foot: ['railpistol', 'shockrod', 'aerorifle', 'gustlauncher', 'aerohelm', 'skyjacket', 'glidegloves', 'windboots'],
     },
     parts: {
@@ -164,5 +164,86 @@ export const SHOPS = {
     stall_wind3: { keeper: 'ジャンクパーツ屋', greet: '飛行船の解体で出た部品だよ。', parts: ['arm_gale', 'legs_biped2', 'head_sharp2'] },
     inn: { pricePerMember: 80, keeper: '空港ホテルの支配人' },
     garage: { keeper: '整備長ハヤテ', repairPerArmor: 1, repairPerEn: 1, towFee: 500 },
+  },
+
+  // ================================================================ 第3章「水」の惑星
+  // 町7：港町シーゲート（宇宙船が着く人工島の港）
+  town7: {
+    weapon: {
+      keeper: '武器屋のマリナ',
+      greet: '海の星へようこそ！ 水の中でも撃てる武器がそろってるよ。',
+      machine: ['rg2', 'sm1', 'galemissile', 'tidalgat', 'torpedo', 'emp2', 'pzblade'],
+      foot: ['harpoongun', 'coralblade', 'plasmarifle', 'divemask', 'aquagloves'],
+    },
+    parts: {
+      keeper: 'パーツ屋のシオリ',
+      greet: '海で使うなら、さびに強いパーツを選んでね。',
+      parts: ['head_sonar', 'arm_hydro', 'legs_marine', 'legs_quad2', 'eng_hydro', 'body_balance2'],
+    },
+    item: {
+      keeper: '道具屋のおやじウミ',
+      greet: '潮風で体が冷える。救急キットは多めにな。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      foot: ['pearlcharm'],
+    },
+    inn: { pricePerMember: 100, keeper: '灯台守の宿のナミ' },
+    garage: { keeper: 'ドック長のスクリュー', repairPerArmor: 1, repairPerEn: 1, towFee: 600 },
+  },
+  // 町8：水上集落タイドウォーク（パーツ屋＋ドック工房の2軒。水中ユニットの改造もここ）
+  town8: {
+    weapon: {
+      keeper: '武器屋のカイリ',
+      greet: '集落の漁師も使ってる、頑丈な武器さ。',
+      machine: ['aquacannon', 'torpedo', 'tidalgat', 'cryoray', 'hydrocutter', 'pc2', 'cm3'],
+      foot: ['bubblebomb', 'coralblade', 'stormgat', 'wetsuit', 'finboots'],
+    },
+    parts: {
+      keeper: 'パーツ屋のサザ',
+      greet: '腕と頭なら、うちにまかせときな。',
+      parts: ['head_sonar', 'head_heavy3', 'arm_hydro', 'arm_power3', 'legs_marine', 'legs_quad2'],
+    },
+    frame: {
+      keeper: 'ドック工房の親方テツ',
+      greet: '海の上で組むフレームは、水圧にも負けねえ。',
+      parts: ['body_balance3', 'body_heavy3', 'body_sharp3', 'eng_hydro', 'eng_heavy2', 'legs_tread2'],
+    },
+    item: {
+      keeper: '道具屋のアサリ',
+      greet: '海上プラントに行くなら、生身の回復が大事よ。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+      foot: ['pearlcharm', 'tidering'],
+    },
+    inn: { pricePerMember: 110, keeper: '水上の宿のシズク' },
+    garage: { keeper: '整備士のアンカ', repairPerArmor: 1, repairPerEn: 1, towFee: 650 },
+  },
+  // 町9：海上ドーム都市アクアドーム（いちばん広い。交易所と屋台）
+  town9: {
+    weapon: {
+      keeper: '武器商人ネプト',
+      greet: '星の外から届いた最新型だ。水没都市に挑むならこれくらいはな。',
+      machine: ['aquacannon', 'torpedo', 'tidalgat', 'cryoray', 'hydrocutter', 'pc2', 'v30', 'tsl2', 'cm3', 'gigahammer'],
+      foot: ['harpoongun', 'coralblade', 'bubblebomb', 'plasmarifle', 'stormgat', 'divemask', 'wetsuit', 'aquagloves', 'finboots'],
+    },
+    parts: {
+      keeper: 'パーツ屋のコーラ',
+      greet: 'ドームの工場で作った新品よ。なんでもそろうわ。',
+      parts: ['head_sonar', 'head_heavy3', 'body_balance3', 'body_heavy3', 'body_sharp3', 'arm_hydro', 'arm_power3', 'legs_marine', 'legs_quad2', 'eng_hydro'],
+    },
+    item: {
+      keeper: '補給係のミオ',
+      greet: 'ドームの補給品です。旅の前にまとめてどうぞ。',
+      items: ['kitM', 'kitL', 'repM', 'repL', 'batM', 'batL', 'maint', 'revive', 'warpunit'],
+    },
+    market: {
+      keeper: '交易所の主人タイド',
+      greet: '海の底の遺跡から上がった品もあるよ。ボス戦の準備ならここで。',
+      items: ['kitL', 'repL', 'batL', 'maint', 'revive', 'megaheal', 'warpunit'],
+      foot: ['pearlcharm', 'tidering', 'nanohelm', 'nanogloves'],
+    },
+    stall_sea1: { keeper: '貝がら売りの子', greet: 'いらっしゃい！ 貝がらの薬はよく効くよ。', items: ['kitM', 'kitL', 'repM', 'warpunit'] },
+    stall_sea2: { keeper: '元海賊の武器商', greet: '……海賊はやめたさ。品物は本物だ。', machine: ['tidalgat', 'torpedo', 'galemissile', 'windblade'], foot: ['harpoongun', 'coralblade'] },
+    stall_sea3: { keeper: 'サルベージ屋', greet: '沈んだ船から引き上げた部品だよ。', parts: ['arm_hydro', 'legs_quad2', 'head_sonar'] },
+    inn: { pricePerMember: 120, keeper: 'ドームホテルの支配人' },
+    garage: { keeper: '整備長マリン', repairPerArmor: 1, repairPerEn: 1, towFee: 700 },
   },
 };
