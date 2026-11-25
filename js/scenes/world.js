@@ -31,10 +31,14 @@ const GRACE_STEPS = 10; // 戦闘の後・マップに入った後の、敵が�
 // 転送・ワープユニットで着く場所（町の入口の少し内側）
 const TOWN_GATE = { town1: [15, 23], town2: [12, 43], town3: [20, 31] };
 const CHAR_SCALE = 0.9;
-// フィールドのカメラの回転（スワイプ）。最大で左右90度ずつ。360度にするときは CAM_MAX_YAW を外す
+// フィールドのカメラ（画面の右半分をスワイプ）
+//  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
+//  上下（pitch）：0度＝真横（地面すれすれ）〜 90度＝真上から。いつもの角度は CAM_PITCH0（約54度）
 const CAM_MAX_YAW = Math.PI / 2;
-const CAM_SWIPE = 0.006; // 1ピクセルあたりの回転（ラジアン）
+const CAM_PITCH0 = Math.atan2(13, 9.6);
+const CAM_SWIPE = 0.007; // 1ピクセルあたりの回転（ラジアン）
 const clampYaw = (y) => Math.max(-CAM_MAX_YAW, Math.min(CAM_MAX_YAW, y));
+const clampPitch = (a) => Math.max(0, Math.min(Math.PI / 2, a));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 // 光の粒子（アルファ・オメガが動くと舞う）
@@ -79,11 +83,17 @@ export class WorldScene {
     input.on('menu', () => { if (this.active && !this.busy && !ui.busy) this.onMenu(); });
     input.on('tap', (p) => { if (this.active && !this.busy && !ui.busy) this.onTap(p); });
     // フィールドでは画面の右側を横にスワイプするとカメラが左右に回る（最大90度ずつ。指を離した角度で止まる）
-    input.on('swipe', ({ dx }) => { if (this.active && !ui.busy && this.canRotate()) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) - dx * CAM_SWIPE); } });
+    // 横に動かすと左右に回り、縦に動かすと上下の角度が変わる（下へ動かすと真上寄り、上へ動かすと地面すれすれ寄り）
+    input.on('swipe', ({ dx, dy }) => {
+      if (!this.active || ui.busy || !this.canRotate()) return;
+      this.camYawTarget = null; this.camPitchTarget = null;
+      this.camYaw = clampYaw((this.camYaw || 0) - dx * CAM_SWIPE);
+      this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + (dy || 0) * CAM_SWIPE);
+    });
     this.camResetBtn = document.createElement('button');
     this.camResetBtn.className = 'cam-reset';
     this.camResetBtn.textContent = '⟲ 正面に戻す';
-    this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = 0; });
+    this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = 0; this.camPitchTarget = CAM_PITCH0; });
     this.camResetBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     // 調べられる物の正面に立つと出る「調べる」ボタン
     this.pop = document.createElement('button');
@@ -326,7 +336,7 @@ export class WorldScene {
         const mspd = lead.kind === 'machine' ? machineStats(lead.mc).spd : 0;
         const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2);
         // カメラが回っていても、スティックを倒した画面上の向きに進む
-        const yaw = this.camYaw || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
+        const yaw = this.camYawView || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
         const wx = mv.x * cy + mv.y * sy, wz = -mv.x * sy + mv.y * cy;
         const dx = wx * speed * dt / Math.max(mag, 1), dz = wz * speed * dt / Math.max(mag, 1);
         const r = lead.kind === 'machine' ? 0.4 : 0.26;
@@ -478,25 +488,42 @@ export class WorldScene {
     }
     this.camZoom = (this.camZoom ?? zoom) + (zoom - (this.camZoom ?? zoom)) * Math.min(1, dt * 3);
     off.multiplyScalar(this.camZoom);
-    // フィールドのカメラの回転：Q／Eキーでも回せる。「正面に戻す」でゆっくり0度へ
+    // フィールドのカメラ：Q／E で左右、R／F で上下にも動かせる。「正面に戻す」でゆっくりいつもの角度へ
+    let rotated = false;
     if (this.canRotate()) {
       const kq = (input.isDown('q') || input.isDown('Q') ? 1 : 0) - (input.isDown('e') || input.isDown('E') ? 1 : 0);
+      const kr = (input.isDown('f') || input.isDown('F') ? 1 : 0) - (input.isDown('r') || input.isDown('R') ? 1 : 0);
       if (kq && !ui.busy) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) + kq * dt * 1.6); }
-      if (this.camYawTarget != null) {
-        this.camYaw += (this.camYawTarget - this.camYaw) * Math.min(1, dt * 3);
-        if (Math.abs(this.camYaw - this.camYawTarget) < 0.002) { this.camYaw = this.camYawTarget; this.camYawTarget = null; }
-      }
-    } else { this.camYaw = 0; this.camYawTarget = null; }
-    const yaw = this.camYaw || 0;
-    if (yaw) { const ox = off.x, oz = off.z; off.x = ox * Math.cos(yaw) + oz * Math.sin(yaw); off.z = -ox * Math.sin(yaw) + oz * Math.cos(yaw); }
-    this.camResetBtn.classList.toggle('on', this.canRotate() && Math.abs(yaw) > 0.01 && !ui.busy);
+      if (kr && !ui.busy) { this.camPitchTarget = null; this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + kr * dt * 1.2); }
+      const ease = Math.min(1, dt * 4);
+      if (this.camYawTarget != null) { this.camYaw += (this.camYawTarget - this.camYaw) * ease; if (Math.abs(this.camYaw - this.camYawTarget) < 0.003) { this.camYaw = this.camYawTarget; this.camYawTarget = null; } }
+      if (this.camPitchTarget != null) { this.camPitch += (this.camPitchTarget - this.camPitch) * ease; if (Math.abs(this.camPitch - this.camPitchTarget) < 0.003) { this.camPitch = this.camPitchTarget; this.camPitchTarget = null; } }
+      // 見た目は少しなめらかに追いかける
+      this.camYawView = (this.camYawView ?? 0) + ((this.camYaw || 0) - (this.camYawView ?? 0)) * Math.min(1, dt * 12);
+      this.camPitchView = (this.camPitchView ?? CAM_PITCH0) + ((this.camPitch ?? CAM_PITCH0) - (this.camPitchView ?? CAM_PITCH0)) * Math.min(1, dt * 12);
+      // キャラを中心にした球の上にカメラを置く（距離はいつもと同じ）
+      const dist = off.length(), yw = this.camYawView, pt = this.camPitchView;
+      off.set(dist * Math.cos(pt) * Math.sin(yw), dist * Math.sin(pt), dist * Math.cos(pt) * Math.cos(yw));
+      rotated = Math.abs(this.camYaw || 0) > 0.01 || Math.abs((this.camPitch ?? CAM_PITCH0) - CAM_PITCH0) > 0.01;
+    } else { this.camYaw = 0; this.camYawTarget = null; this.camPitch = CAM_PITCH0; this.camPitchTarget = null; this.camYawView = 0; this.camPitchView = CAM_PITCH0; }
+    this.camResetBtn.classList.toggle('on', rotated && !ui.busy);
     let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
     // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
     if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
-    const want = target.clone().add(off);
+    // 低い角度のときは目の高さから見る（マシンに乗っているときはマシンの頭の上から。真横でも前が見えるように）
+    if (this.canRotate()) target.y += (this.avatars?.[0]?.kind === 'machine' ? 3.6 : 1.4) * (1 - Math.sin(this.camPitchView ?? CAM_PITCH0));
     const k = Math.min(1, dt * 6);
-    this.camera.position.lerp(want, k);
-    this.camLook = this.camLook ? this.camLook.lerp(target, k) : target;
+    this.camLook = this.camLook ? this.camLook.lerp(target, k) : target.clone();
+    let want;
+    if (this.canRotate()) {
+      // フィールド：注視点から角度どおりの位置（回転中に視点がぶれないよう、位置はそのまま決める）。地面の下にはもぐらない
+      want = this.camLook.clone().add(off);
+      want.y = Math.max(want.y, heightAt(this.map, want.x, want.z) + 0.6);
+      this.camera.position.copy(want);
+    } else {
+      want = target.clone().add(off);
+      this.camera.position.lerp(want, k);
+    }
     this.camera.lookAt(this.camLook);
     this.sun.position.set(p.x - 9, 20, p.y + 7);
     this.sun.target.position.set(p.x, 0, p.y);

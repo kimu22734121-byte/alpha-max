@@ -1,6 +1,7 @@
 // 入力：指を置いた所に出るバーチャルスティック／タップ／キーボード（矢印・WASD・Enter・Esc）
 const listeners = {};
 const keys = new Set();
+export const STICK_ZONE = 0.5; // 画面の左からこの割合までがスティック。右側はカメラのスワイプ
 
 export const input = {
   move: { x: 0, y: 0 }, // -1..1（y は画面の下方向が +）
@@ -21,9 +22,9 @@ export const input = {
 
     layer.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, t0: performance.now(), moved: false, stick: false };
-      // 画面の左側60%で置いた指はスティックになる
-      if (this.enabled && !this.stick && e.clientX < window.innerWidth * 0.6) {
+      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastY: e.clientY, t0: performance.now(), moved: false, stick: false };
+      // 画面の左半分で置いた指はスティックになる（右半分はカメラのスワイプ・タップ用）
+      if (this.enabled && !this.stick && e.clientX < window.innerWidth * STICK_ZONE) {
         p.stick = true;
         this.stick = p;
         base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`;
@@ -39,8 +40,8 @@ export const input = {
       const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
       if (Math.hypot(dx, dy) > 12) p.moved = true;
       // スティックではない指（画面の右側）を横に動かすと「スワイプ」（フィールドのカメラを回す）
-      if (!p.stick && p.moved) { this.emit('swipe', { dx: e.clientX - p.lastX }); }
-      p.lastX = e.clientX;
+      if (!p.stick && p.moved) { this.emit('swipe', { dx: e.clientX - p.lastX, dy: e.clientY - p.lastY }); }
+      p.lastX = e.clientX; p.lastY = e.clientY;
       if (p.stick) {
         const len = Math.hypot(dx, dy);
         const k = len > R ? R / len : 1;
