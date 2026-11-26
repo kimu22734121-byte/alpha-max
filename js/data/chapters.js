@@ -3,13 +3,14 @@
 //  目的：steps を上から順に見て、まだ終わっていない最初の1つを出す（done が false のもの）。
 //        done は G（セーブデータ）を受け取って true／false を返す。hint は「つぎの目的」を開いたときに添える一言
 export const CHAPTERS = {
-  1: { planet: '土の惑星', sub: '錆びた荒野と、眠れる白き機体', color: '#e8b878' },
-  2: { planet: '風の惑星', sub: '雲海に浮かぶ島々', color: '#a8d8ff' },
-  3: { planet: '水の惑星', sub: '蒼き海と、沈んだ都市', color: '#6ad0ff' },
-  4: { planet: '火の惑星', sub: '灼熱の大地と、父の名', color: '#ff8a4a' },
-  5: { planet: '光の惑星', sub: '天上の聖域と、星の核', color: '#ffe08a' },
-  6: { planet: '闇の惑星', sub: '終焉の夜、最後の封印', color: '#ff4a5a' },
-  7: { planet: 'マザーコアの世界', sub: '虹の深淵、最終決戦', color: 'rainbow' },
+  // grad：星の名前の文字のグラデーション（左→右）、color：光と副題・飾り線の色、bg：背景のほのかな色
+  1: { planet: '土の惑星', sub: '錆びた荒野と、眠れる白き機体', color: '#e8a858', grad: ['#ffe0a0', '#e8a050', '#b8602a'], bg: '#2a1608' },
+  2: { planet: '風の惑星', sub: '雲海に浮かぶ島々', color: '#8ad8ff', grad: ['#ffffff', '#8ad8ff', '#6ad89a'], bg: '#08182a' },
+  3: { planet: '水の惑星', sub: '蒼き海と、沈んだ都市', color: '#4ac8ff', grad: ['#c8f8ff', '#4ac8ff', '#2a6ae0'], bg: '#041428' },
+  4: { planet: '火の惑星', sub: '灼熱の大地と、父の名', color: '#ff7a2a', grad: ['#fff08a', '#ff8a2a', '#e82a1a'], bg: '#2a0804' },
+  5: { planet: '光の惑星', sub: '天上の聖域と、星の核', color: '#ffd860', grad: ['#ffffff', '#ffe890', '#e8b030', '#b890ff'], bg: '#1a1630' },
+  6: { planet: '闇の惑星', sub: '終焉の夜、最後の封印', color: '#ff3a4a', grad: ['#ff9aa8', '#ff2a3a', '#8a0a2a', '#5a2a8a'], bg: '#14020a' },
+  7: { planet: 'マザーコアの世界', sub: '虹の深淵、最終決戦', color: '#e0b8ff', grad: ['#ff5a5a', '#ffd84a', '#5aff8a', '#5ac8ff', '#c85aff', '#ff5ad8'], bg: '#0a0420' },
 };
 
 const B = (G, id) => !!G.bounties?.[id];

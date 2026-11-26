@@ -3,7 +3,7 @@
 //  ダッシュボタンは押すたびにオン・オフ（オンの間は走る。PCは Shift を押している間）
 import { G, partyMembers, memberStats, machineStats, machineName } from '../game/state.js';
 import { MAPS } from '../data/maps.js';
-import { nextObjective } from '../data/chapters.js';
+import { nextObjective, currentChapter, CHAPTERS } from '../data/chapters.js';
 import { input } from './input.js';
 import { ui, esc, fmt } from './ui.js';
 
@@ -87,5 +87,6 @@ export const hud = {
     gearEl.innerHTML = `<span class="gear-icon">⚙</span>${fmt(G.gear)} ギア`;
     mapEl.textContent = map.name;
     goalEl.innerHTML = goal ? `<b>目的</b>${esc(goal)}` : '';
+    goalEl.style.setProperty('--goal', CHAPTERS[currentChapter(G)].color); // 目的の印はいまの章の色
   },
 };
