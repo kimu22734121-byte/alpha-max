@@ -75,11 +75,11 @@ button { font-family: inherit; color: inherit; }
 .bar.armor i { background: var(--armor); }
 .bar.en i { background: var(--en); }
 .pl-mc .bar.en { flex-basis: 100%; height: 3px; }
-.hud-top { position: fixed; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
+.hud-top { position: fixed; right: calc(10px + var(--safe-r)); top: 6px; width: 136px; justify-content: center; display: flex; gap: 10px; align-items: center; }
 .hud-map, .hud-gear { background: var(--panel); border: 1px solid var(--line2); padding: 4px 10px; font-size: 13px; border-radius: 3px; white-space: nowrap; }
-.hud-gear { color: var(--accent); }
+.hud-gear { color: var(--accent); width: 100%; text-align: center; box-sizing: border-box; }
 .gear-icon { display: inline-block; color: var(--accent); margin-right: 2px; }
-.hud-menu { position: fixed; right: calc(10px + var(--safe-r)); top: 8px; pointer-events: auto; background: var(--panel); border: 2px solid var(--line); color: var(--text); width: 64px; height: 50px; border-radius: 8px; font-size: 20px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
+.hud-menu { position: fixed; right: calc(10px + var(--safe-r)); top: 36px; pointer-events: auto; background: var(--panel); border: 2px solid var(--line); color: var(--text); width: 64px; height: 50px; border-radius: 8px; font-size: 20px; line-height: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: pointer; }
 .hud-menu span { font-size: 10px; }
 .hud-action { position: fixed; z-index: 15; right: calc(22px + var(--safe-r)); bottom: 22px; pointer-events: auto; width: 86px; height: 86px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffcf80, #e8813a 60%, #8a4a1a); border: 3px solid #ffe8c0; color: #2a1406; font-size: 16px; font-weight: bold; box-shadow: 0 4px 0 #4a2208, 0 0 18px rgba(255, 150, 60, 0.4); cursor: pointer; }
 .hud-action:active { transform: translateY(3px); box-shadow: 0 1px 0 #4a2208; }
@@ -343,7 +343,7 @@ table.cmp td.arr { color: var(--dim); }
 .color-input { width: 120px; height: 60px; border: none; background: none; cursor: pointer; }
 
 /* フィールドのカメラ：「正面に戻す」ボタン（回したときだけ出る） */
-.cam-reset { position: fixed; right: calc(10px + var(--safe-r)); top: 174px; z-index: 5; display: none; background: var(--panel); border: 2px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 12px; font-family: var(--font); font-size: 14px; cursor: pointer; }
+.cam-reset { position: fixed; right: calc(10px + var(--safe-r)); top: 202px; z-index: 5; display: none; background: var(--panel); border: 2px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 12px; font-family: var(--font); font-size: 14px; cursor: pointer; }
 .cam-reset.on { display: block; }
 
 /* 格納庫の一覧（マシン・パーツ）：絞り込み・並べ替え・まとめ表示 */
@@ -421,7 +421,7 @@ table.cmp td.arr { color: var(--dim); }
 .hud-menu.hud-mapbtn { right: calc(82px + var(--safe-r)); font-size: 18px; }
 
 /* ミニ地図（v1.6.3）：左上、仲間の体力の下。タップで大きな「ちず」 */
-.hud-mini { position: fixed; right: calc(10px + var(--safe-r)); top: 66px; width: 150px; height: 100px; border-radius: 6px; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); opacity: 0.92; }
-@media (max-height: 430px) { .hud-mini { width: 126px; height: 84px; } .cam-reset { top: 158px; } }
+.hud-mini { position: fixed; right: calc(10px + var(--safe-r)); top: 94px; width: 150px; height: 100px; border-radius: 6px; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); opacity: 0.92; }
+@media (max-height: 430px) { .hud-mini { width: 126px; height: 84px; } .cam-reset { top: 186px; } }
 /* 今いる場所の名前は左下（v1.6.4） */
 .hud > .hud-map { position: fixed; left: calc(8px + var(--safe-l)); bottom: 10px; }
