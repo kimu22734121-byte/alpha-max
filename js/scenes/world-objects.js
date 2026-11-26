@@ -115,7 +115,7 @@ export function addBuildings(scene, map) {
     const st = BUILDING_STYLE[b.shop] || BUILDING_STYLE[b.facility] || BUILDING_STYLE.item;
     const k = TOWN_TINT[map.id] ?? 1;
     const colors = Object.fromEntries(Object.entries(st.colors).map(([r, c]) => [r, new THREE.Color(c).multiplyScalar(r === 'primary' ? k : 1).getHex()]));
-    const obj = buildBuilding({ style: st.style, w: b.w, d: b.h, colors });
+    const obj = buildBuilding({ style: st.style, w: b.w, d: b.h, colors, doorX: (b.door[0] + 0.5) - (b.x + b.w / 2) });
     obj.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     obj.position.set(b.x + b.w / 2, heightAt(map, b.door[0] + 0.5, b.door[1] + 1.2), b.y + b.h / 2);
     // 入口の上に看板（アイコン＋店名）。遠くからでも見える大きさ
