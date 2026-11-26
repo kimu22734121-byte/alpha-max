@@ -1139,7 +1139,7 @@ export async function weaponSlots(mc) {
       const w = mc.slots[i] ? weaponByUid(mc.slots[i]) : null;
       const locked = !info.core && i >= st.slots;
       const hint = info.core ? '胸のコア（第7の専用スロット）：ステラ・ブレイカーだけを付けられる。ほかの6か所の数は減らない' : info.mount === 'arm' ? '腕には機銃・近接・特殊兵器（腕用）を付けられる' : info.place === 'shoulder' ? '肩の上：主砲やミサイルなど見せ場の武器に向く（頭の横を通るので顔に重ならない）' : '背中：主砲・ミサイル・特殊兵器（背中用）を付けられる';
-      return { label: `<b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b> ${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${WEAPONS[w.id].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[w.id])}${weaponLocked(w, mc) ? ' <small>（封印中）</small>' : ''}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: (w ? weaponDesc(WEAPONS[w.id], w, mc) + '<br>' : '') + `<small>${hint}</small>` };
+      return { label: `<b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b> ${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${WEAPONS[w.id].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[w.id])}${weaponLocked(w, mc) ? ' <small>（第3章から使える）</small>' : ''}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: (w ? weaponDesc(WEAPONS[w.id], w, mc) + '<br>' : '') + `<small>${hint}</small>` };
     });
     const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/6${st.core ? '＋胸のコア' : ''}`, wide: true, desc: true, items: [{ label: '⚡ 最強', value: '__best', desc: 'パーツと武器を、いま持っている中でいちばん強いものに付け替える（ほかのマシンに付いている物は取らない）' }, ...items] });
     if (slot == null) return;
@@ -1288,7 +1288,7 @@ async function towMenu(town, shop) {
 
 // ---------------- 説明文 ----------------
 export function weaponDesc(w, inst, mc) {
-  if (w.sealAtk) return `胸のコア専用・アルファ専用　範囲を切り替え（単体${Math.round(w.modes.one * 100)}%・グループ${Math.round(w.modes.group * 100)}%・全体${Math.round(w.modes.all * 100)}%）<br>封印の段階で進化：${w.sealAtk.map((a, i) => `${esc(w.stageNames[i])} ${a || '―'}`).join(' → ')}${mc ? `<br>いまの威力（単体）：<b>${weaponAtk(inst || { id: 'stella' }, mc)}</b>` : ''}`;
+  if (w.sealAtk) return `胸のコア専用・アルファ専用　範囲を切り替え（単体${Math.round(w.modes.one * 100)}%・グループ${Math.round(w.modes.group * 100)}%・全体${Math.round(w.modes.all * 100)}%）<br>章ごとに5段階で進化（第3章から使える）：${w.sealAtk.map((a, i) => `${esc(w.stageNames[i])} ${a || '―'}`).join(' → ')}${mc ? `<br>いまの威力（単体）：<b>${weaponAtk(inst || { id: 'stella' }, mc)}</b>` : ''}`;
   const tgt = { one: '単体', group: 'グループ', all: '全体' }[w.target];
   const el = w.elem ? `　属性:${w.elem === 'elec' ? '<b class="elec">電気</b>' : '<b class="fire">火</b>'}` : '';
   const atk = inst ? weaponAtk(inst, mc) : w.atk;
