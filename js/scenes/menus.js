@@ -1546,6 +1546,7 @@ async function settingsMenu(world) {
         { label: 'BGMの音量', right: pct(settings.bgm), value: 'bgm' },
         { label: '効果音の音量', right: pct(settings.se), value: 'se' },
         { label: 'マップ表示', right: settings.mapMode === '3d' ? '立体（標準）' : '2D（軽量）', value: 'map' },
+        { label: 'ミニ地図', right: settings.minimap === false ? 'オフ' : 'オン', value: 'mini' },
         { label: '全画面表示', value: 'fs' },
       ],
     });
@@ -1558,6 +1559,7 @@ async function settingsMenu(world) {
       audio.sfx('ok');
     }
     if (v === 'map') { settings.mapMode = settings.mapMode === '3d' ? '2d' : '3d'; audio.saveSettings(); world.build(); }
+    if (v === 'mini') { settings.minimap = settings.minimap === false; audio.saveSettings(); audio.sfx('ok'); }
     if (v === 'fs') { try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { ui.toast('この端末では全画面にできません'); } }
   }
 }

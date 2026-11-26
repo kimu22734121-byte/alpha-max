@@ -419,3 +419,7 @@ table.cmp td.arr { color: var(--dim); }
 
 /* メニューの横の「ちず」ボタン（v1.6） */
 .hud-menu.hud-mapbtn { right: calc(82px + var(--safe-r)); font-size: 18px; }
+
+/* ミニ地図（v1.6.3）：左上、仲間の体力の下。タップで大きな「ちず」 */
+.hud-mini { position: fixed; left: calc(8px + var(--safe-l)); top: 70px; width: 150px; height: 100px; border-radius: 6px; pointer-events: auto; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); opacity: 0.92; }
+@media (max-height: 430px) { .hud-mini { width: 126px; height: 84px; top: 60px; } }
