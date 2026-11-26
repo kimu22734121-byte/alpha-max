@@ -42,6 +42,7 @@ export const OBJECTIVES = {
   2: {
     hint: '北の高原へは、スカイアンカーの島の地下の「風鳴りの洞窟」を抜けて行く',
     steps: [
+      { done: (G) => F(G, 'ch2Started') || Object.values(G.members || {}).some((m) => m.joined && m.machine === 'alpha'), text: 'ラストヘイヴンのガレージで、目を覚ましたアルファに乗ろう（光っているアルファを調べる）' },
       { done: (G) => F(G, 'ch2Started'), text: 'ウェイポイントの交易マーケットの前にいる宇宙船の船長キールに話して、風の惑星へ飛ぼう' },
       { done: (G) => F(G, 'towerKey'), text: '浮遊研究所（生身でしか入れない）でゲイルキメラを倒し、嵐の塔の起動キーを手に入れよう' },
       { done: (G) => B(G, 'coreguardian'), text: '嵐の塔の最上階で、コアガーディアンを倒そう' },
