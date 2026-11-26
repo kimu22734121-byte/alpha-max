@@ -428,7 +428,8 @@ export class WorldScene {
       const mag = Math.hypot(mv.x, mv.y);
       if (mag > 0.05) {
         const mspd = lead.kind === 'machine' ? machineStats(lead.mc).spd : 0;
-        const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2);
+        // ダッシュ（ボタンかShift）で1.8倍の速さ
+        const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2) * (input.dashing ? 1.8 : 1);
         // カメラが回っていても、スティックを倒した画面上の向きに進む
         const yaw = this.camYawView || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
         const wx = mv.x * cy + mv.y * sy, wz = -mv.x * sy + mv.y * cy;
@@ -482,9 +483,16 @@ export class WorldScene {
       b.position.y += dt * this.bubbleUp; b.position.x += Math.sin(t * 3 + u.max * 10) * dt * 0.2;
     }
     // 隠し通路の壁は近づくと透ける
+    // 少し近づく（7マス以内）と、隠し通路の壁がゆっくり明滅して、ときどききらりと光る
     for (const h of this.mapView.hidden || []) {
-      const near = h.cells.some(([x, y]) => Math.abs(x + 0.5 - p.x) < 1.6 && Math.abs(y + 0.5 - p.y) < 1.6);
+      let dmin = Infinity, cx = 0, cz = 0;
+      for (const [x, y] of h.cells) { const d = Math.hypot(x + 0.5 - p.x, y + 0.5 - p.y); if (d < dmin) { dmin = d; cx = x + 0.5; cz = y + 0.5; } }
+      const near = dmin < 2.2;
       h.mesh.material.opacity += ((near ? 0.3 : 1) - h.mesh.material.opacity) * Math.min(1, dt * 6);
+      // 開発者の部屋への壁（修理屋の地下）は見つけにくいまま
+      const hint = dmin < 7 && this.map.id !== 'basement' ? 1 - dmin / 7 : 0;
+      if (h.mesh.material.emissive) h.mesh.material.emissiveIntensity = hint * (0.25 + 0.25 * Math.sin(t * 3));
+      if (hint > 0 && Math.random() < dt * (0.6 + hint * 1.5)) this.spark(new THREE.Vector3(cx, heightAt(this.map, cx, cz) - 0.4 + Math.random() * 0.8, cz - 0.6), 0xffe0a0);
     }
     for (const o of this.showcases || []) { o.rotation.y = t * 0.6; if (o.userData.showcase !== 'char') animateMachine(o, t, 0); }
     // 転送台の光の輪がゆっくり回る
