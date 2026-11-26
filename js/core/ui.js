@@ -421,6 +421,20 @@ export const ui = {
     setTimeout(() => t.remove(), dur * 1000 + 500);
   },
 
+  // 章の題目（v1.4〜）：黒い画面に「第◯章」と星の名前・副題が浮かび上がる。タップで早送り
+  chapterTitle({ num, planet, sub, color }) {
+    return new Promise((resolve) => {
+      const rainbow = color === 'rainbow';
+      const w = el('div', 'chapter-title', `<div class="ct-line"></div><div class="ct-num">第${num}章</div><div class="ct-name${rainbow ? ' rainbow' : ''}"${rainbow ? '' : ` style="--ct:${color || '#ffe08a'}"`}>${planet}</div><div class="ct-sub">${sub || ''}</div><div class="ct-line"></div>`);
+      document.body.appendChild(w);
+      requestAnimationFrame(() => w.classList.add('in'));
+      let done = false;
+      const end = () => { if (done) return; done = true; w.classList.remove('in'); w.classList.add('out'); setTimeout(() => { w.remove(); resolve(); }, 700); };
+      const t = setTimeout(end, 3800);
+      w.addEventListener('pointerdown', () => { clearTimeout(t); end(); });
+    });
+  },
+
   banner(text, sub = '', dur = 2.4) {
     const b = el('div', 'banner', `<div class="banner-main">${text}</div>${sub ? `<div class="banner-sub">${sub}</div>` : ''}`);
     document.body.appendChild(b);

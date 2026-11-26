@@ -1,5 +1,6 @@
 // 起動とシーン切り替え
 import { engine } from './core/engine.js';
+import { CHAPTERS } from './data/chapters.js';
 import { input } from './core/input.js';
 import { ui, esc } from './core/ui.js';
 import { hud } from './core/hud.js';
@@ -55,7 +56,7 @@ flow.toWorld = async (opts = {}) => {
 
 // 宇宙船で別の惑星へ（第1章 → 第2章など）。仲間が使っているマシンも貨物室で一緒に運ぶ
 // to：着く町 / at：着く場所 / from・planet：演出の惑星（flight.js の PLANET_LOOK）/ lines：字幕 / after：着いた後の話
-flow.flyTo = async ({ to, at, from, planet, lines, after }) => {
+flow.flyTo = async ({ to, at, from, planet, lines, after, chapter }) => {
   ui.closeAll();
   await ui.fade(true, 0.6);
   for (const m of partyMembers()) {
@@ -69,6 +70,8 @@ flow.flyTo = async ({ to, at, from, planet, lines, after }) => {
   await engine.setScene(scenes.flight, {
     from, to: planet, lines,
     onDone: async () => {
+      // 初めて着いた星では、章の題目を出す（chapters.js）
+      if (chapter && CHAPTERS[chapter]) await ui.chapterTitle({ num: chapter, ...CHAPTERS[chapter] });
       await engine.setScene(scenes.world, { banner: true, after });
       await ui.fade(false, 0.6);
       autosave();
@@ -407,6 +410,7 @@ async function startNewGame() {
   const names = await ui.nameEntry(['ren', 'shion', 'gina'].map((id) => ({ role: `${CHARACTERS[id].roleName}`, value: CHARACTERS[id].defaultName })));
   newGame(names);
   await ui.fade(true, 0.5);
+  await ui.chapterTitle({ num: 1, ...CHAPTERS[1] });
   await engine.setScene(scenes.world, {
     banner: true,
     after: async () => {

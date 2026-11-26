@@ -3,10 +3,11 @@
 //  ダッシュボタンは押すたびにオン・オフ（オンの間は走る。PCは Shift を押している間）
 import { G, partyMembers, memberStats, machineStats, machineName } from '../game/state.js';
 import { MAPS } from '../data/maps.js';
+import { nextObjective } from '../data/chapters.js';
 import { input } from './input.js';
 import { ui, esc, fmt } from './ui.js';
 
-let root, plates, gearEl, mapEl, actBtn, menuBtn, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
+let root, plates, gearEl, mapEl, goalEl, actBtn, menuBtn, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
 // 決定ボタンを出さない画面（お店・3Dで比べる画面・テンキー・名前の入力は、自分のボタンで決める）
 const NO_CONFIRM = '.shop-panel, .compare-panel, .keypad-wrap, #ui input';
 
@@ -17,11 +18,13 @@ export const hud = {
     root.innerHTML = `
       <div class="hud-party"></div>
       <div class="hud-top"><div class="hud-map"></div><div class="hud-gear"></div></div>
+      <div class="hud-goal"></div>
       <button class="hud-menu" aria-label="メニュー">☰<span>メニュー</span></button>`;
     parent.appendChild(root);
     plates = root.querySelector('.hud-party');
     gearEl = root.querySelector('.hud-gear');
     mapEl = root.querySelector('.hud-map');
+    goalEl = root.querySelector('.hud-goal');
     menuBtn = root.querySelector('.hud-menu');
     // 調べる／決定ボタンとダッシュボタンは、メニューの上にも出せるように画面のいちばん上の層に置く
     actBtn = document.createElement('button'); actBtn.className = 'hud-action hidden'; actBtn.textContent = '調べる';
@@ -76,11 +79,13 @@ export const hud = {
         ${mline}</div>`;
     }).join('');
     const map = MAPS[G.pos.map];
-    const key = html + G.gear + map.name;
+    const goal = map.type === 'interior' ? '' : nextObjective(G).text; // 建物の中では出さない
+    const key = html + G.gear + map.name + goal;
     if (!force && key === last) return;
     last = key;
     plates.innerHTML = html;
     gearEl.innerHTML = `<span class="gear-icon">⚙</span>${fmt(G.gear)} ギア`;
     mapEl.textContent = map.name;
+    goalEl.innerHTML = goal ? `<b>目的</b>${esc(goal)}` : '';
   },
 };
