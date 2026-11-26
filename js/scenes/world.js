@@ -20,7 +20,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, partyMembers, machineStats, machineName, canPilot, sealOf, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
+  G, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
@@ -100,6 +100,7 @@ export function machineSpec(mc) {
     colors: sealed ? def.brokenColors : def.colors,
     weapons: mc.slots.map((uid) => (uid ? weaponByUid(uid) : null)),
     sealStage: mc.type === 'alpha' ? seal : 0,
+    stellaStage: mc.type === 'alpha' ? stellaStage(mc) : 0,
     wingSpread: !!body?.wingSpread,
     // 光の強さ：アルファは封印の段階、ほかは glowK（開発者の部屋で調整できる。1 のときはそのまま）
     glow: mc.type === 'alpha' ? def.seal[seal].glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,

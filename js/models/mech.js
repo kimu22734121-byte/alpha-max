@@ -85,7 +85,7 @@ export function buildMachineModel(spec) {
     // 胸のコアのステラ・ブレイカー：封印の段階で光と形が変わる発射口
     if (info.core) {
       if (!legend) return;
-      const obj = buildStellaEmitter(sealStage);
+      const obj = buildStellaEmitter(spec.stellaStage ?? sealStage);
       mountNode(info).add(obj);
       weapons.push({ slot: i, obj, def, muzzle: obj.getObjectByName('muzzle') || obj, core: true });
       return;

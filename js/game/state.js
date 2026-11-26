@@ -7,6 +7,7 @@ import { WEAPONS, UPGRADE } from '../data/weapons.js';
 import { ITEMS, MATERIALS, FOOT_GEAR } from '../data/items.js';
 import { SETS, FAVORITE_RANGE, FAVORITE_BONUS } from '../data/footgear.js';
 import { SAVE_VERSION } from '../core/save.js';
+import { currentChapter } from '../data/chapters.js';
 
 export const GEAR_MAX = 999999;
 export let G = null;
@@ -166,6 +167,12 @@ export function typeBoost(mc, def) {
 
 // 封印の段階（アルファ）。展示台の機体は sealOverride で段階を切り替えて見られる
 export const sealOf = (mc) => (mc?.sealOverride ?? G.seal);
+// ステラ・ブレイカーの段階（v1.5〜）：章で決まる。第1・2章＝0（撃てない）、第3章＝1 … 第6章＝4、第6章クリア後＝5
+// 展示台の機体（sealOverride）は封印の段階から読みかえる
+export function stellaStage(mc) {
+  if (mc?.sealOverride != null) return [0, 1, 2, 4, 5][mc.sealOverride] ?? 0;
+  return Math.max(0, Math.min(5, currentChapter(G) - 2));
+}
 // 段階で進化するパーツ（アルファの外装）：stages[段階] の値で上書きする
 export function partNow(id, mc) {
   const p = PARTS[id];
@@ -236,11 +243,11 @@ export function weaponEquippedOn(uid) {
 // 武器の威力。ステラ・ブレイカーは封印の段階で進化する（mc を渡すとその機体の段階）
 export function weaponAtk(w, mc) {
   const def = WEAPONS[w.id];
-  const base = def.sealAtk ? def.sealAtk[Math.min(def.sealAtk.length - 1, mc ? sealOf(mc) : G.seal)] : def.atk;
+  const base = def.sealAtk ? def.sealAtk[Math.min(def.sealAtk.length - 1, stellaStage(mc))] : def.atk;
   return Math.round(base * (1 + UPGRADE.atkRate * (w.plus || 0)));
 }
 // 撃てない武器（ステラ・ブレイカーの封印中）
-export const weaponLocked = (w, mc) => { const def = WEAPONS[w.id]; return !!def.sealAtk && !def.sealAtk[mc ? sealOf(mc) : G.seal]; };
+export const weaponLocked = (w, mc) => { const def = WEAPONS[w.id]; return !!def.sealAtk && !def.sealAtk[stellaStage(mc)]; };
 export const weaponLabel = (w) => `${WEAPONS[w.id].name}${w.plus ? `+${w.plus}` : ''}`;
 
 // slot に武器を付けられるか

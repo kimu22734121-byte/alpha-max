@@ -118,9 +118,10 @@ Object.assign(WEAPONS, {
   gaia_claymore: { name: 'ガイア・クレイモア', cat: 'melee', style: 'blade', mount: 'any', target: 'group', atk: 203, hit: 6, wt: 12, price: 0, tier: 4, model: 'wpn_gaia_claymore', color: 0x8a2a20, glow: 0xff7a2a, size: 1.0, unique: true, only: 'gaia', elem: 'fire', noRule: true, rank: 5, sig: 'claymore', sfx: 'metalhit' },
   gaia_quake: { name: 'アース・クエイク', cat: 'special', mount: 'any', target: 'all', atk: 66, hit: 30, wt: 10, en: 20, price: 0, tier: 4, model: 'wpn_gaia_quake', color: 0x6a3a2a, glow: 0xff9a3a, size: 1.0, unique: true, only: 'gaia', noRule: true, rank: 9, sig: 'quake', sfx: 'press' },
   // ---- アルファの第7の専用スロット（胸のコア）にだけ付く、ゲーム中で最強の武器
-  // 範囲は撃つ前に切り替える（modes の倍率：単体が最大、全体が最小）。威力は封印の段階で進化（sealAtk[封印] が単体の威力。0 は壊れていて使えない）
-  stella: { name: 'ステラ・ブレイカー', cat: 'cannon', mount: 'core', target: 'one', modes: { one: 1.0, group: 0.72, all: 0.52 }, sealAtk: [0, 380, 540, 740, 1050], atk: 300, hit: 50, wt: 0, en: 30, price: 0, tier: 7, model: null, color: 0xf4f2ea, glow: 0xbff4ff, unique: true, only: 'alpha', noRule: true, rank: 1, sig: 'stella', sfx: 'beam',
-    stageNames: ['封印（壊れていて撃てない）', '目覚めの光', '白金の光', '星光の奔流', 'アルファマックス・ステラ'] },
+  // 範囲は撃つ前に切り替える（modes の倍率：単体が最大、全体が最小）。威力は章ごとに5段階で進化（v1.5〜。sealAtk[段階] が単体の威力。0 はまだ撃てない）
+  //  段階（state.js の stellaStage）：第1・2章＝0（撃てない）、第3章＝1、第4章＝2、第5章＝3、第6章＝4、第6章クリア後＝5（最強）
+  stella: { name: 'ステラ・ブレイカー', cat: 'cannon', mount: 'core', target: 'one', modes: { one: 1.0, group: 0.72, all: 0.52 }, sealAtk: [0, 420, 560, 720, 880, 1050], atk: 300, hit: 50, wt: 0, en: 30, price: 0, tier: 7, model: null, color: 0xf4f2ea, glow: 0xbff4ff, unique: true, only: 'alpha', noRule: true, rank: 1, sig: 'stella', sfx: 'beam',
+    stageNames: ['封印（まだ撃てない）', '目覚めの光', '白金の光', '星光の奔流', '闇を裂く光', 'アルファマックス・ステラ'] },
 });
 
 export const RANGES = {

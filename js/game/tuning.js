@@ -9,7 +9,7 @@ const KEY = 'alphamax.tuning';
 // 'colors.primary' のような書き方は、入れ子の値（マシンの色）
 const FIELDS = {
   machines: { fields: ['colors.primary', 'colors.secondary', 'colors.accent', 'colors.glow', 'glowK'] },
-  weapons: { fields: ['price', 'atk', 'hit', 'en', 'wt', 'target', 'sealAtk.1', 'sealAtk.2', 'sealAtk.3', 'sealAtk.4'], extra: () => ['en'] },
+  weapons: { fields: ['price', 'atk', 'hit', 'en', 'wt', 'target', 'sealAtk.1', 'sealAtk.2', 'sealAtk.3', 'sealAtk.4', 'sealAtk.5'], extra: () => ['en'] },
   foot: {
     fields: ['price', 'sell', 'atk', 'def', 'hit', 'eva', 'spd', 'hp', 'crit', 'target'],
     extra: (row) => (row.slot === 'weapon' ? ['atk', 'hit', 'crit', 'target'] : row.slot === 'acc' ? ['atk', 'def', 'hit', 'eva', 'spd', 'hp', 'crit'] : ['def', 'eva', 'hp', 'spd']),
@@ -25,7 +25,7 @@ export const TUNE_TABLES = Object.fromEntries(Object.entries(FIELDS).map(([k, f]
 export const FIELD_NAMES = {
   price: '値段', sell: '売値', atk: '攻撃', def: '防御', hit: '命中', eva: '回避', spd: '素早さ・スピード', hp: '体力', crit: '会心率', en: 'EN（エネルギー消費・量）', wt: '重さ',
   armor: '装甲', cap: '積める重さ', atkMul: '攻撃倍率', amount: '効果量', exp: '経験値', gear: 'ギア', slots: '武器スロット数', maxSlots: '武器スロットの上限', target: '攻撃範囲',
-  'sealAtk.1': '威力（第一封印）', 'sealAtk.2': '威力（第二封印）', 'sealAtk.3': '威力（第三封印）', 'sealAtk.4': '威力（アルファマックス）', 'colors.primary': '本体の色', 'colors.secondary': 'サブの色', 'colors.accent': 'アクセントの色', 'colors.glow': '光の色', glowK: '光の強さ',
+  'sealAtk.1': '威力（第3章）', 'sealAtk.2': '威力（第4章）', 'sealAtk.3': '威力（第5章）', 'sealAtk.4': '威力（第6章）', 'sealAtk.5': '威力（第6章クリア後・最強）', 'colors.primary': '本体の色', 'colors.secondary': 'サブの色', 'colors.accent': 'アクセントの色', 'colors.glow': '光の色', glowK: '光の強さ',
 };
 export const CHOICES = { target: { one: '単体', group: 'グループ', all: '全体' } };
 export const isColor = (f) => f.startsWith('colors.');

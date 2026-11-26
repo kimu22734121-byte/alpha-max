@@ -16,7 +16,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MATERIALS, ITEMS } from '../data/items.js';
 import { MACHINES } from '../data/machines.js';
 import {
-  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost, weaponLocked, sealOf,
+  G, partyMembers, memberStats, machineStats, machineName, weaponByUid, weaponAtk, weaponLabel, gainExp, addGear, addMat, receiveLoot, typeBoost, weaponLocked, sealOf, stellaStage,
 } from '../game/state.js';
 import { inMachine, machineSpec } from './world.js';
 import { buildCharModel } from '../models/char-look.js';
@@ -414,7 +414,7 @@ export class BattleScene {
         u.mc.slots.forEach((uid, i) => {
           if (!uid) return;
           const w = weaponByUid(uid), d = WEAPONS[w.id];
-          if (d.modes) { for (const k of Object.keys(d.modes)) items.push({ label: `✦ ${esc(d.name)} ${rangeBadge({ target: k })}`, right: weaponLocked(w, u.mc) ? '<small>封印中</small>' : `威力${Math.round(weaponAtk(w, u.mc) * d.modes[k])}`, value: { slot: i, mode: k }, disabled: weaponLocked(w, u.mc) }); return; }
+          if (d.modes) { for (const k of Object.keys(d.modes)) items.push({ label: `✦ ${esc(d.name)} ${rangeBadge({ target: k })}`, right: weaponLocked(w, u.mc) ? '<small>第3章から</small>' : `威力${Math.round(weaponAtk(w, u.mc) * d.modes[k])}`, value: { slot: i, mode: k }, disabled: weaponLocked(w, u.mc) }); return; }
           items.push({ label: `${WEAPON_CATS[d.cat].icon} ${esc(d.name)} ${rangeBadge(d)}`, right: `威力${weaponAtk(w, u.mc)}`, value: { slot: i } });
         });
         items.push({ label: '全砲門一斉発射', value: { allfire: true } });
@@ -987,7 +987,7 @@ export class BattleScene {
 
   // ステラ・ブレイカー：胸のコアに光の粒子が吸い込まれる溜め → 封印の段階に合わせた太さの光
   async stellaFire(u, slot, def, targets, ctx, fast) {
-    const stage = sealOf(u.mc);
+    const stage = stellaStage(u.mc);
     const core = () => this.muzzleOf(u, slot);
     if (!fast) { this.camIdle = false; await this.camTo(u.obj.position.clone().add(V(1.6, 2.2, 2.6)), core(), 0.35); }
     audio.sfx('charge');
