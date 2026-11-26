@@ -244,8 +244,8 @@ const DRAW = {
 };
 DRAW[6] = (g, px, py) => { g.fillStyle = '#555'; g.fillRect(px, py, TS, TS); };
 DRAW[19] = DRAW[0];
-// 隠し通路は周りの壁と同じ見た目（よく見ると細いひびがある）
-const crack = (base) => (g, px, py, x, y) => { base(g, px, py, x, y); g.strokeStyle = 'rgba(255,240,200,0.22)'; g.lineWidth = 1; g.beginPath(); g.moveTo(px + 12, py + 6); g.lineTo(px + 17, py + 14); g.lineTo(px + 13, py + 24); g.stroke(); };
+// 隠し通路は周りの壁と同じ見た目。でもよく見ると光るひびがある（v1.3 で見つけやすく：ひびを太く明るく、近づくと壁がほんのり光り、きらりと光る）
+const crack = (base) => (g, px, py, x, y) => { base(g, px, py, x, y); g.strokeStyle = 'rgba(255,225,140,0.6)'; g.lineWidth = 2; g.beginPath(); g.moveTo(px + 12, py + 4); g.lineTo(px + 17, py + 13); g.lineTo(px + 12, py + 20); g.lineTo(px + 16, py + 28); g.moveTo(px + 17, py + 13); g.lineTo(px + 24, py + 16); g.stroke(); };
 DRAW[20] = DRAW[0];
 DRAW[22] = DRAW[0];
 DRAW[34] = DRAW[0];
@@ -668,6 +668,7 @@ function add3D(map, group, disposables, view) {
     if (!cells.length) continue;
     const k = kinds[look];
     const mat = k.mat.clone(); mat.transparent = true;
+    if (mat.emissive) { mat.emissive.setHex(0xffc860); mat.emissiveIntensity = 0; } // 近づくと world.js がほんのり光らせる
     const inst = new THREE.InstancedMesh(k.geo, mat, cells.length);
     cells.forEach(([x, y], i) => place(inst, i, x, y, k));
     inst.castShadow = true;

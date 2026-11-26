@@ -82,6 +82,9 @@ export const input = {
   },
 
   isDown(k) { return keys.has(k); },
+  // ダッシュ中か（ダッシュボタンがオン、または Shift を押している）
+  dashOn: false,
+  get dashing() { return this.dashOn || keys.has('Shift'); },
   // キーボードとスティックをまとめた移動量
   getMove() {
     if (!this.enabled) return { x: 0, y: 0 };

@@ -29,6 +29,7 @@ import { buildMachineModel } from '../models/mech.js';
 import { buildCharModel } from '../models/char-look.js';
 import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
+import { bestAll, bestFoot, bestMachine } from '../game/best-gear.js';
 
 export const settings = audio.settings;
 // v0.4 から立体的なマップ（3D）が標準。軽くしたい時は「せってい」で2Dにできる
@@ -1133,8 +1134,9 @@ export async function weaponSlots(mc) {
       const hint = info.core ? '胸のコア（第7の専用スロット）：ステラ・ブレイカーだけを付けられる。ほかの6か所の数は減らない' : info.mount === 'arm' ? '腕には機銃・近接・特殊兵器（腕用）を付けられる' : info.place === 'shoulder' ? '肩の上：主砲やミサイルなど見せ場の武器に向く（頭の横を通るので顔に重ならない）' : '背中：主砲・ミサイル・特殊兵器（背中用）を付けられる';
       return { label: `<b class="slot-ico${info.core ? ' core' : ''}">${info.icon}</b> ${info.name}：${locked ? '<small>（フレーム強化で解放）</small>' : w ? `${esc(weaponLabel(w))} ${WEAPONS[w.id].modes ? '<b class="rg rg-all">範囲切替</b>' : rangeBadge(WEAPONS[w.id])}${weaponLocked(w, mc) ? ' <small>（封印中）</small>' : ''}` : '<small>なし</small>'}`, value: i, disabled: locked, desc: (w ? weaponDesc(WEAPONS[w.id], w, mc) + '<br>' : '') + `<small>${hint}</small>` };
     });
-    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/6${st.core ? '＋胸のコア' : ''}`, wide: true, desc: true, items });
+    const slot = await ui.menu({ title: `${esc(machineName(mc))}の武器`, header: `${esc(st.typeName)}タイプ　重さ ${st.weight}/${st.cap}　スロット ${st.slots}/6${st.core ? '＋胸のコア' : ''}`, wide: true, desc: true, items: [{ label: '⚡ 最強', value: '__best', desc: 'パーツと武器を、いま持っている中でいちばん強いものに付け替える（ほかのマシンに付いている物は取らない）' }, ...items] });
     if (slot == null) return;
+    if (slot === '__best') { bestDone(bestMachine(mc)); continue; }
     const info = SLOT_INFO[slot];
     const cands = ownedWeapons().filter((w) => fitsSlot(info, WEAPONS[w.id]) && mc.slots[slot] !== w.uid);
     const list = cands.map((w) => {
@@ -1164,9 +1166,10 @@ export async function partSlots(mc) {
     const st = machineStats(mc);
     const slotKey = await ui.menu({
       title: `${esc(machineName(mc))}のパーツ`, header: `${esc(st.typeName)}タイプ　装甲 ${st.maxArmor}　防御 ${st.def}　重さ ${st.weight}/${st.cap}`, wide: true, desc: true,
-      items: PART_SLOTS.map(([k, n]) => ({ label: `${n}：${esc(PARTS[mc.parts[k]].name)}`, value: k, desc: partDesc(PARTS[mc.parts[k]]) })),
+      items: [{ label: '⚡ 最強', value: '__best', desc: 'パーツと武器を、いま持っている中でいちばん強いものに付け替える（ほかのマシンに付いている物は取らない）' }, ...PART_SLOTS.map(([k, n]) => ({ label: `${n}：${esc(PARTS[mc.parts[k]].name)}`, value: k, desc: partDesc(PARTS[mc.parts[k]]) }))],
     });
     if (!slotKey) return;
+    if (slotKey === '__best') { bestDone(bestMachine(mc)); continue; }
     const want = slotKey.startsWith('arm') ? 'arm' : slotKey;
     // 同じ種類・同じ印（テスト入手かどうか）のパーツはまとめて「×個数」で表示する
     const groups = {};
@@ -1322,6 +1325,7 @@ export async function openFieldMenu(world) {
         { label: 'どうぐ', value: 'items' },
         { label: 'ちず', value: 'map' },
         { label: 'そうび（生身）', value: 'equip' },
+        { label: '⚡ 最強', value: 'best' },
         { label: 'マシン', value: 'machines' },
         { label: '調べる', value: 'search' },
         { label: '手配書', value: 'bounty' },
@@ -1334,7 +1338,8 @@ export async function openFieldMenu(world) {
     if (v === 'status') await statusMenu();
     if (v === 'items') { const before = G.pos.map; await itemMenu(false, world); if (G.pos.map !== before || !world.active) return; }
     if (v === 'map') await openMapView(world);
-    if (v === 'equip') await equipMenu();
+    if (v === 'equip') { await equipMenu(); world.buildParty(); }
+    if (v === 'best') { bestDone(bestAll()); world.buildParty(); }
     if (v === 'machines') await machineList();
     if (v === 'bounty') await bountyList();
     if (v === 'mats') await ui.panel(`<table class="kv">${Object.entries(MATERIALS).map(([k, m]) => `<tr><th>${esc(m.name)}</th><td>${G.inv.mats[k] || 0}</td><td><small>${esc(m.desc)}</small></td></tr>`).join('')}</table>`, { title: '素材（武器強化・改造に使う）' });
@@ -1461,17 +1466,24 @@ export async function itemMenu(inBattle, world) {
   }
 }
 
+// 「最強」を押したあとの知らせ
+function bestDone(n) {
+  if (n) { audio.sfx('levelup'); ui.toast(`最強の装備にした！（${n}か所を付け替え）`); } else { audio.sfx('ok'); ui.toast('もう、いま持っている中で最強の装備だ'); }
+}
+
 async function equipMenu() {
   for (;;) {
-    const m = await ui.menu({ title: 'そうび（生身）', wide: true, items: partyMembers().map((mm) => ({ label: esc(mm.name), right: `${esc(FOOT_GEAR[mm.equip.weapon]?.name || '素手')}${memberStats(mm).set ? ` <b class="ok">${esc(memberStats(mm).set.name)}</b>` : ''}`, value: mm })) });
+    const m = await ui.menu({ title: 'そうび（生身）', wide: true, items: [{ label: '⚡ 最強（全員）', value: '__best', right: '<small>持っている中でいちばん強い装備に</small>' }, ...partyMembers().map((mm) => ({ label: esc(mm.name), right: `${esc(FOOT_GEAR[mm.equip.weapon]?.name || '素手')}${memberStats(mm).set ? ` <b class="ok">${esc(memberStats(mm).set.name)}</b>` : ''}`, value: mm }))] });
     if (!m) return;
+    if (m === '__best') { bestDone(partyMembers().reduce((a, mm) => a + bestFoot(mm), 0)); continue; }
     for (;;) {
       const st = memberStats(m);
       const kind = await ui.menu({
         title: `${esc(m.name)}の装備`, wide: true, header: `攻撃${st.atk + st.weaponAtk}　防御${st.def}　命中${st.hit}　回避${st.eva}　素早さ${st.spd}　会心${st.crit}%${st.set ? `　<b class="ok">セット効果：${esc(st.set.name)}</b>` : ''}`,
-        items: FOOT_SLOT_KEYS.map((k) => ({ label: `${FOOT_SLOTS[k].icon} ${FOOT_SLOTS[k].name}：${esc(FOOT_GEAR[m.equip[k]]?.name || 'なし')}`, value: k })),
+        items: [{ label: '⚡ 最強', value: '__best' }, ...FOOT_SLOT_KEYS.map((k) => ({ label: `${FOOT_SLOTS[k].icon} ${FOOT_SLOTS[k].name}：${esc(FOOT_GEAR[m.equip[k]]?.name || 'なし')}`, value: k }))],
       });
       if (!kind) break;
+      if (kind === '__best') { bestDone(bestFoot(m)); continue; }
       const owned = Object.entries(G.inv.foot).filter(([id, n]) => n > 0 && FOOT_GEAR[id]?.slot === kind);
       const items = owned.map(([id, n]) => {
         const ok = canWearFoot(m, id);
