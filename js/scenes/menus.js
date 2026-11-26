@@ -30,6 +30,7 @@ import { buildCharModel } from '../models/char-look.js';
 import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
 import { bestAll, bestFoot, bestMachine } from '../game/best-gear.js';
+import { nextObjective, CHAPTERS } from '../data/chapters.js';
 
 export const settings = audio.settings;
 // v0.4 から立体的なマップ（3D）が標準。軽くしたい時は「せってい」で2Dにできる
@@ -437,6 +438,7 @@ export async function runEvent(name, world) {
     await flow.flyTo({
       to: rt.town, at: rt.at, from: here || 'earth', planet: rt.planet,
       lines: rt.lines,
+      chapter: first ? rt.order : null,
       after: first ? async () => { G.flags[rt.flag] = true; await rt.arrive(r, cap); } : null,
     });
     return;
@@ -1326,6 +1328,7 @@ export async function openFieldMenu(world) {
       title: 'メニュー', pos: 'right',
       header: `${GEAR}${fmt(G.gear)} ギア`,
       items: [
+        { label: '📍 つぎの目的', value: 'goal' },
         { label: 'つよさ', value: 'status' },
         { label: 'どうぐ', value: 'items' },
         { label: 'ちず', value: 'map' },
@@ -1340,6 +1343,10 @@ export async function openFieldMenu(world) {
       ],
     });
     if (!v) return;
+    if (v === 'goal') {
+      const o = nextObjective(G), c = CHAPTERS[o.chapter];
+      await ui.say([{ name: `第${o.chapter}章「${c.planet}」`, text: `つぎの目的：${o.text}` }, ...(o.hint ? [{ name: 'ヒント', text: o.hint }] : [])]);
+    }
     if (v === 'status') await statusMenu();
     if (v === 'items') { const before = G.pos.map; await itemMenu(false, world); if (G.pos.map !== before || !world.active) return; }
     if (v === 'map') await openMapView(world);
