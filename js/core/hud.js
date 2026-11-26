@@ -19,7 +19,8 @@ export const hud = {
     root.className = 'hud hidden';
     root.innerHTML = `
       <div class="hud-party"></div>
-      <div class="hud-top"><div class="hud-map"></div><div class="hud-gear"></div></div>
+      <div class="hud-top"><div class="hud-gear"></div></div>
+      <div class="hud-map"></div>
       <div class="hud-goal"></div>
       <canvas class="hud-mini" width="300" height="200" aria-label="ミニ地図"></canvas>
       <button class="hud-menu" aria-label="メニュー">☰<span>メニュー</span></button>
