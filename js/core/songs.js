@@ -91,6 +91,13 @@ const dark6Mel = `o4 l4
   g2 b-2 | a2. c+ | d2 f e | a2. r |
   b-2 > d2 < | > c2. < g | a > c e d < | d1 |
   b- > d g f < | g2 b- a | a2 > c+2 < | > d2. < r |`;
+// 虹の深淵（v1.2〜）：最終決戦へ向かう勇ましい長調
+const rainbow = ['D', 'A', 'Bm', 'G', 'Em', 'A', 'D', 'Asus4 A', 'G', 'A', 'F#m', 'Bm', 'G', 'Em', 'A', 'D'];
+const rainbowMel = `o5 l4
+  d2 a f+ | e2. c+ | d f+ b a | g2. b |
+  e g b a | a2 > c+ e < | d2 f+ a | a2. r |
+  g b > d c+ < | a2. e | f+ a > c+ < b | b2. r |
+  b > d g f+ < | e g b > e < | a2 > c+2 < | > d1 < |`;
 const core = ['Cm', 'Ab', 'Fm', 'G', 'Cm', 'Db', 'Bb', 'G', 'Ab', 'Fm', 'Cm', 'G', 'Ab', 'Db', 'G', 'G'];    // マザーコアの世界：重く不安な短調
 const lastA = ['Em', 'C', 'D', 'B', 'Em', 'C', 'Am', 'B'];
 const lastB = ['C', 'D', 'Bm', 'Em', 'Am', 'D', 'B', 'B'];
@@ -233,19 +240,18 @@ export const SONGS = {
       { inst: 'drums', vol: 0.5, mml: '[o4 b1 r1 r1 r1]4' },
     ],
   },
-  // 第7章「マザーコアの世界」のフィールド
+  // 第7章「虹の深淵」のフィールド（v1.2〜：最終決戦へ向かう、きらびやかで勇ましい長調のマーチ）
   field7: {
-    bpm: 84,
+    bpm: 126,
     tracks: [
-      { inst: 'brass', vol: 0.75, mml: `o4 l4
-        c e- g f | e-2. c | c f a- g | g2. r |
-        c e- g > c < | b-2 a-2 | f a- > c < b- | b1 |
-        a- > c e- d < | c2 < a-2 > | g b- > d c < | b2. r |
-        a- > c f e- < | d- f a- g | g2 b2 | g1 |` },
-      { inst: 'strings', vol: 0.45, mml: pad(core, 57) },
-      { inst: 'warmpad', vol: 0.4, mml: pad(core, 45) },
-      { inst: 'ebass', vol: 0.8, mml: bass(core, { 4: 'R4. R8 R4 F4', 2: 'R4 R4' }, 1) },
-      { inst: 'drums', vol: 0.55, mml: '[o4 c4 r8 c8 d4 r4]16' },
+      { inst: 'brass', vol: 0.95, mml: rainbowMel },
+      { inst: 'lead', vol: 0.3, transpose: 12, mml: rainbowMel },
+      { inst: 'bell', vol: 0.4, mml: arp(rainbow, 66, [0, 1, 2, 3, 4, 5, 4, 3]) },
+      { inst: 'harp', vol: 0.45, mml: arp(rainbow, 55, [0, 2, 1, 2, 0, 2, 1, 2]) },
+      { inst: 'strings', vol: 0.45, mml: pad(rainbow, 57) },
+      { inst: 'ebass', vol: 0.9, mml: `q6 ${bass(rainbow, { 4: 'R8 R8 F8 R8 O8 R8 F8 R8', 2: 'R8 R8 O8 R8' }, 1)}` },
+      { inst: 'drums', vol: 0.75, mml: '[o4 c8 c8 d8 c8 c8 c8 d8 e8]16' },
+      { inst: 'drums', vol: 0.5, mml: '[o4 b1 r1 r1 r1]4' },
     ],
   },
   // 最後のボス（マザーコア）
@@ -265,7 +271,10 @@ export const SONGS = {
       { inst: 'guitar', vol: 0.8, mml: `q6 ${chug(last, 40)}` },
       { inst: 'ebass', vol: 1.0, mml: `q6 ${bass(last, { 4: 'R8 R8 O8 R8 R8 R8 O8 R8', 2: 'R8 R8 O8 R8' }, 1)}` },
       { inst: 'strings', vol: 0.35, mml: pad(last, 59) },
+      { inst: 'bell', vol: 0.3, mml: arp(last, 64, [0, 1, 2, 3, 4, 3, 2, 1]) },
+      { inst: 'warmpad', vol: 0.3, mml: pad(last, 48) },
       { inst: 'drums', vol: 0.95, mml: '[o4 c8 c8 d8 c8 c8 c8 d8 e8]16' },
+      { inst: 'drums', vol: 0.5, mml: '[o4 b1 r1 r1 r1]4' },
     ],
   },
   // エンディング（スタッフロール）

@@ -43,6 +43,8 @@ export class BattleScene {
     this.test = opts.test || null; // 開発者の部屋の試し撃ち
     this.over = false;
     this.boss = !!opts.boss;
+    // マザーコアとの最後の戦いは、心臓の中でも虹の空の下で（盛大に）
+    this.finalBattle = (opts.enemies || []).some(([id]) => id === 'mothercore');
     this.buildArena(opts.terrain);
     this.fx = new BattleFX(this.scene, this.camera);
     this.buildUnits(opts.enemies);
@@ -73,7 +75,7 @@ export class BattleScene {
   }
 
   buildArena(terrain = 'sand') {
-    const dungeon = !!MAPS[G.pos.map]?.dark;
+    const dungeon = !!MAPS[G.pos.map]?.dark && !this.finalBattle;
     const veins = G.pos.map === 'factory1' || G.pos.map === 'ship1';
     const pal = {
       sand: { g: '#c4a068', s: ['#b08c58', '#d4b07a'], sky: [0xe8b878, 0x8a5a3a], fog: 0xd8a870 },
@@ -104,7 +106,7 @@ export class BattleScene {
       fire: { g: '#5a4a44', s: ['#3a3236', '#7a5a4a'], sky: [0xff7a3a, 0x2a0804], fog: 0x6a2a14, rock: 0x3a2228 },
       light: { g: '#e4d8e8', s: ['#d8cce0', '#f0e0c0'], sky: [0xffd8a0, 0x14205a], fog: 0xc8a0c8, rock: 0xd0cce0 },
       dark: { g: '#3a3038', s: ['#2a2028', '#4e3a44'], sky: [0x8a0a1a, 0x030106], fog: 0x2a060e, rock: 0x1e1418 },
-      core: { g: '#4a2a3e', s: ['#3a1e30', '#6a2a4a'], sky: [0x8a2a6a, 0x14040e], fog: 0x2a0820, rock: 0x3a1430 },
+      core: { g: '#d8d4ec', s: ['#c8c4e4', '#f0ecff'], sky: [0xff8ad8, 0x05021a], fog: 0x8a7ad8, rock: 0xe8e4ff },
     }[biome];
     if (ARENA) Object.assign(pal, ARENA);
     const dark = dungeon;
@@ -117,6 +119,8 @@ export class BattleScene {
     if (dark && biome === 'deep') { g.fillStyle = '#2a4a5a'; g.fillRect(0, 0, 512, 512); for (let i = 0; i < 1200; i++) { g.fillStyle = i % 2 ? '#1e3a48' : '#3a5a6a'; g.fillRect(Math.random() * 512, Math.random() * 512, 3, 3); } }
     if (dark && biome === 'lab') { g.fillStyle = '#c8d2d8'; g.fillRect(0, 0, 512, 512); g.strokeStyle = '#7ad8d8'; g.lineWidth = 3; for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(i * 64, 0); g.lineTo(i * 64, 512); g.moveTo(0, i * 64); g.lineTo(512, i * 64); g.stroke(); } }
     if (dark && veins) { g.strokeStyle = 'rgba(180,70,220,0.5)'; g.lineWidth = 4; for (let i = 0; i < 10; i++) { g.beginPath(); g.moveTo(Math.random() * 512, Math.random() * 512); g.bezierCurveTo(Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512, Math.random() * 512); g.stroke(); } }
+    // 虹の深淵：地面に七色の帯
+    if (biome === 'core') { g.globalCompositeOperation = 'color'; g.globalAlpha = 0.6; for (let i = 0; i < 12; i++) { g.fillStyle = `hsl(${i * 30},100%,60%)`; g.fillRect(i * 512 / 12, 0, 512 / 12 + 1, 512); } g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1; }
     const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 6);
     const ground = new THREE.Mesh(new THREE.CircleGeometry(60, 48), new THREE.MeshStandardMaterial({ map: tex, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true;
@@ -128,7 +132,7 @@ export class BattleScene {
     const pos = skyGeo.attributes.position;
     for (let i = 0; i < pos.count; i++) { const k = clamp(pos.getY(i) / 150, 0, 1); const c = bot.clone().lerp(top, Math.pow(k, 0.6)); cols.push(c.r, c.g, c.b); }
     skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
-    const climaxSky = !dark && (biome === 'light' || biome === 'dark'); // 光と闇の空は climax-fx.js が描く
+    const climaxSky = !dark && (biome === 'light' || biome === 'dark' || biome === 'core'); // 光と闇の空は climax-fx.js が描く
     if (!climaxSky) this.scene.add(new THREE.Mesh(skyGeo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false })));
     this.scene.fog = new THREE.Fog(dark ? 0x16161c : pal.fog, 25, 90);
     this.scene.background = null;
@@ -332,6 +336,11 @@ export class BattleScene {
   update(dt) {
     this.t += dt;
     this.climax?.update(dt, this.t, this.camera);
+    // マザーコアは七色に移り変わって光る
+    if (this.finalBattle) for (const e of this.enemies || []) if (e.key === 'mothercore') {
+      if (!e.rainbowMats) { e.rainbowMats = []; e.obj.traverse((o) => { if (o.material?.emissive && (o.material.emissiveIntensity > 0.2 || /glow|organic/.test(o.material.name))) e.rainbowMats.push(o.material); }); }
+      e.rainbowMats.forEach((m, i) => { m.emissive.setHSL(((this.t * 0.12 + i * 0.13) % 1), 1, 0.5); if (/organic/.test(m.name)) m.color.setHSL(((this.t * 0.12 + 0.5) % 1), 0.7, 0.55); });
+    }
     this.party.forEach((u, i) => {
       if (u.mc) animateMachine(u.obj, this.t, 0); else if (!u.m.ko) animateChar(u.obj, this.t, 0);
       // 待機中もゆらゆら（ホバーは大きく浮き沈み）

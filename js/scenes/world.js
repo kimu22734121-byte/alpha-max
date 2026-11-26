@@ -56,13 +56,14 @@ const BIOME_LOOK = {
     out: { bg: 0x1a0408, fog: 0x2a060e, near: 14, far: 42, sky: 0xc04a6a, ground: 0x0a0204, hemi: 0.7, sun: 0xff5a4a, sunK: 0.9, lamp: 0xffb878, lampK: 24 },
     in: { bg: 0x0a0206, fog: 0x18040a, near: 10, far: 30, sky: 0x8a3a5a, ground: 0x060104, hemi: 0.5, sun: 0xff5a4a, sunK: 0.4, lamp: 0xffb878, lampK: 26 },
   },
+  // 虹の深淵（v1.2〜）：宇宙色の空と、七色に移り変わる光（色の動きは climax-fx.js）
   core: {
-    out: { bg: 0x14040e, fog: 0x2a0820, near: 14, far: 40, sky: 0xd86ab0, ground: 0x1a0414, hemi: 0.65, sun: 0xff6ad0, sunK: 0.7, lamp: 0xff9ae0, lampK: 22 },
-    in: { bg: 0x0e0208, fog: 0x1e0616, near: 12, far: 32, sky: 0xc85aa0, ground: 0x12020c, hemi: 0.55, sun: 0xff6ad0, sunK: 0.4, lamp: 0xff9ae0, lampK: 24 },
+    out: { bg: 0x0a0420, fog: 0x6a5ab8, near: 28, far: 84, sky: 0xffffff, ground: 0x8a6aff, hemi: 1.1, sun: 0xffffff, sunK: 2.0 },
+    in: { bg: 0x0a0420, fog: 0x3a2a7a, near: 16, far: 44, sky: 0xffffff, ground: 0x6a4ad8, hemi: 0.95, sun: 0xffffff, sunK: 0.9, lamp: 0xffffff, lampK: 26 },
   },
 };
 // 漂う粒（泡・火の粉・光の粒・闇の粒・胞子）：色と昇る速さ
-const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 }, core: { color: 0xff6ad0, up: 0.5 } };
+const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 } };
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
 //  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
@@ -196,7 +197,7 @@ export class WorldScene {
       this.lamp = new THREE.PointLight(deep ? 0xa8e8ff : 0xffd8a0, deep ? 24 : 18, deep ? 11 : 9, 1.6);
       this.scene.add(this.lamp);
     } else this.lamp = null;
-    // 第4〜7章の惑星の空と光（火＝赤い空と溶岩の光、光＝まぶしい白金、闇＝夜、マザーコア＝紫の肉の世界）
+    // 第4〜7章の惑星の空と光（火＝赤い空と溶岩の光、光＝まぶしい白金、闇＝夜、マザーコア＝虹の深淵）
     const look = !indoor && BIOME_LOOK[map.biome]?.[dark ? 'in' : 'out'];
     if (look) {
       this.scene.background = new THREE.Color(look.bg);
