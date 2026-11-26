@@ -101,17 +101,19 @@ export const PALETTES = {
     caveWall: ['#141018', '#1e1a26', '#282234'],
     voidCol: '#1a0206', cliff: ['#1e1418', '#2a1a20', '#140c10'],
   },
-  // 第7章「マザーコアの世界」：脈打つ肉の大地・紫の血管・とげの山・底なしの穴（z）・酸の沼（8）
+  // 第7章「マザーコアの世界」（v1.2〜 虹の深淵）：マザーコアが6つの星の光を吸い込み、世界じゅうが虹色に燃えている
+  //  真珠色の大地に虹の帯（rainbow）、水晶の山、虹の泉（8）、星の海の穴（z）
   core: {
-    sand: '#4a2a3e', sandSp: ['#3e2234', '#5a3248', '#6a2a4a'],
-    rock: '#3a1e30', rockSp: ['#2e1626', '#4a283c'], stoneD: '#22101c', stoneL: '#6a3a58',
-    metal: '#3a2a3a', metalD: '#2e202e', metalL: '#4e384e', metalB: '#ff6ad0',
-    mount: ['#2a1022', '#200a1a', '#4a1a3a', '#ff6ad0'],
-    wall: ['#3a1a30', '#4a2440', '#24101e'],
-    road: '#5a3a4e', roadSp: ['#4e3244', '#664258'],
-    grass: '#8a2a6a', flowers: ['#ff6ad0', '#9a4aff'],
-    caveWall: ['#1e0a18', '#2a1022', '#36162c'],
-    voidCol: '#14040e', cliff: ['#3a1a30', '#2a1022', '#4a2440'],
+    sand: '#b4aad8', sandSp: ['#a89ed0', '#c8c0e8', '#bcb2e0'],
+    rock: '#a8a0d0', rockSp: ['#988ec4', '#bcb4e0'], stoneD: '#9a92c0', stoneL: '#f4f0ff',
+    metal: '#c8c4dc', metalD: '#a8a4c4', metalL: '#f0ecff', metalB: '#ffffff',
+    mount: ['#b8b0e0', '#a8a0d4', '#d8d0f4', '#ffffff'],
+    wall: ['#b8b0d8', '#c8c0e8', '#9a92c0'],
+    road: '#f8f4ff', roadSp: ['#ece6ff', '#ffffff'],
+    grass: '#c8b8f0', flowers: ['#ff5a5a', '#ffd84a', '#5aff8a', '#5ac8ff', '#c85aff'],
+    caveWall: ['#8a82b0', '#9a92c0', '#aaa2d0'],
+    voidCol: '#0a0420', cliff: ['#a8a0d4', '#9890c4', '#b8b0e0'],
+    rainbow: true,
   },
   lab: {
     sand: '#a8b4b8', sandSp: ['#98a4a8', '#b8c4c8'],
@@ -181,9 +183,10 @@ const DRAW = {
       return;
     }
     if (P === PALETTES.core) {
-      // 酸の沼（マザーコアの世界）
-      g.fillStyle = '#6a1a5a'; g.fillRect(px, py, TS, TS);
-      g.fillStyle = '#c83ab0'; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + 5 + rng(x, y, i) * 22, py + 5 + rng(x, y, i + 3) * 22, 2 + rng(x, y, i + 6) * 3, 0, 7); g.fill(); }
+      // 虹の泉（マザーコアの世界）：まぶしく光る七色の水。入れない
+      const h = ((x + y) * 18) % 360;
+      g.fillStyle = `hsl(${h},90%,62%)`; g.fillRect(px, py, TS, TS);
+      g.fillStyle = `hsl(${(h + 40) % 360},100%,80%)`; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(px + 5 + rng(x, y, i) * 22, py + 5 + rng(x, y, i + 3) * 22, 2 + rng(x, y, i + 6) * 3, 0, 7); g.fill(); }
       return;
     }
     if (P.seabed) {
@@ -423,6 +426,14 @@ export function drawMapCanvas(map) {
     const t = map.grid[y][x];
     (DRAW[t] || DRAW[0])(g, x * TS, y * TS, x, y);
   }
+  // 虹の深淵：大地に斜めの虹の帯を重ねる（地面の色はそのまま、色合いだけ七色に）
+  if (P.rainbow) {
+    g.save(); g.globalCompositeOperation = 'color'; g.globalAlpha = 0.75;
+    const W = map.width * TS, H = map.height * TS, R = Math.hypot(W, H);
+    g.translate(W / 2, H / 2); g.rotate(-0.55);
+    for (let d = -R; d < R; d += TS) { g.fillStyle = `hsl(${(((d / TS) * 12) % 360 + 360) % 360},100%,60%)`; g.fillRect(d, -R, TS + 1, R * 2); }
+    g.restore();
+  }
   for (const b of map.buildings || []) (map.buildings3d ? drawFoundation : drawBuilding)(g, b);
   // 3Dの建造物があるマップ（フィールド）では2Dのアイコンは描かない
   if (!map.structures) for (let y = 0; y < map.height; y++) for (let x = 0; x < map.width; x++) {
@@ -573,6 +584,18 @@ export function createMapView(map, mode = '3d', renderer) {
     view.water = water;
   }
   if (mode !== '2d') add3D(map, group, disposables, view);
+  // 虹の深淵：山・壁・岩・水晶の木を、場所ごとに七色に染める
+  if (mode !== '2d' && PALETTES[map.biome]?.rainbow) {
+    const m4 = new THREE.Matrix4(), c = new THREE.Color(), p = new THREE.Vector3();
+    group.traverse((o) => {
+      if (!o.isInstancedMesh) return;
+      for (let i = 0; i < o.count; i++) {
+        o.getMatrixAt(i, m4); p.setFromMatrixPosition(m4);
+        o.setColorAt(i, c.setHSL((((p.x + p.z) / 18) % 1 + 1) % 1, 0.85, 0.62));
+      }
+      if (o.instanceColor) o.instanceColor.needsUpdate = true;
+    });
+  }
   return view;
 }
 
@@ -587,7 +610,7 @@ function add3D(map, group, disposables, view) {
     fire: { m3: 0x4a2a22, w4: 0x3a2a26, c24: 0x2e1c18, r1: 0x3a3236, r0: 0x5a4a44, trunk: 0x2a1a14, leaf: null, glow: 0xff5a1a },
     light: { m3: 0xc8d8ec, w4: 0xe0d6bc, c24: 0xd0c6ac, r1: 0xe0dcd4, r0: 0xf0e8d0, trunk: 0xe8e0c8, leaf: 0xf0d860, glow: 0xa8d8ff },
     dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x5a1a24, glow: 0xff3a4a },
-    core: { m3: 0x3a1430, w4: 0x3a1a30, c24: 0x2a1022, r1: 0x3a1e30, r0: 0x5a2a48, trunk: 0x4a1a3a, leaf: 0xc83ab0, glow: 0xff6ad0 },
+    core: { m3: 0xf0ecff, w4: 0xe8e4ff, c24: 0xe0dcff, r1: 0xf0ecff, r0: 0xffffff, trunk: 0xf0ecff, leaf: 0xffffff, glow: 0xffffff },
   }[map.biome];
   const kinds = {
     3: field
@@ -723,11 +746,11 @@ function add3D(map, group, disposables, view) {
     return;
   }
   if (BC?.leaf) {
-    // 光・闇・マザーコアの惑星：水晶の木／黒い木／肉のとげの木（形は三角、色だけ変える）
+    // 光・闇・マザーコアの惑星：水晶の木／黒い木／虹の水晶の木（光と虹は八面体、闇は三角）
     const tcell = cellsOf([9]).filter(([x, y]) => rng(x, y, 51) < 0.14);
     if (tcell.length) {
       const trunkG = new THREE.CylinderGeometry(0.06, 0.09, 0.6, 5), trunkM = S(BC.trunk);
-      const leafG = map.biome === 'light' ? new THREE.OctahedronGeometry(0.45, 0) : new THREE.ConeGeometry(0.4, 1.1, 5);
+      const leafG = map.biome === 'light' || map.biome === 'core' ? new THREE.OctahedronGeometry(0.45, 0) : new THREE.ConeGeometry(0.4, 1.1, 5);
       const leafM = S(BC.leaf, { emissive: BC.leaf, emissiveIntensity: map.biome === 'dark' ? 0.05 : 0.35 });
       const trunk = new THREE.InstancedMesh(trunkG, trunkM, tcell.length), leaf = new THREE.InstancedMesh(leafG, leafM, tcell.length);
       tcell.forEach(([x, y], i) => {

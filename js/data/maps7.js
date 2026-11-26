@@ -58,7 +58,7 @@ export const MAPS7 = {
       { id: 'captain', name: '宇宙船の船長キール', model: 'npc_clerk', x: 24, y: 7, colors: { primary: 0x2a4a6a }, event: 'shuttleCaptain', lines: [] },
       { id: 'cmdr', name: '前線基地の司令ノヴァ', model: 'npc_clerk', x: 15, y: 9, colors: { primary: 0x6ad8ff }, lines: [
         'よく来てくれた。ここがマザーコアの世界、最後の前線基地ラストホープだ。',
-        '西の島の「肉の回廊」を抜けると、北の大地に出る。回廊の奥の女王を倒せば、心臓への道が開く。',
+        '西の島の「虹の回廊」を抜けると、北の大地に出る。回廊の奥の女王を倒せば、心臓への道が開く。',
         '……宇宙じゅうの星が、おまえたちを待っている。',
       ] },
       { id: 'mech19', name: '基地の整備士', model: 'npc_a', x: 9, y: 16, colors: { primary: 0xd8a040 }, lines: [
@@ -75,7 +75,7 @@ export const MAPS7 = {
   },
   // ================================================================ フィールド：マザーコアの大地
   field7: {
-    id: 'field7', name: 'マザーコアの大地', subtitle: '第7章「マザーコアの世界」の惑星',
+    id: 'field7', name: '虹の深淵', subtitle: '第7章「マザーコアの世界」の惑星',
     type: 'field', biome: 'core', bgm: 'field7', machineAllowed: true, ground: '#4a2a3e',
     rows: [
       'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
@@ -207,7 +207,7 @@ export const MAPS7 = {
       { x: 30, y: 95, to: 'town19', tx: 17, ty: 27, dir: 'up' },
       { x: 76, y: 56, to: 'vein7', tx: 2, ty: 14, dir: 'right' },
       { x: 60, y: 36, to: 'vein7', tx: 59, ty: 14, dir: 'left' },
-      { x: 155, y: 14, to: 'heart7', tx: 26, ty: 36, dir: 'up', require: 'heartKey', lockedText: ['マザーコアの心臓の入口は、脈打つ肉の壁でふさがれている。', '肉の回廊の奥の女王を倒せば、道が開くはずだ。'] },
+      { x: 155, y: 14, to: 'heart7', tx: 26, ty: 36, dir: 'up', require: 'heartKey', lockedText: ['マザーコアの心臓の入口は、七色に燃える結晶の壁でふさがれている。', '虹の回廊の奥の女王を倒せば、道が開くはずだ。'] },
     ],
     encounter: {
       steps: [10, 22],
@@ -264,9 +264,9 @@ export const MAPS7 = {
       { kind: 'floatrock', x: 35, y: 22 },
     ],
   },
-  // ================================================================ ダンジョン：肉の回廊
+  // ================================================================ ダンジョン：虹の回廊
   vein7: {
-    id: 'vein7', name: '肉の回廊', subtitle: '脈打つ肉の中を抜ける道（マシンで進む）',
+    id: 'vein7', name: '虹の回廊', subtitle: '七色の結晶の中を抜ける道（マシンで進む）',
     type: 'dungeon', biome: 'core', bgm: 'dungeon', machineAllowed: true, ground: '#1a1418', dark: true,
     rows: [
       'oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo',

@@ -15,7 +15,8 @@ export const PLANET_LOOK = {
   // 光：金色の星に光の輪（星の門）／闇：黒い星に赤い裂け目と赤いコロナ
   light: { base: '#f0d8a0', bands: [[255, 230, 170], [230, 190, 120], [180, 170, 240]], spots: 'rgba(255,255,255,0.6)', clouds: 0.35, atmo: 0xffd890, ring: 0xffe8b0 },
   dark: { base: '#0a0408', bands: [[40, 10, 20], [70, 14, 30], [16, 6, 10]], spots: 'rgba(255,40,60,0.55)', clouds: 0.08, atmo: 0xff2a3a, ring: 0xff3a4a, eclipse: true },
-  core: { base: '#3a0a2a', bands: [[120, 30, 90], [80, 10, 60], [200, 60, 160]], spots: 'rgba(255,80,210,0.5)', clouds: 0.15, atmo: 0xff4ad0 },
+  // 虹の深淵：七色の帯の星と虹の輪
+  core: { base: '#e8e0ff', bands: [[255, 90, 90], [255, 200, 70], [90, 230, 120], [80, 180, 255], [190, 100, 255]], spots: 'rgba(255,255,255,0.5)', clouds: 0.2, atmo: 0xd8b8ff, ring: 0xffffff, rainbowRing: true },
   wind: { base: '#4a8ac8', bands: [[90, 160, 90], [120, 190, 110], [70, 130, 190]], spots: 'rgba(60,120,60,0.5)', clouds: 0.55, atmo: 0xbfe8ff },
 };
 function planetTexture(look) {
@@ -34,7 +35,13 @@ function makePlanet(kind, r) {
   grp.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), new THREE.MeshStandardMaterial({ map: planetTexture(look), roughness: 1 })));
   grp.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.04, 48, 32), new THREE.MeshBasicMaterial({ color: look.atmo, transparent: true, opacity: look.eclipse ? 0.4 : 0.18, side: THREE.BackSide })));
   if (look.eclipse) grp.add(new THREE.Mesh(new THREE.SphereGeometry(r * 1.12, 48, 32), new THREE.MeshBasicMaterial({ color: look.atmo, transparent: true, opacity: 0.15, side: THREE.BackSide, blending: THREE.AdditiveBlending })));
-  if (look.ring) {
+  if (look.rainbowRing) {
+    // 七色の輪を重ねる
+    for (let i = 0; i < 7; i++) {
+      const ring = new THREE.Mesh(new THREE.RingGeometry(r * (1.3 + i * 0.06), r * (1.35 + i * 0.06), 96), new THREE.MeshBasicMaterial({ color: new THREE.Color().setHSL(i / 7, 1, 0.6), transparent: true, opacity: 0.7, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
+      ring.rotation.x = Math.PI / 2.4; grp.add(ring);
+    }
+  } else if (look.ring) {
     const ring = new THREE.Mesh(new THREE.RingGeometry(r * 1.35, r * 1.6, 96), new THREE.MeshBasicMaterial({ color: look.ring, transparent: true, opacity: 0.55, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
     ring.rotation.x = Math.PI / 2.4; grp.add(ring);
   }
