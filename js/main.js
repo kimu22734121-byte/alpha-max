@@ -63,6 +63,13 @@ flow.flyTo = async ({ to, at, from, planet, lines, after, chapter }) => {
     const mc = m.machine && G.machines[m.machine];
     if (mc?.owned && (mc.loc.type === 'garage' || mc.loc.type === 'party')) mc.loc = { type: 'garage', town: to };
   }
+  // 目覚めたアルファは、ガレージに置いたままでも必ず一緒に運ぶ（v1.4.2）。だれも乗っていなければレンが乗る
+  let alphaNote = false;
+  const alpha = G.machines.alpha;
+  if (alpha?.owned && G.seal >= 1 && alpha.loc.type !== 'map') {
+    alpha.loc = { type: 'garage', town: to };
+    if (!partyMembers().some((m) => m.machine === 'alpha')) { G.members.ren.machine = 'alpha'; alphaNote = true; }
+  }
   // at は広げる前の町の座標で書いてある（map-scale.js）
   const k = MAPS[to]?.spread || 1;
   G.pos = { map: to, x: at[0] * k, y: at[1] * k, dir: 0 };
@@ -74,6 +81,7 @@ flow.flyTo = async ({ to, at, from, planet, lines, after, chapter }) => {
       if (chapter && CHAPTERS[chapter]) await ui.chapterTitle({ num: chapter, ...CHAPTERS[chapter] });
       await engine.setScene(scenes.world, { banner: true, after });
       await ui.fade(false, 0.6);
+      if (alphaNote) ui.toast(`アルファも貨物室で運んできた！ ${G.members.ren.name}はアルファに乗る（町のガレージで乗りこむ）`, 4);
       autosave();
     },
   });

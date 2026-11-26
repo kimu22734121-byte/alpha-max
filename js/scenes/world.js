@@ -13,6 +13,7 @@ import { buildCharModel } from '../models/char-look.js';
 import { devStore, robotStation, charStation, showcaseModel } from './devroom.js';
 import { hangarList, machineViewer } from './hangar.js';
 import { MAPS } from '../data/maps.js';
+import { planetOfTown } from '../data/planets.js';
 import { addClimaxWorld } from './climax-fx.js';
 import { TILES, tileAt, isWalkable } from '../data/tiles.js';
 import { CHARACTERS } from '../data/characters.js';
@@ -140,8 +141,18 @@ export class WorldScene {
 
   get map() { return MAPS[G.pos.map]; }
 
+  // 目覚めたアルファがほかの星のガレージに取り残されていたら、いまの星の町のガレージへ運ぶ（v1.4.2。以前のセーブの直し）
+  alphaFollow() {
+    const alpha = G.machines.alpha, here = planetOfTown(G.lastTown);
+    if (!alpha?.owned || G.seal < 1 || !here || alpha.loc.type !== 'garage') return;
+    if (planetOfTown(alpha.loc.town)?.id === here.id) return;
+    alpha.loc = { type: 'garage', town: G.lastTown };
+    setTimeout(() => ui.toast(`アルファが${MAPS[G.lastTown].name}のガレージに届いた！ ガレージの「乗る人を決める」で乗れる`, 4.5), 1200);
+  }
+
   async enter(opts = {}) {
     this.active = true;
+    this.alphaFollow();
     this.build();
     hud.show();
     audio.playSong(this.map.bgm);
