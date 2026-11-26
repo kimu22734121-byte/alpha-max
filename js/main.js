@@ -61,7 +61,7 @@ flow.flyTo = async ({ to, at, from, planet, lines, after, chapter }) => {
   await ui.fade(true, 0.6);
   for (const m of partyMembers()) {
     const mc = m.machine && G.machines[m.machine];
-    if (mc?.owned && (mc.loc.type === 'garage' || mc.loc.type === 'party')) mc.loc = { type: 'garage', town: to };
+    if (mc?.owned) mc.loc = { type: 'garage', town: to }; // 外に置いてきたマシンも一緒に運ぶ（v1.6）
   }
   // 目覚めたアルファは、ガレージに置いたままでも必ず一緒に運ぶ（v1.4.2）。だれも乗っていなければレンが乗る
   let alphaNote = false;

@@ -416,3 +416,6 @@ table.cmp td.arr { color: var(--dim); }
 .hud-goal b { color: var(--goal, var(--accent)); margin-right: 4px; text-shadow: 0 0 6px var(--goal, transparent); }
 .hud-goal { border-left: 3px solid var(--goal, var(--line2)); }
 .hud-goal:empty { display: none; }
+
+/* メニューの横の「ちず」ボタン（v1.6） */
+.hud-menu.hud-mapbtn { right: calc(82px + var(--safe-r)); font-size: 18px; }
