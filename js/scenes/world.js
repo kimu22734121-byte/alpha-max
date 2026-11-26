@@ -23,7 +23,7 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
+import { openMapView, shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
 import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
@@ -117,6 +117,7 @@ export class WorldScene {
     this.t = 0;
     input.on('action', () => { if (this.active && !this.busy && !ui.busy) this.onAction(); });
     input.on('menu', () => { if (this.active && !this.busy && !ui.busy) this.onMenu(); });
+    input.on('mapview', async () => { if (!this.active || this.busy || ui.busy) return; this.lock(true); try { await openMapView(this); } finally { if (this.active) this.lock(false); } });
     input.on('tap', (p) => { if (this.active && !this.busy && !ui.busy) this.onTap(p); });
     // フィールドでは画面の右側を横にスワイプするとカメラが左右に回る（最大90度ずつ。指を離した角度で止まる）
     // 横に動かすと左右に回り、縦に動かすと上下の角度が変わる（下へ動かすと真上寄り、上へ動かすと地面すれすれ寄り）
@@ -898,10 +899,12 @@ export class WorldScene {
     await this.beam(false);
     audio.sfx('warp');
     await ui.fade(true, 0.25, '#e8f6ff');
-    // 乗っているマシンと、転送台を使ったガレージのマシンは行き先のガレージへ
+    // 乗っているマシンと、転送台を使ったガレージのマシンは行き先のガレージへ。
+    // 仲間が使うマシンは、外に置いてきた物・ほかの町のガレージにある物も、行き先の町のガレージへ自動で戻る（v1.6）
+    const mine = new Set(partyMembers().map((m) => m.machine).filter(Boolean));
     for (const mc of Object.values(G.machines)) {
       if (!mc.owned) continue;
-      if (mc.loc.type === 'party' || (pad && mc.loc.type === 'garage' && mc.loc.town === from)) mc.loc = { type: 'garage', town: to };
+      if (mc.loc.type === 'party' || mine.has(mc.id) || (pad && mc.loc.type === 'garage' && mc.loc.town === from)) mc.loc = { type: 'garage', town: to };
     }
     const gid = `${to}_garage`;
     const tp = MAPS[gid]?.props?.find((q) => q.pad);

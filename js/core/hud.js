@@ -7,7 +7,7 @@ import { nextObjective, currentChapter, CHAPTERS } from '../data/chapters.js';
 import { input } from './input.js';
 import { ui, esc, fmt } from './ui.js';
 
-let root, plates, gearEl, mapEl, goalEl, actBtn, menuBtn, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
+let root, plates, gearEl, mapEl, goalEl, actBtn, menuBtn, mapBtn, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
 // 決定ボタンを出さない画面（お店・3Dで比べる画面・テンキー・名前の入力は、自分のボタンで決める）
 const NO_CONFIRM = '.shop-panel, .compare-panel, .keypad-wrap, #ui input';
 
@@ -19,19 +19,22 @@ export const hud = {
       <div class="hud-party"></div>
       <div class="hud-top"><div class="hud-map"></div><div class="hud-gear"></div></div>
       <div class="hud-goal"></div>
-      <button class="hud-menu" aria-label="メニュー">☰<span>メニュー</span></button>`;
+      <button class="hud-menu" aria-label="メニュー">☰<span>メニュー</span></button>
+      <button class="hud-menu hud-mapbtn" aria-label="ちず">🗺<span>ちず</span></button>`;
     parent.appendChild(root);
     plates = root.querySelector('.hud-party');
     gearEl = root.querySelector('.hud-gear');
     mapEl = root.querySelector('.hud-map');
     goalEl = root.querySelector('.hud-goal');
     menuBtn = root.querySelector('.hud-menu');
+    mapBtn = root.querySelector('.hud-mapbtn');
     // 調べる／決定ボタンとダッシュボタンは、メニューの上にも出せるように画面のいちばん上の層に置く
     actBtn = document.createElement('button'); actBtn.className = 'hud-action hidden'; actBtn.textContent = '調べる';
     dashBtn = document.createElement('button'); dashBtn.className = 'hud-dash hidden'; dashBtn.innerHTML = '<b>»</b>ダッシュ';
     document.body.append(actBtn, dashBtn);
     const stop = (e) => { e.stopPropagation(); };
-    for (const b of [menuBtn, actBtn, dashBtn]) { b.addEventListener('pointerdown', stop); }
+    for (const b of [menuBtn, mapBtn, actBtn, dashBtn]) { b.addEventListener('pointerdown', stop); }
+    mapBtn.addEventListener('click', (e) => { e.stopPropagation(); input.emit('mapview'); }); // メニューの横の「ちず」ボタン（v1.6）
     menuBtn.addEventListener('click', (e) => { e.stopPropagation(); input.emit('menu'); });
     actBtn.addEventListener('click', (e) => {
       e.stopPropagation();
