@@ -422,10 +422,14 @@ export const ui = {
   },
 
   // 章の題目（v1.4〜）：黒い画面に「第◯章」と星の名前・副題が浮かび上がる。タップで早送り
-  chapterTitle({ num, planet, sub, color }) {
+  // 章ごとに、星の名前はグラデーション（grad）、光・副題・飾り線は color、背景はほのかな bg の色
+  chapterTitle({ num, planet, sub, color, grad, bg }) {
     return new Promise((resolve) => {
-      const rainbow = color === 'rainbow';
-      const w = el('div', 'chapter-title', `<div class="ct-line"></div><div class="ct-num">第${num}章</div><div class="ct-name${rainbow ? ' rainbow' : ''}"${rainbow ? '' : ` style="--ct:${color || '#ffe08a'}"`}>${planet}</div><div class="ct-sub">${sub || ''}</div><div class="ct-line"></div>`);
+      const g = `linear-gradient(90deg, ${(grad || [color, color]).join(', ')})`;
+      const w = el('div', 'chapter-title', `<div class="ct-line"></div><div class="ct-num">第${num}章</div><div class="ct-name">${planet}</div><div class="ct-sub">${sub || ''}</div><div class="ct-line"></div>`);
+      w.style.setProperty('--ct', color || '#ffe08a');
+      w.style.setProperty('--ctg', g);
+      w.style.background = `radial-gradient(ellipse at center, ${bg || '#111'} 0%, #000 70%)`;
       document.body.appendChild(w);
       requestAnimationFrame(() => w.classList.add('in'));
       let done = false;
