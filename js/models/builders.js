@@ -678,7 +678,8 @@ function buildPile(colors) {
 // style: gable（三角屋根）/ flat（平屋根）/ hangar（かまぼこ型）/ tower（塔付き）/ twostory（2階建て）
 // w, d は床の大きさ（タイル数）、正面は +Z。原点は建物の中心の地面
 // =====================================================================
-export function buildBuilding({ style = 'gable', w = 5, d = 4, colors = {} } = {}) {
+// doorX：入口のタイルの真ん中の、建物の真ん中からのずれ（幅が偶数の建物は ±0.5。v1.6.1 で入口の見た目を本当の入口に合わせた）
+export function buildBuilding({ style = 'gable', w = 5, d = 4, colors = {}, doorX = 0 } = {}) {
   const m = makeMats({ primary: 0xb8a68a, secondary: 0x8a4a2c, accent: 0xe8b04a, dark: 0x3a2e26, glow: 0xffd98a, metal: 0x8a9098, ...colors });
   const root = grp(null, 'building');
   root.userData = { kind: 'building', style };
@@ -718,16 +719,16 @@ export function buildBuilding({ style = 'gable', w = 5, d = 4, colors = {} } = {
     // 日よけ
     add(root, Bx(W * 0.8, 0.06, 0.6), m('accent'), 0, H * 0.72, z0 + D / 2 + 0.3, 0.3, 0, 0);
   }
-  // 入口（正面中央）
+  // 入口（入口のタイルの真上）
   const fz = z0 + D / 2;
-  add(root, Bx(0.86, 1.15, 0.08), m('dark'), 0, 0.58, fz + 0.01);
-  add(root, Bx(1.0, 0.1, 0.12), m('accent'), 0, 1.2, fz + 0.03);
-  add(root, Bx(0.6, 0.06, 0.02), m('glow'), 0, 1.06, fz + 0.06);
+  add(root, Bx(0.86, 1.15, 0.08), m('dark'), doorX, 0.58, fz + 0.01);
+  add(root, Bx(1.0, 0.1, 0.12), m('accent'), doorX, 1.2, fz + 0.03);
+  add(root, Bx(0.6, 0.06, 0.02), m('glow'), doorX, 1.06, fz + 0.06);
   // 窓
   const n = Math.max(1, Math.floor((W - 1.2) / 1.1));
   for (let i = 0; i < n; i++) {
     const x = -W / 2 + 0.55 + i * ((W - 1.1) / Math.max(1, n - 1 || 1));
-    if (Math.abs(x) < 0.7) continue;
+    if (Math.abs(x - doorX) < 0.75) continue;
     add(root, Bx(0.46, 0.42, 0.04), m('glow'), x, Math.min(1.1, H * 0.55), fz + 0.02);
     add(root, Bx(0.54, 0.06, 0.06), m('dark'), x, Math.min(1.1, H * 0.55) - 0.24, fz + 0.03);
   }
