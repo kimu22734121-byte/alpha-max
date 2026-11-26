@@ -22,7 +22,7 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, sealOf, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
+import { shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
 import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
@@ -169,6 +169,7 @@ export class WorldScene {
   // ---------------------------------------------------------------- 組み立て
   clear() {
     this.particles = [];
+    this.npcMarks = [];
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
     this.mapView?.dispose();
   }
@@ -282,6 +283,23 @@ export class WorldScene {
       obj.rotation.y = 0;
       obj.userData.entity = { kind: 'npc', data: n };
       this.scene.add(obj);
+      // 次の惑星へ飛べるとき、船長キールの頭の上に「次の惑星へ」の目印（ゆっくり上下する）
+      if (n.event === 'shuttleCaptain' && shuttleReady()) {
+        const c = document.createElement('canvas'); c.width = 256; c.height = 96;
+        const g = c.getContext('2d');
+        g.fillStyle = 'rgba(20,30,60,0.85)'; g.strokeStyle = '#ffe08a'; g.lineWidth = 4;
+        g.beginPath(); g.roundRect(6, 6, 244, 60, 14); g.fill(); g.stroke();
+        g.fillStyle = '#ffe08a'; g.beginPath(); g.moveTo(112, 66); g.lineTo(144, 66); g.lineTo(128, 90); g.fill();
+        g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+        g.fillText('🚀 次の惑星へ', 128, 37);
+        const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+        const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
+        mark.scale.set(2.4, 0.9, 1); mark.renderOrder = 20;
+        mark.position.set(n.x + 0.5, obj.position.y + 2.6, n.y + 0.5);
+        mark.userData.baseY = mark.position.y; mark.userData.npcMark = true;
+        this.scene.add(mark);
+        (this.npcMarks ||= []).push(mark);
+      }
       return { data: n, obj, x: n.x + 0.5, z: n.y + 0.5 };
     });
 
@@ -462,6 +480,7 @@ export class WorldScene {
     this.updateParticles(dt, moving);
     // NPC・シンボル
     for (const n of this.npcs) animateChar(n.obj, t + n.x, 0);
+    for (const mk of this.npcMarks || []) mk.position.y = mk.userData.baseY + Math.sin(t * 2.5) * 0.15;
     for (const s of this.symbols) {
       animateEnemy(s.obj, t);
       const fly = s.obj.userData.flying;

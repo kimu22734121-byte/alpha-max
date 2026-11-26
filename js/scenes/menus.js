@@ -262,6 +262,11 @@ function join(id, machineId) {
 
 // 宇宙船の行き先（星ごと）。need＝行けるようになる封印の段階、flag＝はじめて着いたら立つフラグ
 // 新しい星（章）はここに1つ足せば船長の行き先に並ぶ
+// まだ行っていない次の星へ飛べるとき true（船長キールの頭の上に「次の惑星へ」の目印を出す）
+export function shuttleReady() {
+  if (G.seal < 1) return false;
+  return SHUTTLE_ROUTES.some((rt) => rt.flag && (rt.ok ? rt.ok() : G.seal >= (rt.need || 0)) && !G.flags[rt.flag]);
+}
 const SHUTTLE_ROUTES = [
   { planet: 'earth', order: 1, town: 'town3', at: [24.5, 26.5], label: '土の惑星（ウェイポイント）', lines: ['宇宙船は星の海を飛び立った。', '目指すは、なつかしい土の惑星――。'] },
   {
@@ -405,7 +410,7 @@ export async function runEvent(name, world) {
     join('gina', 'goliath');
     await ui.say(`重厚タイプのマシン「ゴライアス」がガレージに入った。（${g}が乗ります）`);
   }
-  // 宇宙船の船長キール：惑星と惑星を結ぶ定期便。行き先は SHUTTLE_ROUTES（封印の段階 need で次の星が増える）
+  // 宇宙船の船長キール：惑星と惑星を結ぶ定期便。頭の上の「次の惑星へ」の目印は shuttleReady()（world.js）。行き先は SHUTTLE_ROUTES（封印の段階 need で次の星が増える）
   if (name === 'shuttleCaptain') {
     const cap = '船長キール';
     const here = planetOfTown(currentTown())?.id;

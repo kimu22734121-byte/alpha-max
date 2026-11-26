@@ -259,7 +259,7 @@ async function chapterEnding(ch) {
   await ui.panel(`<div class="ending">
     <div class="ending-big">第${ch}章「${titles[ch]}」の惑星　クリア！</div>
     <p>${notes[ch]}</p>
-    <p class="note">（宇宙船の船長キールに話すと、次の星へ飛べます。このまま遊び続けることもできます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+    <p class="note">（この星の最初の町にいる宇宙船の船長キールに話すと、次の星へ飛べます。頭の上に「次の惑星へ」の目印が出ています）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
   autosave();
 }
@@ -327,7 +327,7 @@ async function endingChapter3() {
     <div class="ending-big">第3章「水」の惑星　クリア！</div>
     <p>アルファは三つ目の封印を取り戻し、星の光をまとった。</p>
     <p>三機の兄弟機の使命と、マザーコアの謎を追い、旅は次の惑星へ――</p>
-    <p class="note">To be continued…　（このまま第3章を遊び続けられます。転送台や宇宙船でほかの星にも行けます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+    <p class="note">To be continued…　（シーゲートの宇宙船の船長キールに話すと、次の星「火の惑星」へ飛べます。頭の上に「次の惑星へ」の目印が出ています）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
   autosave();
 }
@@ -357,7 +357,7 @@ async function endingChapter2() {
     <div class="ending-big">第2章「風」の惑星　クリア！</div>
     <p>アルファは二つ目の封印を取り戻し、白金の輝きをまとった。</p>
     <p>三機の兄弟機と「マザーコア」の謎を追い、旅は次の惑星へ――</p>
-    <p class="note">To be continued…　（このまま第2章を遊び続けられます。転送台で第1章の町にも行けます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
+    <p class="note">To be continued…　（ブリーズヒルの宇宙船の船長キールに話すと、次の星「水の惑星」へ飛べます。頭の上に「次の惑星へ」の目印が出ています）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
   autosave();
 }
@@ -396,7 +396,7 @@ async function endingChapter1() {
     <div class="ending-big">第1章「土」の惑星　クリア！</div>
     <p>伝説の機体アルファは、封印のひとつを取り戻して目を覚ました。</p>
     <p>（アルファはラストヘイヴンのガレージにいます。「乗る人を決める」でレンが乗れます）</p>
-    <p>（ウェイポイントの宇宙船の船長に話すと、次の惑星へ飛べます）</p>
+    <p>（ウェイポイントの交易マーケットの前にいる宇宙船の船長キールに話すと、次の惑星へ飛べます。頭の上に「次の惑星へ」の目印が出ています）</p>
     <p>宇宙生物「マザーコア」の謎を追い、旅は次の惑星へ――</p>
     <p class="note">To be continued…　（このまま第1章を遊び続けられます）</p></div>`, { title: 'アルファマックス', closeText: '旅を続ける' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
