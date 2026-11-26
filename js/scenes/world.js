@@ -305,15 +305,17 @@ export class WorldScene {
       obj.rotation.y = 0;
       obj.userData.entity = { kind: 'npc', data: n };
       this.scene.add(obj);
-      // 次の惑星へ飛べるとき、船長キールの頭の上に「次の惑星へ」の目印（ゆっくり上下する）
-      if (n.event === 'shuttleCaptain' && shuttleReady()) {
+      // 船長キールの頭の上にはいつも目印（v1.6.2）。次の星へ飛べるときは金色の「次の惑星へ」、それ以外は青い「宇宙船の船長」
+      if (n.event === 'shuttleCaptain') {
+        const ready = shuttleReady();
         const c = document.createElement('canvas'); c.width = 256; c.height = 96;
         const g = c.getContext('2d');
-        g.fillStyle = 'rgba(20,30,60,0.85)'; g.strokeStyle = '#ffe08a'; g.lineWidth = 4;
+        const edge = ready ? '#ffe08a' : '#8ad8ff';
+        g.fillStyle = 'rgba(20,30,60,0.85)'; g.strokeStyle = edge; g.lineWidth = 4;
         g.beginPath(); g.roundRect(6, 6, 244, 60, 14); g.fill(); g.stroke();
-        g.fillStyle = '#ffe08a'; g.beginPath(); g.moveTo(112, 66); g.lineTo(144, 66); g.lineTo(128, 90); g.fill();
+        g.fillStyle = edge; g.beginPath(); g.moveTo(112, 66); g.lineTo(144, 66); g.lineTo(128, 90); g.fill();
         g.font = 'bold 30px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
-        g.fillText('🚀 次の惑星へ', 128, 37);
+        g.fillText(ready ? '🚀 次の惑星へ' : '🚀 宇宙船の船長', 128, 37);
         const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
         const mark = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true }));
         mark.scale.set(2.4, 0.9, 1); mark.renderOrder = 20;
