@@ -144,7 +144,7 @@ export class WorldScene {
     // 歩く向きに合わせて、カメラが自動でキャラの後ろに回る（v2.9〜。押すたびにオン・オフ、設定に覚える）
     this.camFollowBtn = document.createElement('button');
     this.camFollowBtn.className = 'cam-follow';
-    const drawFollow = () => { const on = !!audio.settings.followCam; this.camFollowBtn.textContent = on ? '🎥 自動で後ろへ：オン' : '🎥 自動で後ろへ：オフ'; this.camFollowBtn.classList.toggle('active', on); };
+    const drawFollow = () => { const on = !!audio.settings.followCam; this.camFollowBtn.innerHTML = `🎥<span> 自動で後ろへ：${on ? 'オン' : 'オフ'}</span>`; this.camFollowBtn.title = `自動で後ろへ：${on ? 'オン' : 'オフ'}`; this.camFollowBtn.classList.toggle('active', on); };
     drawFollow();
     this.camFollowBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     this.camFollowBtn.addEventListener('click', (e) => { e.stopPropagation(); audio.settings.followCam = !audio.settings.followCam; audio.saveSettings(); audio.sfx('cursor'); drawFollow(); });

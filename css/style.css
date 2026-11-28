@@ -61,16 +61,17 @@ button { font-family: inherit; color: inherit; }
 
 /* ---- フィールドのHUD ---- */
 .hud.hidden { display: none; }
-.hud-party { position: fixed; left: calc(8px + var(--safe-l)); top: 8px; display: flex; gap: 6px; align-items: flex-start; }
-.plate { background: var(--panel); border: 1px solid var(--line2); border-left: 3px solid var(--line); padding: 4px 8px 5px; min-width: 116px; font-size: 12px; border-radius: 3px; }
+/* 左上：ミュート → 仲間の体力（v2.9.1：ミュートを左上の角に。体力は右上のボタンにかぶらない幅に収め、画面が狭いと縮む） */
+.hud-party { position: fixed; left: calc(56px + var(--safe-l)); top: 8px; display: flex; gap: 5px; align-items: flex-start; max-width: calc(100vw - 56px - 168px - var(--safe-l) - var(--safe-r)); }
+.plate { background: var(--panel); border: 1px solid var(--line2); border-left: 3px solid var(--line); padding: 3px 7px 4px; flex: 0 1 128px; min-width: 0; box-sizing: border-box; font-size: 11px; border-radius: 3px; }
 .plate.ko { opacity: 0.55; border-left-color: var(--warn); }
 .plate.riding { border-left-color: var(--en); }
-.pl-name { display: flex; justify-content: space-between; gap: 6px; font-size: 13px; }
+.pl-name { display: flex; justify-content: space-between; gap: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; }
 .pl-lv { color: var(--dim); font-size: 11px; }
 .pl-hp, .pl-mc { display: flex; align-items: center; gap: 4px; margin-top: 2px; flex-wrap: wrap; }
-.pl-mcname { width: 100%; color: var(--en); font-size: 11px; }
+.pl-mcname { width: 100%; color: var(--en); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pl-num { font-size: 11px; color: var(--dim); min-width: 26px; text-align: right; }
-.bar { flex: 1; min-width: 50px; height: 6px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; }
+.bar { flex: 1; min-width: 24px; height: 6px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--hp); transition: width 0.3s; }
 .bar.armor i { background: var(--armor); }
 .bar.en i { background: var(--en); }
@@ -201,7 +202,7 @@ b.fire { color: #ff8a5a; font-weight: normal; }
 
 /* 背の低い横画面（スマホ）向け */
 @media (max-height: 430px) {
-  .plate { min-width: 100px; padding: 3px 6px; }
+  .plate { padding: 2px 5px 3px; }
   .menu-item { min-height: 34px; padding-top: 6px; padding-bottom: 6px; font-size: 14px; }
   .menu-title { font-size: 14px; padding-top: 6px; }
   .say-box { min-height: 80px; padding: 12px 16px 14px; }
@@ -355,8 +356,8 @@ table.cmp td.arr { color: var(--dim); }
 .cam-follow { position: fixed; right: calc(10px + var(--safe-r)); top: 248px; z-index: 5; display: none; background: var(--panel); border: 2px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 12px; font-family: var(--font); font-size: 14px; cursor: pointer; }
 .cam-follow.show { display: block; }
 .cam-follow.active { background: #1f5a8a; border-color: #8ad8ff; color: #fff; box-shadow: 0 0 10px #4ab4ff; }
-/* ミュート（v2.9）：左上、仲間の体力の下 */
-.hud-mute { position: fixed; left: calc(8px + var(--safe-l)); top: 66px; pointer-events: auto; background: var(--panel); border: 2px solid var(--line); color: var(--text); width: 46px; height: 40px; border-radius: 8px; font-size: 20px; line-height: 1; cursor: pointer; }
+/* ミュート（v2.9）：左上の角 */
+.hud-mute { position: fixed; left: calc(8px + var(--safe-l)); top: 8px; pointer-events: auto; background: var(--panel); border: 2px solid var(--line); color: var(--text); width: 42px; height: 42px; padding: 0; border-radius: 8px; font-size: 20px; line-height: 1; cursor: pointer; }
 .hud-mute.muted { border-color: #ff7a7a; background: #4a1c1c; }
 
 /* 格納庫の一覧（マシン・パーツ）：絞り込み・並べ替え・まとめ表示 */
@@ -470,3 +471,10 @@ table.cmp td.arr { color: var(--dim); }
 #boot.setting .boot-title { font-size: clamp(26px, 6vw, 56px); }
 .auto-mode-btn { position: fixed; right: calc(100px + var(--safe-r)); top: 12px; z-index: 12; pointer-events: auto; background: var(--panel); border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 7px 10px; font-family: var(--font); font-size: 13px; cursor: pointer; }
 .auto-mode-btn.on { border-color: #7aff9a; color: #eaffea; }
+
+/* とても背の低い横画面：「自動で後ろへ」はアイコンだけにして「正面に戻す」の右に並べる（ダッシュボタンにかぶらないように。v2.9.1） */
+@media (max-height: 360px) {
+  .cam-follow { top: 186px; padding: 8px 10px; }
+  .cam-follow span { display: none; }
+  .cam-reset { right: calc(62px + var(--safe-r)); }
+}
