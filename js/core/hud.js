@@ -24,7 +24,7 @@ export const hud = {
       <div class="hud-goal"></div>
       <canvas class="hud-mini" width="300" height="200" aria-label="ミニ地図"></canvas>
       <button class="hud-menu" aria-label="メニュー">☰<span>メニュー</span></button>
-      <button class="hud-menu hud-mapbtn" aria-label="ちず">🗺<span>ちず</span></button>`;
+      <button class="hud-menu hud-mapbtn" aria-label="どうぐ">🎒<span>どうぐ</span></button>`;
     parent.appendChild(root);
     plates = root.querySelector('.hud-party');
     gearEl = root.querySelector('.hud-gear');
@@ -43,7 +43,7 @@ export const hud = {
     document.body.append(actBtn, dashBtn);
     const stop = (e) => { e.stopPropagation(); };
     for (const b of [menuBtn, mapBtn, actBtn, dashBtn]) { b.addEventListener('pointerdown', stop); }
-    mapBtn.addEventListener('click', (e) => { e.stopPropagation(); input.emit('mapview'); }); // メニューの横の「ちず」ボタン（v1.6）
+    mapBtn.addEventListener('click', (e) => { e.stopPropagation(); input.emit('items'); }); // メニューの横の「どうぐ」ボタン（v1.7。ちずはミニ地図をタップ）
     menuBtn.addEventListener('click', (e) => { e.stopPropagation(); input.emit('menu'); });
     actBtn.addEventListener('click', (e) => {
       e.stopPropagation();

@@ -15,7 +15,7 @@ import {
 } from '../game/state.js';
 import { buildMachineModel } from '../models/mech.js';
 import { machineSpec } from './world.js';
-import { compareTable, partDesc, rangeBadge, partSlots, weaponSlots } from './menus.js';
+import { compareTable, partDesc, rangeBadge, partSlots, weaponSlots, sortPilotedFirst } from './menus.js';
 
 // ---------------- 並べ替え・絞り込みの材料 ----------------
 const KIND = (mc) => (MACHINES[mc.type].secret ? 'secret' : mc.type === 'alpha' || MACHINES[mc.type].special ? 'legend' : 'normal');
@@ -65,8 +65,10 @@ function machineGroups() {
   const out = Object.entries(groups).map(([type, mcs]) => ({ type, mcs, name: MACHINES[type].name, power: Math.max(...mcs.map(machinePower)), order: Math.min(...mcs.map(order)) }));
   const by = { order: (a, b) => a.order - b.order, name: (a, b) => a.name.localeCompare(b.name, 'ja'), power: (a, b) => b.power - a.power }[f.sort];
   out.sort(by);
-  for (const g of out) g.mcs.sort(f.sort === 'power' ? (a, b) => machinePower(b) - machinePower(a) : (a, b) => order(a) - order(b));
-  return out;
+  for (const g of out) g.mcs = sortPilotedFirst(g.mcs.sort(f.sort === 'power' ? (a, b) => machinePower(b) - machinePower(a) : (a, b) => order(a) - order(b)));
+  // 仲間が乗っているマシンの種類を上に（v1.7〜）
+  const used = (g) => (g.mcs.some((mc) => partyMembers().some((m) => m.machine === mc.id)) ? 0 : 1);
+  return out.map((g, i) => [g, i]).sort((a, b) => used(a[0]) - used(b[0]) || a[1] - b[1]).map(([g]) => g);
 }
 // パーツ：持ち物と、マシンに付いているもの
 function partGroups() {

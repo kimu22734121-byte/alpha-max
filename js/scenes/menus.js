@@ -1096,6 +1096,7 @@ function footCompare(m, kind, id) {
 async function pickMachine(list) {
   if (!list.length) { await ui.say('ガレージに預けているマシンがない。'); return null; }
   if (list.length === 1) return list[0];
+  list = sortPilotedFirst(list);
   return ui.menu({ title: 'どのマシン？', items: list.map((mc) => ({ label: esc(machineName(mc)) + testTag(mc), right: pilotName(mc), value: mc })) });
 }
 const pilotName = (mc) => { const p = partyMembers().find((m) => m.machine === mc.id); return p ? esc(p.name) : '<small>乗り手なし</small>'; };
@@ -1107,8 +1108,17 @@ async function garageRepair(here, shop) {
     const cost = Math.ceil(((st.maxArmor - mc.armor) * shop.repairPerArmor + (st.maxEn - mc.en) * shop.repairPerEn + (mc.broken ? 300 : 0)) * (1 - MODS.mechanicDiscount));
     return { label: `${esc(machineName(mc))}${mc.broken ? ' <b class="warn">大破</b>' : ''}`, right: `装甲${mc.armor}/${st.maxArmor}　${GEAR}${cost}`, value: { mc, cost }, disabled: cost <= 0 };
   });
+  const need = items.filter((it) => !it.disabled).map((it) => it.value);
+  const total = need.reduce((a, b) => a + b.cost, 0);
+  if (need.length > 1) items.unshift({ label: '🔧 まとめて修理（全部）', right: `${need.length}台　${GEAR}${total}`, value: { all: true, cost: total } });
   const v = await ui.menu({ title: '修理（メカニック割引）', wide: true, items });
   if (!v) return;
+  if (v.all) {
+    if (G.gear < total) { audio.sfx('error'); await ui.say('ギアが足りない。'); return; }
+    addGear(-total); for (const x of need) repairMachine(x.mc); audio.sfx('repair');
+    await ui.say(`${need.length}台の装甲とエネルギーがまとめて全回復した！`);
+    return;
+  }
   if (G.gear < v.cost) { audio.sfx('error'); await ui.say('ギアが足りない。'); return; }
   addGear(-v.cost); repairMachine(v.mc); audio.sfx('repair');
   await ui.say(`${machineName(v.mc)}の装甲とエネルギーが全回復した！`);
@@ -1331,11 +1341,10 @@ export async function openFieldMenu(world) {
         { label: '📍 つぎの目的', value: 'goal' },
         { label: 'つよさ', value: 'status' },
         { label: 'どうぐ', value: 'items' },
-        { label: 'ちず', value: 'map' },
         { label: 'そうび（生身）', value: 'equip' },
-        { label: '⚡ 最強', value: 'best' },
+        // メカニック（レン）が気絶していなければ、町の外でもマシンの武器・パーツを付け替えられる（v1.7〜）
+        ...(ren().ko ? [] : [{ label: 'そうび（マシン）', value: 'mequip' }]),
         { label: 'マシン', value: 'machines' },
-        { label: '調べる', value: 'search' },
         { label: '手配書', value: 'bounty' },
         { label: '素材', value: 'mats' },
         { label: 'せってい', value: 'settings' },
@@ -1349,14 +1358,12 @@ export async function openFieldMenu(world) {
     }
     if (v === 'status') await statusMenu();
     if (v === 'items') { const before = G.pos.map; await itemMenu(false, world); if (G.pos.map !== before || !world.active) return; }
-    if (v === 'map') await openMapView(world);
     if (v === 'equip') { await equipMenu(); world.buildParty(); }
-    if (v === 'best') { bestDone(bestAll()); world.buildParty(); }
+    if (v === 'mequip') { await machineEquipMenu(); world.buildParty(); }
     if (v === 'machines') await machineList();
     if (v === 'bounty') await bountyList();
     if (v === 'mats') await ui.panel(`<table class="kv">${Object.entries(MATERIALS).map(([k, m]) => `<tr><th>${esc(m.name)}</th><td>${G.inv.mats[k] || 0}</td><td><small>${esc(m.desc)}</small></td></tr>`).join('')}</table>`, { title: '素材（武器強化・改造に使う）' });
     if (v === 'settings') await settingsMenu(world);
-    if (v === 'search') { ui.closeAll(); world.lock(false); await world.onAction(); return; }
     if (v === 'title') {
       if (await ui.confirm('タイトル画面にもどりますか？（オートセーブされます）')) { autosave(); ui.closeAll(); flow.toTitle(); return; }
     }
@@ -1518,8 +1525,39 @@ async function equipMenu() {
   }
 }
 
+// 仲間が使っているマシンを上に（乗っている順）、残りは入手順
+export function sortPilotedFirst(list) {
+  const rank = (mc) => { const i = partyMembers().findIndex((m) => m.machine === mc.id); return i < 0 ? 99 : i; };
+  return list.map((mc, i) => [mc, i]).sort((a, b) => rank(a[0]) - rank(b[0]) || a[1] - b[1]).map(([mc]) => mc);
+}
+
+// そうび（マシン）：仲間が使っているマシンの武器とパーツを、町の外でも付け替える（メカニックが気絶していないとき）
+async function machineEquipMenu() {
+  for (;;) {
+    if (ren().ko) { await ui.say(`${ren().name}が気絶しているので、マシンをいじれない。`); return; }
+    const mcs = partyMembers().map((m) => (m.machine ? G.machines[m.machine] : null)).filter((mc, i, a) => mc?.owned && a.indexOf(mc) === i);
+    if (!mcs.length) { await ui.say('使っているマシンがない。'); return; }
+    const mc = await ui.menu({
+      title: 'そうび（マシン）', wide: true,
+      items: [
+        { label: '⚡ 最強（全員のマシン）', value: '__best', right: '<small>持っている中でいちばん強いパーツと武器に</small>' },
+        ...mcs.map((x) => { const st = machineStats(x); return { label: esc(machineName(x)) + testTag(x), right: `${pilotName(x)}　装甲${x.armor}/${st.maxArmor}`, value: x }; }),
+      ],
+    });
+    if (!mc) return;
+    if (mc === '__best') { let n = 0; for (const x of mcs) n += bestMachine(x); bestDone(n); continue; }
+    for (;;) {
+      const k = await ui.menu({ title: esc(machineName(mc)), items: [{ label: '⚡ 最強', value: 'best' }, { label: '武器の付け替え', value: 'w' }, { label: 'パーツ交換', value: 'p' }] });
+      if (!k) break;
+      if (k === 'best') bestDone(bestMachine(mc));
+      if (k === 'w') await weaponSlots(mc);
+      if (k === 'p') await partSlots(mc);
+    }
+  }
+}
+
 async function machineList() {
-  const owned = Object.values(G.machines).filter((mc) => mc.owned);
+  const owned = sortPilotedFirst(Object.values(G.machines).filter((mc) => mc.owned));
   const where = (mc) => (mc.loc.type === 'party' ? '乗っている' : mc.loc.type === 'garage' ? `${MAPS[mc.loc.town].name}のガレージ` : `${MAPS[mc.loc.map].name}に駐車`);
   const mc = await ui.menu({ title: 'マシン', wide: true, items: owned.map((m) => ({ label: esc(machineName(m)) + testTag(m), right: `${esc(where(m))}　${pilotName(m)}`, value: m })) });
   if (!mc) return;
