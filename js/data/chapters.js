@@ -29,6 +29,18 @@ export function currentChapter(G) {
   return 1;
 }
 
+// クリアした章のフィールド・ダンジョンは「ちず」を全部見せる（v1.9〜）
+// 章はフィールド（fieldN）の番号、ダンジョンは入口の外のフィールドの番号
+export function mapChapter(map) {
+  const f = (id) => { const m = /^field(\d+)$/.exec(id || ''); return m ? Number(m[1]) : 0; };
+  return f(map.id) || f(map.warps?.[0]?.to) || 0;
+}
+export function chapterCleared(G, ch) {
+  if (!ch) return false;
+  return ch === 7 ? F(G, 'gameClear') : currentChapter(G) > ch;
+}
+export function mapRevealed(G, map) { return chapterCleared(G, mapChapter(map)); }
+
 export const OBJECTIVES = {
   1: {
     hint: '町の人や酒場のマスターの話にもヒントがある。手配書はハンターオフィスで見られる',

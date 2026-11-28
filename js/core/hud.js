@@ -5,7 +5,7 @@ import { G, partyMembers, memberStats, machineStats, machineName } from '../game
 import { MAPS } from '../data/maps.js';
 import { TILES } from '../data/tiles.js';
 import { audio } from './audio.js';
-import { nextObjective, currentChapter, CHAPTERS } from '../data/chapters.js';
+import { nextObjective, currentChapter, CHAPTERS, mapRevealed } from '../data/chapters.js';
 import { input } from './input.js';
 import { ui, esc, fmt } from './ui.js';
 
@@ -68,7 +68,7 @@ export const hud = {
     if (off) return;
     const W = map.width, H = map.height, RX = 25, RY = 17, k = mini.width / RX;
     const px = G.pos.x, py = G.pos.y, x0 = px - RX / 2, y0 = py - RY / 2;
-    const fog = map.type !== 'town';
+    const fog = map.type !== 'town' && !mapRevealed(G, map); // クリアした章の地図は全部見える
     const ex = fog ? (G.explored?.[map.id] || '') : '';
     const g = miniG;
     g.fillStyle = 'rgba(6,8,14,0.92)'; g.fillRect(0, 0, mini.width, mini.height);
