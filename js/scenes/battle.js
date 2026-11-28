@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { ui, esc } from '../core/ui.js';
 import { audio } from '../core/audio.js';
 import { difficultyOf } from '../data/difficulty.js';
+import { AUTO_MODES, AUTO_ORDER, autoModeOf } from '../data/auto.js';
 import { tween, tweenTo, wait, Ease, rand, clamp, pick, timeScale } from '../core/tween.js';
 import { input } from '../core/input.js';
 import { getModel, flashModel, resetFlash, setGlow, setOpacity, disposeObject } from '../core/assets.js';
@@ -71,6 +72,7 @@ export class BattleScene {
     clearTimeout(this.msgTimer);
     this.hudEl?.remove();
     this.autoBtn?.remove(); this.autoBtn = null;
+    this.autoModeBtn?.remove(); this.autoModeBtn = null;
     this.fx?.dispose();
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
   }
@@ -295,6 +297,20 @@ export class BattleScene {
       ab.addEventListener('click', (e) => { e.stopPropagation(); this.setAuto(!this.auto); });
       document.body.appendChild(ab);
       this.autoBtn = ab;
+      // 作戦のボタン（押すたびに おまかせ → 全力 → 節約 → いのちだいじに）
+      const mb = document.createElement('button');
+      mb.className = 'auto-mode-btn';
+      mb.addEventListener('pointerdown', (e) => e.stopPropagation());
+      mb.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cur = G.flags.autoMode || 'smart';
+        G.flags.autoMode = AUTO_ORDER[(AUTO_ORDER.indexOf(cur) + 1) % AUTO_ORDER.length];
+        audio.sfx('cursor');
+        ui.toast(`作戦：${AUTO_MODES[G.flags.autoMode].name}　${AUTO_MODES[G.flags.autoMode].desc}`, 3);
+        this.setAuto(this.auto);
+      });
+      document.body.appendChild(mb);
+      this.autoModeBtn = mb;
       this.setAuto(this.auto);
     }
     this.partyEl = el.querySelector('.b-party');
@@ -451,32 +467,41 @@ export class BattleScene {
     this.auto = on;
     G.flags.autoBattle = on;
     if (this.autoBtn) { this.autoBtn.classList.toggle('on', on); this.autoBtn.textContent = on ? 'AUTO ●' : 'AUTO'; }
+    if (this.autoModeBtn) { this.autoModeBtn.textContent = `作戦：${autoModeOf(G).name}`; this.autoModeBtn.classList.toggle('on', on); }
     if (on) ui.cancelTopMenu();
   }
 
   // オートバトルの1人分の行動：弱っていたら回復・修理、そうでなければいちばんダメージが出る武器と相手を選ぶ
   autoCommand(u) {
+    const M = autoModeOf(G); // 作戦（data/auto.js）
     const inv = G.inv.items;
-    const has = (ids) => ids.find((k) => (inv[k] || 0) > 0);
+    const has = (ids) => (M.items === 'all' || (M.items === 'revive' && ids.includes('revive')) ? ids.find((k) => (inv[k] || 0) > 0) : null);
     const ko = this.party.find((p) => p.m.ko);
     if (ko) { const id = has(['revive']); if (id) return { type: 'item', id, target: { member: ko.m } }; }
-    const lowMc = this.party.filter((p) => p.mc && !p.m.ko && p.mc.armor < machineStats(p.mc).maxArmor * 0.35).sort((a, b) => a.mc.armor - b.mc.armor)[0];
+    const lowMc = this.party.filter((p) => p.mc && !p.m.ko && p.mc.armor < machineStats(p.mc).maxArmor * M.heal).sort((a, b) => a.mc.armor - b.mc.armor)[0];
     if (lowMc && CHARACTERS[u.m.id].skill.id === 'repair' && u.mc) return { type: 'repair', target: lowMc };
     if (u.mc && lowMc === u) { const id = has(['maint', 'repL', 'repM', 'repS']); if (id) return { type: 'item', id, target: { mc: u.mc } }; }
-    if (!u.mc && u.m.hp < memberStats(u.m).maxHp * 0.35) { const id = has(['kitL', 'kitM', 'kitS']); if (id) return { type: 'item', id, target: { member: u.m } }; }
+    if (!u.mc && u.m.hp < memberStats(u.m).maxHp * M.heal) { const id = has(['kitL', 'kitM', 'kitS']); if (id) return { type: 'item', id, target: { member: u.m } }; }
+    // いのちだいじに：回復できず、とても危ないときは防御
+    if (M.guard && (u.mc ? u.mc.armor < machineStats(u.mc).maxArmor * M.guard : u.m.hp < memberStats(u.m).maxHp * M.guard)) return { type: 'guard' };
     if (u.mc) {
       const alive = this.aliveEnemies();
       const st = machineStats(u.mc);
-      // エネルギーがたまっていて、ボス戦か敵が多いときは全砲門一斉発射
-      if (u.mc.en >= ALLFIRE_EN && u.mc.en >= st.maxEn * 0.85 && (alive.some((e) => e.def.boss) || alive.length >= 3) && u.mc.slots.some(Boolean)) return { type: 'allfire' };
+      const boss = alive.some((e) => e.def.boss);
+      // 全砲門一斉発射（作戦で使い方が変わる）
+      const canAll = u.mc.en >= ALLFIRE_EN && u.mc.slots.some(Boolean);
+      const wantAll = M.allfire === 'always' ? true : M.allfire === 'boss' ? boss && u.mc.en >= st.maxEn * 0.85 : M.allfire === 'smart' ? u.mc.en >= st.maxEn * 0.85 && (boss || alive.length >= 3) : false;
+      if (canAll && wantAll) return { type: 'allfire' };
       let best = null;
       u.mc.slots.forEach((uid, i) => {
         if (!uid) return;
         const w = weaponByUid(uid), d = WEAPONS[w.id];
         if (weaponLocked(w, u.mc) || (d.en || 0) > u.mc.en) return;
+        if (!M.en && (d.en || 0) > 0) return; // 節約：エネルギーを使う武器は使わない
         for (const mode of d.modes ? Object.keys(d.modes) : [d.target || 'one']) {
           const t = this.autoTarget(mode, d);
-          const score = weaponAtk(w, u.mc) * (d.modes ? d.modes[mode] : 1) * t.n * t.k - (d.en || 0) * 0.5;
+          const enCost = M.allfire === 'always' ? 0 : (d.en || 0) * 0.5; // 全力はエネルギーを気にしない
+          const score = weaponAtk(w, u.mc) * (d.modes ? d.modes[mode] : 1) * t.n * t.k - enCost;
           if (!best || score > best.score) best = { score, slot: i, mode: d.modes ? mode : null, target: t.target };
         }
       });
@@ -535,7 +560,13 @@ export class BattleScene {
       items.push({ label: '道具', value: 'item' }, { label: '防御', value: 'guard' }, { label: 'オート', value: 'auto', right: '<small>自動で戦う</small>' }, { label: '逃げる', value: 'escape' });
       const v = await ui.menu({ title: `${esc(u.m.name)}${u.mc ? `<small>（${esc(machineName(u.mc))}）</small>` : ''}`, items, className: 'battle-cmd', cancel: true });
       if (this.auto) return 'auto';
-      if (v === 'auto') { this.setAuto(true); return 'auto'; }
+      if (v === 'auto') {
+        const cur = G.flags.autoMode || 'smart';
+        const m = await ui.menu({ title: 'オートの作戦', className: 'battle-cmd wide', desc: true, items: AUTO_ORDER.map((k) => ({ label: `${k === cur ? '● ' : ''}${AUTO_MODES[k].name}`, value: k, desc: AUTO_MODES[k].desc })) });
+        if (!m) continue;
+        G.flags.autoMode = m;
+        this.setAuto(true); return 'auto';
+      }
       if (v === null) return 'back';
       if (v === 'guard') return { type: 'guard' };
       if (v === 'escape') return { type: 'escape' };

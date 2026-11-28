@@ -34,6 +34,7 @@ import { nextObjective, CHAPTERS, mapRevealed } from '../data/chapters.js';
 import { swapDirs } from '../data/orient.js';
 import { mapMarks, blinkAlpha } from '../core/map-marks.js';
 import { DIFFICULTY, DIFF_ORDER, difficultyOf } from '../data/difficulty.js';
+import { AUTO_MODES, AUTO_ORDER } from '../data/auto.js';
 // 町の番号から章（town10〜12＝第4章 … town19＝第7章）
 const chapterOfTown = (t) => { const n = Number(String(t).replace('town', '')); return n >= 19 ? 7 : n >= 10 ? 4 + Math.floor((n - 10) / 3) : 0; };
 
@@ -1673,6 +1674,7 @@ async function settingsMenu(world) {
         { label: 'マップ表示', right: settings.mapMode === '3d' ? '立体（標準）' : '2D（軽量）', value: 'map' },
         { label: '音', right: settings.sound === 'hq' ? '高音質（アレンジ版）' : 'レトロ（電子音）', value: 'sound' },
         { label: 'むずかしさ', right: `${difficultyOf(settings).name}`, value: 'diff' },
+        { label: 'オートの作戦', right: AUTO_MODES[G.flags.autoMode || 'smart'].name, value: 'automode' },
         { label: 'ミニ地図', right: settings.minimap === false ? 'オフ' : 'オン', value: 'mini' },
         { label: '全画面表示', value: 'fs' },
       ],
@@ -1699,6 +1701,11 @@ async function settingsMenu(world) {
         if (song) audio.playSong(song, { restart: true });
         ui.toast(d === 'hq' ? '高音質（アレンジ版）にした' : 'レトロ（電子音）にした');
       }
+    }
+    if (v === 'automode') {
+      const cur = G.flags.autoMode || 'smart';
+      const d = await ui.menu({ title: 'オートの作戦（戦闘の「作戦」ボタンでも切り替えられます）', wide: true, desc: true, items: AUTO_ORDER.map((k) => ({ label: `${k === cur ? '● ' : ''}${AUTO_MODES[k].name}`, value: k, desc: AUTO_MODES[k].desc })) });
+      if (d) { G.flags.autoMode = d; audio.sfx('ok'); }
     }
     if (v === 'diff') {
       const cur = settings.difficulty || 'normal';

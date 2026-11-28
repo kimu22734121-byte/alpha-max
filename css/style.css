@@ -461,3 +461,5 @@ table.cmp td.arr { color: var(--dim); }
 @media (max-height: 430px) { .boot-title { font-size: clamp(34px, 9vw, 80px); } #boot { gap: 6px; } .boot-settings { gap: 5px; padding: 10px 12px; } .boot-settings .bs-row { padding: 7px 10px; } }
 #boot.setting .boot-sub, #boot.setting .boot-bar { display: none; }
 #boot.setting .boot-title { font-size: clamp(26px, 6vw, 56px); }
+.auto-mode-btn { position: fixed; right: calc(100px + var(--safe-r)); top: 12px; z-index: 12; pointer-events: auto; background: var(--panel); border: 1px solid var(--line2); color: var(--text); border-radius: 8px; padding: 7px 10px; font-family: var(--font); font-size: 13px; cursor: pointer; }
+.auto-mode-btn.on { border-color: #7aff9a; color: #eaffea; }
