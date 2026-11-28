@@ -252,6 +252,9 @@ table.cmp td.arr { color: var(--dim); }
 /* ちず */
 .map-panel .mapview { text-align: center; }
 .map-panel .mapview img { max-width: 100%; max-height: 58vh; image-rendering: pixelated; border: 1px solid var(--line2); }
+.map-panel .mapview-wrap { position: relative; display: inline-block; max-width: 100%; }
+.map-panel .mapview-wrap img { display: block; }
+.map-panel .mapview-wrap canvas.mapmarks { position: absolute; left: 1px; top: 1px; width: calc(100% - 2px); height: calc(100% - 2px); pointer-events: none; image-rendering: auto; }
 
 /* 転送台の行き先（惑星ごとの見出し・まだ行っていない町はグレー） */
 .grey { color: #7a7a7a; }

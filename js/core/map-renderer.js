@@ -91,15 +91,15 @@ export const PALETTES = {
   },
   // 第6章「闇」の惑星：夜の大地・紫の岩・黒い山・闇の谷（z）
   dark: {
-    sand: '#3a3038', sandSp: ['#2e262e', '#463a44', '#3a2228'],
-    rock: '#2a2636', rockSp: ['#201c2a', '#363046'], stoneD: '#18141e', stoneL: '#4a4460',
-    metal: '#3a3440', metalD: '#2e2832', metalL: '#4e4652', metalB: '#ff3a4a',
-    mount: ['#241a22', '#1a1218', '#3a2a34', '#c02a3a'],
-    wall: ['#2a2636', '#363046', '#1a1622'],
-    road: '#4e4860', roadSp: ['#423c54', '#5a546c'],
-    grass: '#4a2a32', flowers: ['#ff3a4a', '#ff8a5a'],
-    caveWall: ['#141018', '#1e1a26', '#282234'],
-    voidCol: '#1a0206', cliff: ['#1e1418', '#2a1a20', '#140c10'],
+    sand: '#635460', sandSp: ['#514451', '#766373', '#633e48'],
+    rock: '#4b445d', rockSp: ['#3b354b', '#5d5476'], stoneD: '#2f2938', stoneL: '#7c739e',
+    metal: '#635a6d', metalD: '#514857', metalL: '#827689', metalB: '#ff3a4a',
+    mount: ['#41323e', '#32252f', '#634b5a', '#c02a3a'],
+    wall: ['#4b445d', '#5d5476', '#322c3e'],
+    road: '#82799e', roadSp: ['#70678c', '#958cb1'],
+    grass: '#7c4b57', flowers: ['#ff3a4a', '#ff8a5a'],
+    caveWall: ['#29222f', '#383244', '#483e5a'],
+    voidCol: '#320d13', cliff: ['#38292f', '#4b323b', '#291c22'],
   },
   // 第7章「マザーコアの世界」（v1.2〜 虹の深淵）：マザーコアが6つの星の光を吸い込み、世界じゅうが虹色に燃えている
   //  真珠色の大地に虹の帯（rainbow）、水晶の山、虹の泉（8）、星の海の穴（z）
@@ -609,7 +609,7 @@ function add3D(map, group, disposables, view) {
   const BC = {
     fire: { m3: 0x4a2a22, w4: 0x3a2a26, c24: 0x2e1c18, r1: 0x3a3236, r0: 0x5a4a44, trunk: 0x2a1a14, leaf: null, glow: 0xff5a1a },
     light: { m3: 0xc8d8ec, w4: 0xe0d6bc, c24: 0xd0c6ac, r1: 0xe0dcd4, r0: 0xf0e8d0, trunk: 0xe8e0c8, leaf: 0xf0d860, glow: 0xa8d8ff },
-    dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x5a1a24, glow: 0xff3a4a },
+    dark: { m3: 0x4a4058, w4: 0x504a64, c24: 0x3a3448, r1: 0x4a4460, r0: 0x605878, trunk: 0x3a3040, leaf: 0x8a2a3a, glow: 0xff3a4a }, // v2.0 で明るく
     core: { m3: 0xf0ecff, w4: 0xe8e4ff, c24: 0xe0dcff, r1: 0xf0ecff, r0: 0xffffff, trunk: 0xf0ecff, leaf: 0xffffff, glow: 0xffffff },
   }[map.biome];
   const indoor = map.type === 'interior';

@@ -86,7 +86,20 @@ export class TitleScene {
       if (v === 'auto') { this.handlers.continue(auto); return; }
       if (v === 'new') {
         if ((auto || anySlot) && !(await ui.confirm('はじめから遊びますか？（セーブデータは消えません）'))) continue;
-        this.handlers.newGame(); return;
+        // 一度クリアしていたら、伝説の機体をすべて最強にして始めることもできる（v2.0〜）
+        let legend = false;
+        if (save.hasCleared()) {
+          const how = await ui.menu({
+            title: 'どちらで始める？', wide: true, desc: true,
+            items: [
+              { label: 'ふつうに始める', value: 'normal', desc: '最初の旅と同じ。アルファは封印されたところから' },
+              { label: '✦ 伝説の機体をすべて最強にして始める', value: 'legend', desc: 'アルファは最初から「アルファマックス」（ステラ・ブレイカーも最終段階）。オメガ・ガイアもラストヘイヴンのガレージにいて、3機ともフレーム・エンジン強化が最大、武器は+5' },
+            ],
+          });
+          if (!how) continue;
+          legend = how === 'legend';
+        }
+        this.handlers.newGame({ legend }); return;
       }
       if (v === 'slot') {
         const n = await ui.menu({ title: 'どのデータで続ける？', wide: true, items: slots.map((s) => ({ label: `セーブ${s.n}`, right: esc(describeSave(s.data)), value: s.n, disabled: !s.data })) });

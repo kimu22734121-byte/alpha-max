@@ -31,6 +31,11 @@ import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
 import { bestAll, bestFoot, bestMachine } from '../game/best-gear.js';
 import { nextObjective, CHAPTERS, mapRevealed } from '../data/chapters.js';
+import { swapDirs } from '../data/orient.js';
+import { mapMarks, blinkAlpha } from '../core/map-marks.js';
+import { DIFFICULTY, DIFF_ORDER, difficultyOf } from '../data/difficulty.js';
+// 町の番号から章（town10〜12＝第4章 … town19＝第7章）
+const chapterOfTown = (t) => { const n = Number(String(t).replace('town', '')); return n >= 19 ? 7 : n >= 10 ? 4 + Math.floor((n - 10) / 3) : 0; };
 
 export const settings = audio.settings;
 // v0.4 から立体的なマップ（3D）が標準。軽くしたい時は「せってい」で2Dにできる
@@ -224,7 +229,7 @@ async function bar() {
     town17: ['マスター「グレイブメックは、パイロットの手袋を飲みこんだらしい」', 'マスター「浮遊ドックの隠し部屋に、三人分の靴があるそうだ」'],
     town18: ['マスター「闇の王を倒したとき、白い機体は本当の姿になるという言い伝えがある」', 'マスター「専用装備は、ガレージで最後の姿にしておけ」'],
     town19: ['マスター「……最後の酒だ。おまえたちの帰りを待ってるぜ」', 'マスター「宝箱には、伝説の武器が眠ってる。全部拾っていけ」'],
-  }[currentTown()] || ['マスター「いらっしゃい」'];
+  }[currentTown()]?.map((t) => swapDirs(t, chapterOfTown(currentTown()))) || ['マスター「いらっしゃい」'];
   const name = { town1: 'ラストオアシス', town2: '坑夫のねぐら', town3: 'スターポート', town4: 'そよ風亭', town5: '雲の上の止まり木', town6: 'ジェットストリーム', town7: '灯台下', town8: '潮だまり', town9: 'ブルーホール', town10: '溶鉱炉の一杯', town11: '火口亭', town12: '灰の港の灯', town13: '光の杯', town14: '水晶の間', town15: '神殿の泉', town16: '灯の下', town17: '要塞の食堂', town18: '最後の灯', town19: 'ラストオーダー' }[currentTown()] || '酒場';
   for (;;) {
     const v = await ui.menu({ title: `酒場「${name}」`, items: [{ label: 'マスターと話す', value: 'master' }, { label: '出る', value: null }] });
@@ -340,6 +345,7 @@ const SHUTTLE_ROUTES = [
 
 // 第4章以降の星の行き先（字幕と、はじめて着いたときの話を短く書けるように）
 function newPlanet(o) {
+  for (const k of ['lines', 'talk', 'arrive']) if (o[k]) o[k] = o[k].map((t) => swapDirs(t, o.order));
   return {
     ...o, at: [24.5, 8.5],
     talk: (r, cap) => [{ name: r, text: o.talk[0] }, { name: cap, text: o.talk[1] }],
@@ -1392,12 +1398,35 @@ export async function openMapView(world) {
   }
   const dot = (x, y, col, r = k * 0.9) => { g.fillStyle = col; g.beginPath(); g.arc((x + 0.5) * k, (y + 0.5) * k, r, 0, 7); g.fill(); };
   for (const w of map.warps || []) if (ex[w.y * W + w.x] === '1') dot(w.x, w.y, '#ffd040', k);
-  for (const c of map.chests || []) if (ex[c.y * W + c.x] === '1') { const op = G.flags.opened?.[`${map.id}:${c.id}`]; g.fillStyle = op ? '#5a5a5a' : '#ffcc33'; g.fillRect(c.x * k, c.y * k, k, k); }
-  for (const sy of map.symbols || []) if (ex[sy.y * W + sy.x] === '1' && !(sy.bounty ? G.bounties[sy.bounty] : G.flags[sy.flag])) dot(sy.x, sy.y, '#ff3a2a', k * 1.2);
   dot(G.pos.x - 0.5, G.pos.y - 0.5, '#5ff2ff', k * 1.3);
   const known = ex.split('').filter((c) => c === '1').length;
-  await ui.panel(`<div class="mapview"><img src="${cv.toDataURL()}" alt="地図"></div>
-    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　■ 金＝まだ開けていない宝箱　● 赤＝ボス　${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
+  // 宝箱と賞金首の印は、上に重ねたキャンバスに描いて点滅させる（むずかしさで変わる。map-marks.js）
+  const mk = mapMarks(map, G, settings, { seen: (x, y) => ex[y * W + x] === '1', revealed });
+  const dm = difficultyOf(settings);
+  const legend = dm.map.chests === 'all' ? '● 赤＝レアな宝箱　● 青＝宝箱　（開けた宝箱は点滅しない）　● 赤い大きい丸＝賞金首'
+    : dm.map.chests === 'found' ? '● 青＝見つけた宝箱（開けた宝箱は点滅しない）　● 赤＝ボス'
+      : revealed ? '■ 金＝まだ開けていない宝箱　● 赤＝ボス' : '（ハード：宝箱とボスの印は出ません）';
+  const p = ui.panel(`<div class="mapview"><div class="mapview-wrap"><img src="${cv.toDataURL()}" alt="地図"><canvas class="mapmarks" width="${cv.width}" height="${cv.height}"></canvas></div></div>
+    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　${legend}　［${dm.name}］${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
+  const ov = document.querySelector('.map-panel canvas.mapmarks');
+  if (ov) {
+    const og = ov.getContext('2d');
+    const draw = () => {
+      if (!ov.isConnected) return;
+      og.clearRect(0, 0, ov.width, ov.height);
+      const a = blinkAlpha(performance.now() / 1000);
+      for (const c of mk.chests) {
+        og.globalAlpha = c.blink ? a : 1; og.fillStyle = c.color;
+        og.beginPath(); og.arc((c.x + 0.5) * k, (c.y + 0.5) * k, Math.max(4, k * 1.3) * c.size, 0, 7); og.fill();
+        if (c.size > 1) { og.strokeStyle = '#fff'; og.lineWidth = 1; og.stroke(); }
+      }
+      og.globalAlpha = 1; og.fillStyle = '#ff3a2a';
+      for (const b of mk.bosses) { og.beginPath(); og.arc((b.x + 0.5) * k, (b.y + 0.5) * k, Math.max(6, k * 2), 0, 7); og.fill(); og.strokeStyle = '#ffe0e0'; og.lineWidth = 1.5; og.stroke(); }
+      requestAnimationFrame(draw);
+    };
+    draw();
+  }
+  await p;
 }
 
 async function statusMenu() {
@@ -1596,6 +1625,7 @@ async function settingsMenu(world) {
         { label: 'BGMの音量', right: pct(settings.bgm), value: 'bgm' },
         { label: '効果音の音量', right: pct(settings.se), value: 'se' },
         { label: 'マップ表示', right: settings.mapMode === '3d' ? '立体（標準）' : '2D（軽量）', value: 'map' },
+        { label: 'むずかしさ', right: `${difficultyOf(settings).name}`, value: 'diff' },
         { label: 'ミニ地図', right: settings.minimap === false ? 'オフ' : 'オン', value: 'mini' },
         { label: '全画面表示', value: 'fs' },
       ],
@@ -1609,6 +1639,11 @@ async function settingsMenu(world) {
       audio.sfx('ok');
     }
     if (v === 'map') { settings.mapMode = settings.mapMode === '3d' ? '2d' : '3d'; audio.saveSettings(); world.build(); }
+    if (v === 'diff') {
+      const cur = settings.difficulty || 'normal';
+      const d = await ui.menu({ title: 'むずかしさ（いつでも切り替えられます）', wide: true, desc: true, items: DIFF_ORDER.map((k) => ({ label: `${k === cur ? '● ' : ''}${DIFFICULTY[k].name}`, value: k, desc: DIFFICULTY[k].desc })) });
+      if (d) { settings.difficulty = d; audio.saveSettings(); audio.sfx('ok'); ui.toast(`むずかしさを「${DIFFICULTY[d].name}」にした`); }
+    }
     if (v === 'mini') { settings.minimap = settings.minimap === false; audio.saveSettings(); audio.sfx('ok'); }
     if (v === 'fs') { try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); } catch { ui.toast('この端末では全画面にできません'); } }
   }

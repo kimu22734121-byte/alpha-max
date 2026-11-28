@@ -2,6 +2,7 @@
 //  題目：num＝何章、planet＝星の名前、sub＝副題
 //  目的：steps を上から順に見て、まだ終わっていない最初の1つを出す（done が false のもの）。
 //        done は G（セーブデータ）を受け取って true／false を返す。hint は「つぎの目的」を開いたときに添える一言
+import { swapDirs } from './orient.js';
 export const CHAPTERS = {
   // grad：星の名前の文字のグラデーション（左→右）、color：光と副題・飾り線の色、bg：背景のほのかな色
   1: { planet: '土の惑星', sub: '錆びた荒野と、眠れる白き機体', color: '#e8a858', grad: ['#ffe0a0', '#e8a050', '#b8602a'], bg: '#2a1608' },
@@ -105,6 +106,12 @@ export const OBJECTIVES = {
     ],
   },
 };
+
+// 第4〜7章はフィールドの向きを変えたので、目的の文の東西南北も合わせる（orient.js）
+for (const [ch, o] of Object.entries(OBJECTIVES)) {
+  o.hint = swapDirs(o.hint, Number(ch));
+  for (const st of o.steps) st.text = swapDirs(st.text, Number(ch));
+}
 
 // いまの目的 { chapter, text, hint }
 export function nextObjective(G) {

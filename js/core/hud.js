@@ -7,6 +7,7 @@ import { TILES } from '../data/tiles.js';
 import { audio } from './audio.js';
 import { nextObjective, currentChapter, CHAPTERS, mapRevealed } from '../data/chapters.js';
 import { input } from './input.js';
+import { mapMarks, blinkAlpha } from './map-marks.js';
 import { ui, esc, fmt } from './ui.js';
 
 let root, plates, gearEl, mapEl, goalEl, actBtn, menuBtn, mapBtn, mini, miniG, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
@@ -83,8 +84,12 @@ export const hud = {
     const dot = (x, y, col, r) => { const sx = (x + 0.5 - x0) * k, sy = (y + 0.5 - y0) * k; if (sx < -r || sy < -r || sx > mini.width + r || sy > mini.height + r) return; g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
     const seen = (x, y) => !fog || ex[y * W + x] === '1';
     for (const w of map.warps || []) if (seen(w.x, w.y)) dot(w.x, w.y, '#ffd040', k * 0.7);
-    for (const c of map.chests || []) if (seen(c.x, c.y) && !G.flags.opened?.[`${map.id}:${c.id}`]) dot(c.x, c.y, '#ffcc33', k * 0.8);
-    for (const s of map.symbols || []) if (seen(s.x, s.y) && !(s.bounty ? G.bounties[s.bounty] : G.flags[s.flag])) dot(s.x, s.y, '#ff3a2a', k * 1.1);
+    // 宝箱と賞金首の印はむずかしさで変わる（map-marks.js）
+    const mk = mapMarks(map, G, audio.settings, { seen: (x, y) => ex[y * W + x] === '1', revealed: !fog || mapRevealed(G, map) });
+    const ba = blinkAlpha(performance.now() / 1000);
+    for (const c of mk.chests) { g.globalAlpha = c.blink ? ba : 1; dot(c.x, c.y, c.color, k * 0.8 * c.size); }
+    g.globalAlpha = 1;
+    for (const s of mk.bosses) dot(s.x, s.y, '#ff3a2a', k * 1.1);
     for (const n of map.npcs || []) if (n.event === 'shuttleCaptain') dot(n.x, n.y, '#8ad8ff', k * 0.9);
     // 自分（向きの三角）
     const cx = (px - x0) * k, cy = (py - y0) * k, a = G.pos.dir || 0;

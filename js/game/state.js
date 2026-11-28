@@ -13,7 +13,7 @@ export const GEAR_MAX = 999999;
 export let G = null;
 export function setState(s) { G = s; }
 
-export function newGame(names) {
+export function newGame(names, opts = {}) {
   const s = {
     v: SAVE_VERSION,
     time: 0,
@@ -43,6 +43,24 @@ export function newGame(names) {
     const st0 = def.start;
     const loc = st0.type === 'map' ? { type: 'map', map: st0.map, x: st0.x + 0.5, y: st0.y + 0.5, dir: 0 } : { type: st0.type, town: st0.town };
     createMachine(id, { key: id, owned: !!def.owned, loc });
+  }
+  // 2回目からの「伝説の機体をすべて最強にして始める」（v2.0〜）：アルファは最初からアルファマックス。
+  // オメガ・ガイアも最初からラストヘイヴンのガレージにいて、3機ともフレーム・エンジン強化が最大、武器は+5
+  if (opts.legend) {
+    s.flags.legendStart = true;
+    s.flags.omegaFound = true;
+    s.flags.gaiaFound = true;
+    if (!s.machines.gaia) createMachine('gaia', { key: 'gaia' });
+    for (const id of ['alpha', 'omega', 'gaia']) {
+      const mc = s.machines[id];
+      mc.owned = true;
+      mc.loc = { type: 'garage', town: 'town1' };
+      mc.mods = { frame: MODS.frame.length, engine: MODS.engine.length };
+      for (const uid of mc.slots) { const w = uid && weaponByUid(uid); if (w) w.plus = UPGRADE.maxPlus; }
+      const st = machineStats(mc);
+      mc.armor = st.maxArmor; mc.en = st.maxEn;
+    }
+    s.members.ren.machine = 'alpha';
   }
   return s;
 }
@@ -137,7 +155,7 @@ export function createMachine(type, { key, owned = true, loc, test = false } = {
 // 名前：同じ種類を2台以上持っているときは「アルファ（1）」「アルファ（2）」
 export function machineName(mc) {
   const def = MACHINES[mc.type];
-  let name = mc.name || (mc.type === 'alpha' ? def.seal[G.seal]?.finalName || def.name : def.name);
+  let name = mc.name || (mc.type === 'alpha' ? def.seal[alphaSeal()]?.finalName || def.name : def.name);
   const same = Object.values(G.machines).filter((m) => m.owned && m.type === mc.type);
   const i = same.indexOf(mc);
   if (same.length > 1 && i >= 0) name += `（${i + 1}）`;
@@ -146,7 +164,7 @@ export function machineName(mc) {
 // 開発者の部屋で出したもの（テスト入手）の印
 export const TEST_MARK = '<b class="testmark">テスト</b>';
 export const testTag = (x) => (x?.test ? ` ${TEST_MARK}` : '');
-export function sealInfo() { return MACHINES.alpha.seal[G.seal] || MACHINES.alpha.seal[0]; }
+export function sealInfo() { return MACHINES.alpha.seal[alphaSeal()] || MACHINES.alpha.seal[0]; }
 
 // マシンのタイプ（ボディの mtype で決まる）
 export const machineType = (mc) => PARTS[mc.parts.body].mtype || 'balance';
@@ -166,11 +184,14 @@ export function typeBoost(mc, def) {
 }
 
 // 封印の段階（アルファ）。展示台の機体は sealOverride で段階を切り替えて見られる
-export const sealOf = (mc) => (mc?.sealOverride ?? G.seal);
+// 伝説の機体をすべて最強にして始めたとき（legendStart）は、物語の封印とは別にアルファはいつもアルファマックス
+export const alphaSeal = () => (G?.flags?.legendStart ? 4 : G.seal);
+export const sealOf = (mc) => (mc?.sealOverride ?? alphaSeal());
 // ステラ・ブレイカーの段階（v1.5〜）：章で決まる。第1・2章＝0（撃てない）、第3章＝1 … 第6章＝4、第6章クリア後＝5
 // 展示台の機体（sealOverride）は封印の段階から読みかえる
 export function stellaStage(mc) {
   if (mc?.sealOverride != null) return [0, 1, 2, 4, 5][mc.sealOverride] ?? 0;
+  if (G?.flags?.legendStart) return 5;
   return Math.max(0, Math.min(5, currentChapter(G) - 2));
 }
 // 段階で進化するパーツ（アルファの外装）：stages[段階] の値で上書きする
