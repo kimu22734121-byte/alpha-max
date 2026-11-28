@@ -69,7 +69,7 @@ const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
 //  左右（yaw）：360度ぐるりと回せる（v1.7〜。「正面に戻す」はいちばん近い正面へ）
 //  上下（pitch）：0度＝真横（地面すれすれ）〜 90度＝真上から。いつもの角度は CAM_PITCH0（約54度）
-const CAM_PITCH0 = Math.atan2(13, 9.6);
+const CAM_PITCH0 = (46 * Math.PI) / 180; // いつもの上下の角度（v2.9.4 で約54度→46度に少し下げた）
 const CAM_SWIPE = 0.007; // 1ピクセルあたりの回転（ラジアン）
 const TAU = Math.PI * 2;
 const clampYaw = (y) => y; // 360度回せる（角度は回した分だけ増える。正面に戻すときは近いほうの正面へ）
@@ -681,8 +681,8 @@ export class WorldScene {
       const kr = (input.isDown('f') || input.isDown('F') ? 1 : 0) - (input.isDown('r') || input.isDown('R') ? 1 : 0);
       if (kq && !ui.busy) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) + kq * dt * 1.6); }
       if (kr && !ui.busy) { this.camPitchTarget = null; this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + kr * dt * 1.2); }
-      // 自動で後ろへ（v2.9）：歩いている間、カメラがゆっくりキャラの後ろへ回る（建物の中では回さない。自分で回した直後の1秒も回さない）
-      if (audio.settings.followCam && !indoor && this.followMag > 0 && !ui.busy && (this.t || 0) - (this.manualCamT ?? -9) > 1) {
+      // 自動で後ろへ（v2.9）：歩いている間、カメラがゆっくりキャラの後ろへ回る（v2.9.4 から建物の中も。自分で回した直後の1秒は回さない）
+      if (audio.settings.followCam && this.followMag > 0 && !ui.busy && (this.t || 0) - (this.manualCamT ?? -9) > 1) {
         const want = this.followDir + Math.PI;
         let d = (want - (this.camYaw || 0)) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
         this.camYawTarget = null;
@@ -702,10 +702,11 @@ export class WorldScene {
       rotated = yawOff(this.camYaw || 0) > 0.01 || Math.abs((this.camPitch ?? CAM_PITCH0) - CAM_PITCH0) > 0.01;
     } else { this.camYaw = 0; this.camYawTarget = null; this.camPitch = CAM_PITCH0; this.camPitchTarget = null; this.camYawView = 0; this.camPitchView = CAM_PITCH0; }
     this.camResetBtn.classList.toggle('on', rotated && !ui.busy);
-    this.camFollowBtn.classList.toggle('show', this.canRotate() && !indoor && !ui.busy && this.active);
+    this.camFollowBtn.classList.toggle('show', this.canRotate() && !ui.busy && this.active);
     let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
     // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
-    if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
+    // 「自動で後ろへ」がオンのときは、部屋の中でもキャラを中心に見る（v2.9.4）
+    if (indoor && !audio.settings.followCam) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
     // 低い角度のときは目の高さから見る（マシンに乗っているときはマシンの頭の上から。真横でも前が見えるように）
     if (this.canRotate()) target.y += (this.avatars?.[0]?.kind === 'machine' ? 3.6 : 1.4) * (1 - Math.sin(this.camPitchView ?? CAM_PITCH0));
     const k = Math.min(1, dt * 6);
