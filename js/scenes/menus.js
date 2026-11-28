@@ -916,7 +916,7 @@ export function keypad() {
       e.stopPropagation(); e.preventDefault();
       if (/^\d$/.test(e.key)) press(e.key);
       else if (e.key === 'Backspace') press('⌫');
-      else if (e.key === 'Escape' || e.key === 'x') { audio.sfx('cancel'); finish(false); }
+      else if (e.key === 'Escape') { audio.sfx('cancel'); finish(false); }
     };
     window.addEventListener('keydown', onKey, true);
     draw();

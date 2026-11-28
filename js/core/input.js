@@ -1,4 +1,6 @@
-// 入力：指を置いた所に出るバーチャルスティック／タップ／キーボード（矢印・WASD・Enter・Esc）
+// 入力：指を置いた所に出るバーチャルスティック／タップ／キーボード（矢印・S/Z/X/C・Enter・Esc）
+// v2.5〜：スマホは画面のどこに指を置いてもスティック（左利きでも使える）、2本指でなぞるとカメラを回す。
+//         PC（マウス）はどこをドラッグしてもカメラを回す。キーボードは S＝上・Z＝左・X＝下・C（Y）＝右、矢印キーも使える
 const listeners = {};
 const keys = new Set();
 export const STICK_ZONE = 0.5; // 画面の左からこの割合までがスティック。右側はカメラのスワイプ
@@ -20,11 +22,18 @@ export const input = {
     const pointers = new Map();
     const R = 56;
 
+    const touches = () => [...pointers.values()].filter((q) => q.touch);
     layer.addEventListener('pointerdown', (e) => {
       e.preventDefault();
-      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastY: e.clientY, t0: performance.now(), moved: false, stick: false };
-      // 画面の左半分で置いた指はスティックになる（右半分はカメラのスワイプ・タップ用）
-      if (this.enabled && !this.stick && e.clientX < window.innerWidth * STICK_ZONE) {
+      const touch = e.pointerType !== 'mouse';
+      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastY: e.clientY, t0: performance.now(), moved: false, stick: false, touch, rot: !touch };
+      // スマホ：2本目の指が置かれたら、スティックをやめて2本指でカメラを回す
+      if (touch && touches().length >= 1) {
+        p.rot = true;
+        for (const q of touches()) { q.rot = true; q.moved = true; if (q.stick) { q.stick = false; this.stick = null; this.move.x = 0; this.move.y = 0; base.classList.remove('on'); } }
+      }
+      // スマホ：1本目の指はどこに置いてもスティック（PCのマウスはドラッグでカメラを回す）
+      else if (touch && this.enabled && !this.stick) {
         p.stick = true;
         this.stick = p;
         base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`;
@@ -39,8 +48,8 @@ export const input = {
       if (!p) return;
       const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
       if (Math.hypot(dx, dy) > 12) p.moved = true;
-      // スティックではない指（画面の右側）を横に動かすと「スワイプ」（フィールドのカメラを回す）
-      if (!p.stick && p.moved) { this.emit('swipe', { dx: e.clientX - p.lastX, dy: e.clientY - p.lastY }); }
+      // カメラを回す：スマホは2本指（2本の動きの平均）、PCはマウスのドラッグ
+      if (p.rot && p.moved) { const k = p.touch ? 0.5 : 1; this.emit('swipe', { dx: (e.clientX - p.lastX) * k, dy: (e.clientY - p.lastY) * k }); }
       p.lastX = e.clientX; p.lastY = e.clientY;
       if (p.stick) {
         const len = Math.hypot(dx, dy);
@@ -73,8 +82,8 @@ export const input = {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
       this.emit('key', e);
       if (!e.repeat) {
-        if (['Enter', ' ', 'z', 'Z'].includes(e.key)) this.emit('action');
-        if (['Escape', 'x', 'X', 'm', 'M'].includes(e.key)) this.emit('menu');
+        if (['Enter', ' '].includes(e.key)) this.emit('action');
+        if (['Escape', 'm', 'M'].includes(e.key)) this.emit('menu');
       }
     });
     window.addEventListener('keyup', (e) => keys.delete(e.key));
@@ -89,10 +98,12 @@ export const input = {
   getMove() {
     if (!this.enabled) return { x: 0, y: 0 };
     let x = this.move.x, y = this.move.y;
-    if (keys.has('ArrowLeft') || keys.has('a') || keys.has('A')) x -= 1;
-    if (keys.has('ArrowRight') || keys.has('d') || keys.has('D')) x += 1;
-    if (keys.has('ArrowUp') || keys.has('w') || keys.has('W')) y -= 1;
-    if (keys.has('ArrowDown') || keys.has('s') || keys.has('S')) y += 1;
+    // S＝上・Z＝左・X＝下・C（または Y）＝右（v2.5〜）。矢印キーも使える
+    const any = (...ks) => ks.some((k) => keys.has(k));
+    if (any('ArrowLeft', 'z', 'Z')) x -= 1;
+    if (any('ArrowRight', 'c', 'C', 'y', 'Y')) x += 1;
+    if (any('ArrowUp', 's', 'S')) y -= 1;
+    if (any('ArrowDown', 'x', 'X')) y += 1;
     const len = Math.hypot(x, y);
     if (len > 1) { x /= len; y /= len; }
     return { x, y };

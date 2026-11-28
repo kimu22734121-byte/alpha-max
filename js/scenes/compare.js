@@ -29,7 +29,7 @@ export function compareView({ title, before, after, stats, okLabel = '決定', d
       };
       panel.querySelector('.cmp3d-ok').addEventListener('click', (e) => { e.stopPropagation(); ok(); });
       panel.querySelector('.cmp3d-ng').addEventListener('click', (e) => { e.stopPropagation(); audio.sfx('cancel'); done(false); });
-      return (e) => { if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { e.preventDefault(); ok(); } };
+      return (e) => { if (['Enter', ' '].includes(e.key)) { e.preventDefault(); ok(); } };
     },
   }).then((v) => !!v);
 }
