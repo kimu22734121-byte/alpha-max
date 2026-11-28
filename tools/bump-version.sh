@@ -4,5 +4,8 @@
 cd "$(dirname "$0")/.." || exit 1
 V=$(TZ=Asia/Tokyo date +%Y%m%d-%H%M)
 sed -i -E "s#(src=\"js/main\.js)(\?v=[^\"]*)?\"#\1?v=$V\"#; s#(href=\"css/style\.css)(\?v=[^\"]*)?\"#\1?v=$V\"#" index.html
+sed -i -E "s#(var V = ')[^']*(';)#\1$V\2#" index.html
+# 新しい版の確認用（index.html の中の版と比べて、古ければ読み直す）
+printf '%s\n' "$V" > version.txt
 echo "バージョン番号を $V にしました"
 grep -n "main.js\|style.css" index.html
