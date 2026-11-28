@@ -20,7 +20,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, alphaSeal, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
+  G, alphaSeal, maxFormOf, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { openMapView, itemMenu, shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
@@ -98,13 +98,14 @@ export function machineSpec(mc) {
   const body = partNow(mc.parts.body, mc);
   return {
     parts: mc.parts,
-    colors: sealed ? def.brokenColors : def.colors,
+    colors: sealed ? def.brokenColors : maxFormOf(mc) ? { ...def.colors, ...maxFormOf(mc).colors } : def.colors,
     weapons: mc.slots.map((uid) => (uid ? weaponByUid(uid) : null)),
     sealStage: mc.type === 'alpha' ? seal : 0,
     stellaStage: mc.type === 'alpha' ? stellaStage(mc) : 0,
     wingSpread: !!body?.wingSpread,
     // 光の強さ：アルファは封印の段階、ほかは glowK（開発者の部屋で調整できる。1 のときはそのまま）
-    glow: mc.type === 'alpha' ? def.seal[seal].glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,
+    glow: mc.type === 'alpha' ? def.seal[seal].glow : maxFormOf(mc) ? maxFormOf(mc).glow : def.glowK !== 1 ? 1.4 * def.glowK : undefined,
+    maxForm: !!maxFormOf(mc), // オメガマックス・ガイアマックス（光のオーラ）
   };
 }
 export const inMachine = (m) => !!(m.machine && G.machines[m.machine]?.loc.type === 'party');
@@ -909,6 +910,8 @@ export class WorldScene {
     if (note) ui.toast(note);
     hud.update(true);
     this.lock(false);
+    // クリアしたあと、はじめてレンの修理屋に帰るとエンディング（v2.1〜）
+    if (toMap.id === 'town1_shop' && G.flags.gameClear && !G.flags.homeEnding) flow.homeEnding?.();
   }
 
   // 開発者の部屋の展示台の上に、いま組んでいるロボット・キャラを飾る

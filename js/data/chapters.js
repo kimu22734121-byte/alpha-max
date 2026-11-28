@@ -115,6 +115,7 @@ for (const [ch, o] of Object.entries(OBJECTIVES)) {
 
 // いまの目的 { chapter, text, hint }
 export function nextObjective(G) {
+  if (F(G, 'gameClear') && !F(G, 'homeEnding')) return { chapter: 7, text: 'ラストヘイヴンのレンの修理屋に帰ろう', hint: '宇宙船の船長キールか転送台で土の惑星へ。修理屋に入るとエンディングが始まる' };
   if (F(G, 'gameClear')) return { chapter: 7, text: 'クリアおめでとう！ 残った賞金首・宝箱・隠し通路を探してみよう', hint: '宇宙船や転送台で、行ったことのある星へ自由に行ける' };
   const ch = currentChapter(G);
   const o = OBJECTIVES[ch];

@@ -49,6 +49,8 @@ export const MACHINES = {
     weapons: [{ id: 'omega_storm' }, { id: 'lzblade' }, { id: 'omega_buster' }, { id: 'omega_nova' }, { id: 'hm2' }, null],
     start: { type: 'map', map: 'basement', x: 11, y: 4 },
     particle: 0xff3a4a,
+    // 最強の姿（v2.1〜）：第5章クリアのイベントで「オメガマックス」に。装甲・防御・EN が mul 倍、専用武器の威力が atk 倍、光が強くなる
+    maxForm: { flag: 'omegaMax', name: 'オメガマックス', mul: 1.8, atk: 1.15, glow: 3.4, colors: { glow: 0xff1a2a, accent: 0xe8ecf4 } },
   },
   alpha: {
     name: 'アルファ',
@@ -137,6 +139,8 @@ export const MACHINES = {
     parts: { head: 'head_gaia', body: 'body_gaia', armR: 'arm_gaia', armL: 'arm_gaia', legs: 'legs_gaia', engine: 'eng_gaia' },
     weapons: [{ id: 'gaia_claymore' }, { id: 'gaia_pile' }, { id: 'gaia_quake' }, { id: 'c105' }, null, null],
     particle: 0xff7a3a,
+    // 最強の姿（v2.1〜）：第4章クリアのイベントで「ガイアマックス」に
+    maxForm: { flag: 'gaiaMax', name: 'ガイアマックス', mul: 1.8, atk: 1.15, glow: 3.4, colors: { glow: 0xffa040, accent: 0xffd870 } },
   },
 };
 

@@ -29,7 +29,7 @@ function planetTexture(look) {
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
-function makePlanet(kind, r) {
+export function makePlanet(kind, r) {
   const look = PLANET_LOOK[kind] || PLANET_LOOK.earth;
   const grp = new THREE.Group();
   grp.add(new THREE.Mesh(new THREE.SphereGeometry(r, 48, 32), new THREE.MeshStandardMaterial({ map: planetTexture(look), roughness: 1 })));
