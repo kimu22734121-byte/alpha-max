@@ -825,7 +825,17 @@ export class WorldScene {
       if (G.repel?.steps > 0) {
         G.repel.steps--;
         repelK = G.repel.rate;
-        if (G.repel.steps <= 0) { ui.banner(`${G.repel.name}の効果が切れた`, '敵に出会いやすさが元にもどった'); G.repel = null; }
+        if (G.repel.steps === 30) ui.toast(`${esc(G.repel.name)}の効果が、もうすぐ切れそうだ（あと30歩）`);
+        if (G.repel.steps <= 0) {
+          const name = G.repel.name;
+          G.repel = null;
+          audio.sfx('cancel');
+          ui.banner(`${name}の効果が切れた`, '敵に出会いやすさが元にもどった');
+          // 切れたときはひとこと知らせる（v1.8）
+          this.lock(true);
+          await ui.say(`${name}の効果が切れた。また敵が出てくるかもしれない……`);
+          if (this.active) this.lock(false);
+        }
       }
       if ((G.encGrace || 0) > 0) { G.encGrace--; return; }
       G.encStep = (G.encStep || 0) + 1;
@@ -923,6 +933,19 @@ export class WorldScene {
 
   // ---------------------------------------------------------------- 転送（ガレージの転送台・ワープユニット）
   // 体が光に包まれて消え、行き先の町の転送台（ワープユニットは町の入口）に光とともに現れる
+  // ワープユニットで「ダンジョンの外へ」：入ってきた入口の外（フィールド）へ一瞬で出る（v1.8）
+  async escapeDungeon() {
+    const w = this.map.type === 'dungeon' && !this.map.noMap ? this.map.warps?.[0] : null;
+    if (!w) return false;
+    this.lock(true);
+    audio.sfx('charge');
+    await this.beam(false);
+    audio.sfx('warp');
+    this.lock(false);
+    await this.warp({ ...w, door: false });
+    return true;
+  }
+
   async teleport(to, { pad = false, from = null } = {}) {
     this.lock(true);
     audio.sfx('charge');
