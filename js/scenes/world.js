@@ -686,7 +686,7 @@ export class WorldScene {
         const want = this.followDir + Math.PI;
         let d = (want - (this.camYaw || 0)) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
         this.camYawTarget = null;
-        this.camYaw = (this.camYaw || 0) + d * Math.min(1, dt * 1.6 * this.followMag);
+        this.camYaw = (this.camYaw || 0) + d * Math.min(1, dt * 3.4 * this.followMag); // 追いつく速さ（v2.9.3 で 1.6→3.4）
       }
       const ease = Math.min(1, dt * 4);
       if (!Number.isFinite(this.camYaw)) this.camYaw = 0;
