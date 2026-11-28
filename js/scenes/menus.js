@@ -30,7 +30,7 @@ import { buildCharModel } from '../models/char-look.js';
 import { machineSpec } from './world.js';
 import { flow } from '../game/flow.js';
 import { bestAll, bestFoot, bestMachine } from '../game/best-gear.js';
-import { nextObjective, CHAPTERS } from '../data/chapters.js';
+import { nextObjective, CHAPTERS, mapRevealed } from '../data/chapters.js';
 
 export const settings = audio.settings;
 // v0.4 から立体的なマップ（3D）が標準。軽くしたい時は「せってい」で2Dにできる
@@ -1379,7 +1379,8 @@ export async function openMapView(world) {
   const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
   const g = cv.getContext('2d');
   g.fillStyle = '#05060a'; g.fillRect(0, 0, cv.width, cv.height);
-  const ex = G.explored?.[map.id] || '';
+  const revealed = mapRevealed(G, map); // クリアした章の地図は全部見える（v1.9）
+  const ex = revealed ? '1'.repeat(map.width * map.height) : (G.explored?.[map.id] || '');
   const walkCol = { 5: '#c8a060', 2: '#7a8496', 1: '#9a8672', 25: '#9a8672', 26: '#6a7090', 17: '#7a5a90', 12: '#6a6a6a', 9: '#a8a060', 0: '#c8b088' };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     if (ex[y * W + x] !== '1') continue;
@@ -1396,7 +1397,7 @@ export async function openMapView(world) {
   dot(G.pos.x - 0.5, G.pos.y - 0.5, '#5ff2ff', k * 1.3);
   const known = ex.split('').filter((c) => c === '1').length;
   await ui.panel(`<div class="mapview"><img src="${cv.toDataURL()}" alt="地図"></div>
-    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　■ 金＝まだ開けていない宝箱　● 赤＝ボス　（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
+    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　■ 金＝まだ開けていない宝箱　● 赤＝ボス　${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
 }
 
 async function statusMenu() {
