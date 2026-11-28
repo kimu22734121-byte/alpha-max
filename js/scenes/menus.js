@@ -1476,6 +1476,17 @@ export async function itemMenu(inBattle, world) {
     if (!target) continue;
     if (inBattle) return { id, target };
     if (target.warp) {
+      // ダンジョンの中なら「ダンジョンの外へ出る」も選べる（v1.8）
+      const map = itemWorld?.map;
+      if (map?.type === 'dungeon' && !map.noMap && map.warps?.length) {
+        const how = await ui.menu({ title: 'ワープユニット：どこへ？', items: [
+          { label: 'ダンジョンの外へ出る', right: `<small>${esc(MAPS[map.warps[0].to]?.name || '')}の入口</small>`, value: 'out' },
+          { label: '町へワープする', value: 'town' },
+          { label: 'やめる', value: null },
+        ] });
+        if (!how) continue;
+        if (how === 'out') { addItem(id, -1); ui.closeAll(); await itemWorld.escapeDungeon(); return null; }
+      }
       if (await teleportMenu(itemWorld, false)) return null;
       continue;
     }
