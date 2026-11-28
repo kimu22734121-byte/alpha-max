@@ -1382,7 +1382,7 @@ export async function openMapView(world) {
   const map = world.map;
   if (map.type === 'town' || map.type === 'interior') { await ui.say(`${map.name}にいる。町の中に地図はいらない。`); return; }
   const W = map.width, H = map.height;
-  const k = Math.max(3, Math.floor(Math.min(520 / W, 300 / H)));
+  const k = Math.max(4, Math.min(10, Math.floor(Math.min(1400 / W, 900 / H)))); // 拡大しても見やすいように大きめに描く（v2.2）
   const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
   const g = cv.getContext('2d');
   g.fillStyle = '#05060a'; g.fillRect(0, 0, cv.width, cv.height);
@@ -1407,8 +1407,9 @@ export async function openMapView(world) {
   const legend = dm.map.chests === 'all' ? '● 赤＝レアな宝箱　● 青＝宝箱　（開けた宝箱は点滅しない）　● 赤い大きい丸＝賞金首'
     : dm.map.chests === 'found' ? '● 青＝見つけた宝箱（開けた宝箱は点滅しない）　● 赤＝ボス'
       : revealed ? '■ 金＝まだ開けていない宝箱　● 赤＝ボス' : '（ハード：宝箱とボスの印は出ません）';
-  const p = ui.panel(`<div class="mapview"><div class="mapview-wrap"><img src="${cv.toDataURL()}" alt="地図"><canvas class="mapmarks" width="${cv.width}" height="${cv.height}"></canvas></div></div>
+  const p = ui.panel(`<div class="mapview-zoom"><button class="mz-btn" data-z="in">＋</button><button class="mz-btn" data-z="out">－</button><button class="mz-btn" data-z="fit">全体</button><button class="mz-btn" data-z="me">自分</button></div><div class="mapview"><div class="mapview-wrap"><img src="${cv.toDataURL()}" alt="地図"><canvas class="mapmarks" width="${cv.width}" height="${cv.height}"></canvas></div></div>
     <div class="note">● 水色＝いまいる場所　● 黄＝出入口　${legend}　［${dm.name}］${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
+  setupMapZoom(document.querySelector('.map-panel'), cv.width, cv.height, (G.pos.x) / W, (G.pos.y) / H);
   const ov = document.querySelector('.map-panel canvas.mapmarks');
   if (ov) {
     const og = ov.getContext('2d');
@@ -1428,6 +1429,50 @@ export async function openMapView(world) {
     draw();
   }
   await p;
+}
+
+// 全体地図の拡大・縮小（v2.2）：＋／－ボタン・ピンチ・マウスホイール。拡大したら指でなぞって動かせる
+function setupMapZoom(panel, cw, ch, px, py) {
+  const view = panel?.querySelector('.mapview'), img = view?.querySelector('img');
+  if (!view || !img) return;
+  // 1倍＝画面に全体が入る大きさ
+  const fit = () => Math.min((view.clientWidth || 600) - 4, (window.innerHeight * 0.58) / ch * cw, cw * 4);
+  let base = fit(), z = 1;
+  const MAX = Math.min(8, Math.max(3, (cw / base) * 4));
+  const apply = (nz, fx, fy) => {
+    // fx, fy：画面の中のどこを中心に拡大するか（0〜1。なければ今の真ん中）
+    const cx = fx ?? (view.scrollLeft + view.clientWidth / 2) / (base * z);
+    const cy = fy ?? (view.scrollTop + view.clientHeight / 2) / (base * z * ch / cw);
+    z = Math.max(1, Math.min(MAX, nz));
+    img.style.width = `${base * z}px`; img.style.maxWidth = 'none'; img.style.maxHeight = 'none'; img.style.height = 'auto';
+    view.scrollLeft = cx * base * z - view.clientWidth / 2;
+    view.scrollTop = cy * base * z * ch / cw - view.clientHeight / 2;
+    panel.querySelector('[data-z="out"]').disabled = z <= 1;
+    panel.querySelector('[data-z="in"]').disabled = z >= MAX;
+  };
+  apply(1);
+  panel.querySelectorAll('.mz-btn').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation(); audio.sfx('cursor');
+    const k = b.dataset.z;
+    if (k === 'in') apply(z * 1.6); else if (k === 'out') apply(z / 1.6); else if (k === 'fit') apply(1, 0.5, 0.5); else apply(Math.max(z, 3), px, py);
+  }));
+  view.addEventListener('wheel', (e) => { e.preventDefault(); apply(z * (e.deltaY < 0 ? 1.25 : 0.8)); }, { passive: false });
+  // ピンチ
+  const pts = new Map();
+  let pinch = null;
+  view.addEventListener('pointerdown', (e) => { pts.set(e.pointerId, [e.clientX, e.clientY]); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), z }; } });
+  view.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch && pts.size === 2) { const [a, b] = [...pts.values()]; apply(pinch.z * Math.hypot(a[0] - b[0], a[1] - b[1]) / (pinch.d || 1)); }
+  });
+  const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; };
+  view.addEventListener('pointerup', up); view.addEventListener('pointercancel', up);
+  // マウスでドラッグして動かす（スマホは指でなぞるとそのまま動く）
+  let drag = null;
+  view.addEventListener('mousedown', (e) => { drag = { x: e.clientX, y: e.clientY, l: view.scrollLeft, t: view.scrollTop }; });
+  window.addEventListener('mousemove', (e) => { if (drag && view.isConnected) { view.scrollLeft = drag.l - (e.clientX - drag.x); view.scrollTop = drag.t - (e.clientY - drag.y); } });
+  window.addEventListener('mouseup', () => { drag = null; });
 }
 
 async function statusMenu() {
