@@ -5,6 +5,7 @@
 //  開けた宝箱は点滅をやめて、色はそのまま。クリアした章の地図（revealed）はどのむずかしさでも全部出す
 import { difficultyOf, isRareChest } from '../data/difficulty.js';
 
+const PURPLE = '#c45aff'; // 手配書の賞金首は紫で点滅（v2.3）
 const RED = '#ff3a4a', BLUE = '#4aa8ff', GOLD = '#ffcc33', GREY = '#5a5a5a';
 
 // seen(x, y)：その場所を見つけているか。revealed：クリアした章のマップ
@@ -22,7 +23,7 @@ export function mapMarks(map, G, settings, { seen, revealed }) {
   for (const s of map.symbols || []) {
     if (s.bounty ? G.bounties[s.bounty] : G.flags[s.flag]) continue; // 倒した
     const show = revealed || (d.bosses && s.bounty) || (d.chests !== 'none' && seen(s.x, s.y));
-    if (show) out.bosses.push({ x: s.x, y: s.y });
+    if (show) out.bosses.push({ x: s.x, y: s.y, bounty: !!s.bounty, color: s.bounty ? PURPLE : '#ff3a2a', blink: !!s.bounty });
   }
   return out;
 }

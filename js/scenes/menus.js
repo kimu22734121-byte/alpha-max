@@ -1404,9 +1404,9 @@ export async function openMapView(world) {
   // 宝箱と賞金首の印は、上に重ねたキャンバスに描いて点滅させる（むずかしさで変わる。map-marks.js）
   const mk = mapMarks(map, G, settings, { seen: (x, y) => ex[y * W + x] === '1', revealed });
   const dm = difficultyOf(settings);
-  const legend = dm.map.chests === 'all' ? '● 赤＝レアな宝箱　● 青＝宝箱　（開けた宝箱は点滅しない）　● 赤い大きい丸＝賞金首'
-    : dm.map.chests === 'found' ? '● 青＝見つけた宝箱（開けた宝箱は点滅しない）　● 赤＝ボス'
-      : revealed ? '■ 金＝まだ開けていない宝箱　● 赤＝ボス' : '（ハード：宝箱とボスの印は出ません）';
+  const legend = dm.map.chests === 'all' ? '● 赤＝レアな宝箱　● 青＝宝箱　（開けた宝箱は点滅しない）　● 紫の点滅＝手配書の賞金首'
+    : dm.map.chests === 'found' ? '● 青＝見つけた宝箱（開けた宝箱は点滅しない）　● 紫の点滅＝手配書の賞金首　● 赤＝ボス'
+      : revealed ? '■ 金＝まだ開けていない宝箱　● 紫の点滅＝手配書の賞金首　● 赤＝ボス' : '（ハード：宝箱とボスの印は出ません）';
   const p = ui.panel(`<div class="mapview-zoom"><button class="mz-btn" data-z="in">＋</button><button class="mz-btn" data-z="out">－</button><button class="mz-btn" data-z="fit">全体</button><button class="mz-btn" data-z="me">自分</button></div><div class="mapview"><div class="mapview-wrap"><img src="${cv.toDataURL()}" alt="地図"><canvas class="mapmarks" width="${cv.width}" height="${cv.height}"></canvas></div></div>
     <div class="note">● 水色＝いまいる場所　● 黄＝出入口　${legend}　［${dm.name}］${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
   setupMapZoom(document.querySelector('.map-panel'), cv.width, cv.height, (G.pos.x) / W, (G.pos.y) / H);
@@ -1422,8 +1422,8 @@ export async function openMapView(world) {
         og.beginPath(); og.arc((c.x + 0.5) * k, (c.y + 0.5) * k, Math.max(4, k * 1.3) * c.size, 0, 7); og.fill();
         if (c.size > 1) { og.strokeStyle = '#fff'; og.lineWidth = 1; og.stroke(); }
       }
-      og.globalAlpha = 1; og.fillStyle = '#ff3a2a';
-      for (const b of mk.bosses) { og.beginPath(); og.arc((b.x + 0.5) * k, (b.y + 0.5) * k, Math.max(6, k * 2), 0, 7); og.fill(); og.strokeStyle = '#ffe0e0'; og.lineWidth = 1.5; og.stroke(); }
+      for (const b of mk.bosses) { og.globalAlpha = b.blink ? a : 1; og.fillStyle = b.color; og.beginPath(); og.arc((b.x + 0.5) * k, (b.y + 0.5) * k, Math.max(6, k * 2), 0, 7); og.fill(); og.strokeStyle = '#ffe0ff'; og.lineWidth = 1.5; og.stroke(); }
+      og.globalAlpha = 1;
       requestAnimationFrame(draw);
     };
     draw();

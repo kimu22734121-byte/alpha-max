@@ -213,7 +213,7 @@ export const audio = {
     this.noise = this.makeNoise(1.5);
     this.driveCurve = this.makeDrive(3);
     this.ready = true;
-    this.loadBanks();
+    this.banksReady = this.loadBanks();
     if (this.pendingSong) { const p = this.pendingSong; this.pendingSong = null; this.playSong(p); }
   },
 

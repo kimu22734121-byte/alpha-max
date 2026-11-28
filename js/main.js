@@ -20,6 +20,7 @@ import { BattleScene } from './scenes/battle.js';
 import { FlightScene } from './scenes/flight.js';
 import { autosave } from './scenes/menus.js';
 import { markCleared } from './core/save.js';
+import { difficultyOf, DIFF_ORDER } from './data/difficulty.js';
 import { applyTuning } from './game/tuning.js';
 // 開発者の部屋で調整した数値（ブラウザに保存）を、お店や戦闘で使う表に反映する
 applyTuning();
@@ -522,14 +523,67 @@ const boot = document.getElementById('boot');
 const bar = boot.querySelector('.boot-bar i');
 const msg = boot.querySelector('.boot-msg');
 await loadModels((p) => { bar.style.width = `${Math.round(p * 100)}%`; });
-msg.textContent = 'タップしてスタート';
+msg.textContent = '';
 boot.classList.add('ready');
+// いちばん最初の画面：「スタート」と「せってい」（v2.3〜）。オープニングの前に音（レトロ／高音質）などを選べる
+const btns = document.createElement('div');
+btns.className = 'boot-btns';
+btns.innerHTML = '<button class="boot-btn boot-start">▶ スタート</button><button class="boot-btn boot-set">⚙ せってい</button>';
+boot.appendChild(btns);
+const setPanel = document.createElement('div');
+setPanel.className = 'boot-settings';
+boot.appendChild(setPanel);
+const pct = (v) => `${Math.round(v * 100)}%`;
+const VOLS = [0, 0.25, 0.5, 0.7, 0.85, 1];
+const nextVol = (v) => VOLS[(VOLS.findIndex((x) => Math.abs(x - v) < 0.01) + 1) % VOLS.length];
+function drawSettings() {
+  const st = audio.settings;
+  const rows = [
+    ['sound', '音', st.sound === 'hq' ? '高音質（アレンジ版）' : 'レトロ（電子音）'],
+    ['bgm', 'BGMの音量', pct(st.bgm)],
+    ['se', '効果音の音量', pct(st.se)],
+    ['diff', 'むずかしさ', difficultyOf(st).name],
+  ];
+  setPanel.innerHTML = `<div class="bs-title">せってい</div>${rows.map(([k, l, v]) => `<button class="bs-row" data-k="${k}"><span>${l}</span><b>${v}</b></button>`).join('')}
+    <div class="bs-note">${st.sound === 'hq' ? '高音質：本物の楽器の音でアレンジした曲（読み込みに少し時間がかかります）' : 'レトロ：スーファミ風の電子音（軽くて、どの端末でもよく鳴ります）'}</div>
+    <button class="boot-btn bs-close">もどる</button>`;
+}
+setPanel.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const b = e.target.closest('button');
+  if (!b) return;
+  const st = audio.settings;
+  if (b.classList.contains('bs-close')) { setPanel.classList.remove('on'); btns.classList.remove('hide'); boot.classList.remove('setting'); audio.sfx('cancel'); return; }
+  const k = b.dataset.k;
+  if (k === 'sound') { st.sound = st.sound === 'hq' ? 'retro' : 'hq'; if (st.sound === 'hq') audio.banksReady = audio.loadBanks(); }
+  if (k === 'bgm' || k === 'se') st[k] = nextVol(st[k]);
+  if (k === 'diff') st.difficulty = DIFF_ORDER[(DIFF_ORDER.indexOf(st.difficulty || 'normal') + 1) % DIFF_ORDER.length];
+  audio.saveSettings();
+  audio.sfx('ok');
+  drawSettings();
+});
+btns.querySelector('.boot-set').addEventListener('click', (e) => {
+  e.stopPropagation();
+  audio.unlock();
+  drawSettings();
+  setPanel.classList.add('on'); btns.classList.add('hide'); boot.classList.add('setting');
+  audio.sfx('ok');
+});
 
-boot.addEventListener('click', async () => {
+let started = false;
+boot.addEventListener('click', async (e) => {
+  if (started || setPanel.classList.contains('on')) return;
+  started = true;
   audio.unlock();
   // スマホは全画面＋横向き固定を試す（できない端末もある）
   if (matchMedia('(pointer: coarse)').matches) {
     try { await document.documentElement.requestFullscreen?.(); await screen.orientation?.lock?.('landscape'); } catch { /* 無視 */ }
+  }
+  // 高音質を選んでいたら、楽器を読みこんでから始める（長くても8秒まで）
+  if (audio.settings.sound === 'hq') {
+    btns.classList.add('hide');
+    msg.textContent = '楽器を読み込み中…';
+    await Promise.race([audio.banksReady, new Promise((r) => setTimeout(r, 8000))]);
   }
   boot.remove();
   const fade = document.querySelector('.fade');
@@ -537,7 +591,7 @@ boot.addEventListener('click', async () => {
   const params = new URLSearchParams(location.search);
   if (params.has('skip')) { await flow.toTitle(); return; }
   await engine.setScene(scenes.opening, () => flow.toTitle());
-}, { once: true });
+});
 
 // デバッグ用（ブラウザのコンソールから）
 window.alphamax = { G: () => G, flow, scenes, partyMembers, machineName, MACHINES, esc };
