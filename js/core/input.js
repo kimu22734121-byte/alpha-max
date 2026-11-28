@@ -27,8 +27,13 @@ export const input = {
       e.preventDefault();
       const touch = e.pointerType !== 'mouse';
       const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastY: e.clientY, t0: performance.now(), moved: false, stick: false, touch, rot: !touch };
-      // スマホ：2本目の指が置かれたら、スティックをやめて2本指でカメラを回す
-      if (touch && touches().length >= 1) {
+      // スマホ：スティックで歩いている間（動かした・少し長く押している）に置いた2本目の指は、それだけでカメラを回す（歩きながら回せる。v2.8）
+      const st = this.stick;
+      if (touch && st && touches().length === 1 && (st.moved || performance.now() - st.t0 > 250)) {
+        p.rot = true; p.solo = true;
+      }
+      // スマホ：2本の指をほぼ同時に置いたら、スティックをやめて2本指でカメラを回す
+      else if (touch && touches().length >= 1) {
         p.rot = true;
         for (const q of touches()) { q.rot = true; q.moved = true; if (q.stick) { q.stick = false; this.stick = null; this.move.x = 0; this.move.y = 0; base.classList.remove('on'); } }
       }
@@ -49,7 +54,7 @@ export const input = {
       const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
       if (Math.hypot(dx, dy) > 12) p.moved = true;
       // カメラを回す：スマホは2本指（2本の動きの平均）、PCはマウスのドラッグ
-      if (p.rot && p.moved) { const k = p.touch ? 0.5 : 1; this.emit('swipe', { dx: (e.clientX - p.lastX) * k, dy: (e.clientY - p.lastY) * k }); }
+      if (p.rot && p.moved) { const k = p.touch && !p.solo ? 0.5 : 1; this.emit('swipe', { dx: (e.clientX - p.lastX) * k, dy: (e.clientY - p.lastY) * k }); }
       p.lastX = e.clientX; p.lastY = e.clientY;
       if (p.stick) {
         const len = Math.hypot(dx, dy);
