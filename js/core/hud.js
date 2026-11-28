@@ -89,7 +89,8 @@ export const hud = {
     const ba = blinkAlpha(performance.now() / 1000);
     for (const c of mk.chests) { g.globalAlpha = c.blink ? ba : 1; dot(c.x, c.y, c.color, k * 0.8 * c.size); }
     g.globalAlpha = 1;
-    for (const s of mk.bosses) dot(s.x, s.y, '#ff3a2a', k * 1.1);
+    for (const s of mk.bosses) { g.globalAlpha = s.blink ? ba : 1; dot(s.x, s.y, s.color, k * 1.1); }
+    g.globalAlpha = 1;
     for (const n of map.npcs || []) if (n.event === 'shuttleCaptain') dot(n.x, n.y, '#8ad8ff', k * 0.9);
     // 自分（向きの三角）
     const cx = (px - x0) * k, cy = (py - y0) * k, a = G.pos.dir || 0;
