@@ -79,7 +79,7 @@ export const ui = {
         if (i >= lines.length) { popModal(m); resolve(); return; }
         show();
       };
-      const m = { el: wrap, onKey: (e) => { if (['Enter', ' ', 'z', 'Z', 'Escape', 'x', 'X'].includes(e.key)) { e.preventDefault(); next(); } } };
+      const m = { el: wrap, onKey: (e) => { if (['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); next(); } } };
       wrap.addEventListener('pointerdown', (e) => { e.preventDefault(); next(); });
       pushModal(m);
       show();
@@ -163,10 +163,10 @@ export const ui = {
         // 外から閉じる（オートバトルに切り替えたとき）
         cancelMenu: () => done(null),
         onKey: (e) => {
-          if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); move(1); }
-          else if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); move(-1); }
-          else if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { e.preventDefault(); if (!e.repeat) choose(); }
-          else if (['Escape', 'x', 'X'].includes(e.key) && cancel) { e.preventDefault(); done(null); }
+          if (['ArrowDown', 'x', 'X'].includes(e.key)) { e.preventDefault(); move(1); } // S＝上・X＝下（v2.5〜）
+          else if (['ArrowUp', 's', 'S'].includes(e.key)) { e.preventDefault(); move(-1); }
+          else if (['Enter', ' '].includes(e.key)) { e.preventDefault(); if (!e.repeat) choose(); }
+          else if (e.key === 'Escape' && cancel) { e.preventDefault(); done(null); }
         },
       };
       wrap.addEventListener('pointerdown', (e) => {
@@ -196,7 +196,7 @@ export const ui = {
       const done = () => { popModal(m); resolve(); };
       btn.addEventListener('click', (e) => { e.stopPropagation(); audio.sfx('ok'); done(); });
       wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) { e.preventDefault(); done(); } });
-      const m = { el: wrap, isMenu: true, onKey: (e) => { if (['Enter', ' ', 'Escape', 'z', 'x'].includes(e.key)) { e.preventDefault(); done(); } } };
+      const m = { el: wrap, isMenu: true, onKey: (e) => { if (['Enter', ' ', 'Escape'].includes(e.key)) { e.preventDefault(); done(); } } };
       pushModal(m);
     });
   },
@@ -209,7 +209,7 @@ export const ui = {
       wrap.appendChild(panel);
       let cleanup = null;
       const done = (v) => { cleanup?.(); popModal(m); resolve(v); };
-      const m = { el: wrap, isMenu: true, onKey: (e) => { if (['Escape', 'x', 'X'].includes(e.key)) { e.preventDefault(); audio.sfx('cancel'); done(null); } else m.keys?.(e); } };
+      const m = { el: wrap, isMenu: true, onKey: (e) => { if (e.key === 'Escape') { e.preventDefault(); audio.sfx('cancel'); done(null); } else m.keys?.(e); } };
       pushModal(m);
       const r = build(panel, done, (fn) => { cleanup = fn; });
       if (typeof r === 'function') m.keys = r;
@@ -282,10 +282,10 @@ export const ui = {
       const m = {
         el: wrap, isMenu: true,
         onKey: (e) => {
-          if (e.key === 'ArrowDown' || e.key === 's') { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx + 1) % cur.length); } }
-          else if (e.key === 'ArrowUp' || e.key === 'w') { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx - 1 + cur.length) % cur.length); } }
-          else if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { e.preventDefault(); if (!e.repeat) press(); }
-          else if (['Escape', 'x', 'X'].includes(e.key)) { e.preventDefault(); done(); }
+          if (['ArrowDown', 'x', 'X'].includes(e.key)) { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx + 1) % cur.length); } }
+          else if (['ArrowUp', 's', 'S'].includes(e.key)) { e.preventDefault(); if (cur.length) { audio.sfx('cursor'); setIdx((idx - 1 + cur.length) % cur.length); } }
+          else if (['Enter', ' '].includes(e.key)) { e.preventDefault(); if (!e.repeat) press(); }
+          else if (e.key === 'Escape') { e.preventDefault(); done(); }
         },
       };
       pushModal(m);
@@ -321,10 +321,10 @@ export const ui = {
         el: wrap, isMenu: true,
         onKey: (e) => {
           e.preventDefault();
-          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') set(n + 1);
-          else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') set(n - 1);
-          else if (['Enter', ' ', 'z', 'Z'].includes(e.key)) { if (!e.repeat) done(n); }
-          else if (['Escape', 'x', 'X'].includes(e.key)) done(0);
+          if (['ArrowRight', 'ArrowUp', 'c', 'C', 's', 'S'].includes(e.key)) set(n + 1);
+          else if (['ArrowLeft', 'ArrowDown', 'z', 'Z', 'x', 'X'].includes(e.key)) set(n - 1);
+          else if (['Enter', ' '].includes(e.key)) { if (!e.repeat) done(n); }
+          else if (e.key === 'Escape') done(0);
         },
       };
       pushModal(m);
