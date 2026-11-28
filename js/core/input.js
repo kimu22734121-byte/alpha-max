@@ -23,10 +23,9 @@ export const input = {
     const R = 56;
 
     const touches = () => [...pointers.values()].filter((q) => q.touch);
-    layer.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-      const touch = e.pointerType !== 'mouse';
-      const p = { id: e.pointerId, x0: e.clientX, y0: e.clientY, lastX: e.clientX, lastY: e.clientY, t0: performance.now(), moved: false, stick: false, touch, rot: !touch };
+    // 指・マウスを置いた（id は指ごと）
+    const down = (id, cx, cy, touch) => {
+      const p = { id, x0: cx, y0: cy, lastX: cx, lastY: cy, t0: performance.now(), moved: false, stick: false, touch, rot: !touch };
       // スマホ：スティックで歩いている間（動かした・少し長く押している）に置いた2本目の指は、それだけでカメラを回す（歩きながら回せる。v2.8）
       const st = this.stick;
       if (touch && st && touches().length === 1 && (st.moved || performance.now() - st.t0 > 250)) {
@@ -41,21 +40,20 @@ export const input = {
       else if (touch && this.enabled && !this.stick) {
         p.stick = true;
         this.stick = p;
-        base.style.left = `${e.clientX}px`; base.style.top = `${e.clientY}px`;
+        base.style.left = `${cx}px`; base.style.top = `${cy}px`;
         base.classList.add('on');
         knob.style.transform = 'translate(-50%,-50%)';
       }
-      pointers.set(e.pointerId, p);
-      try { layer.setPointerCapture(e.pointerId); } catch { /* 無視 */ }
-    });
-    layer.addEventListener('pointermove', (e) => {
-      const p = pointers.get(e.pointerId);
+      pointers.set(id, p);
+    };
+    const moveTo = (id, cx, cy) => {
+      const p = pointers.get(id);
       if (!p) return;
-      const dx = e.clientX - p.x0, dy = e.clientY - p.y0;
+      const dx = cx - p.x0, dy = cy - p.y0;
       if (Math.hypot(dx, dy) > 12) p.moved = true;
-      // カメラを回す：スマホは2本指（2本の動きの平均）、PCはマウスのドラッグ
-      if (p.rot && p.moved) { const k = p.touch && !p.solo ? 0.5 : 1; this.emit('swipe', { dx: (e.clientX - p.lastX) * k, dy: (e.clientY - p.lastY) * k }); }
-      p.lastX = e.clientX; p.lastY = e.clientY;
+      // カメラを回す：スマホは2本指（2本の動きの平均）か、歩きながらの2本目の指。PCはマウスのドラッグ
+      if (p.rot && p.moved) { const k = p.touch && !p.solo ? 0.5 : 1; this.emit('swipe', { dx: (cx - p.lastX) * k, dy: (cy - p.lastY) * k }); }
+      p.lastX = cx; p.lastY = cy;
       if (p.stick) {
         const len = Math.hypot(dx, dy);
         const k = len > R ? R / len : 1;
@@ -67,17 +65,35 @@ export const input = {
           this.move.x = dx * s; this.move.y = dy * s;
         }
       }
-    });
-    const end = (e) => {
-      const p = pointers.get(e.pointerId);
+    };
+    const up = (id, cx, cy, button) => {
+      const p = pointers.get(id);
       if (!p) return;
-      pointers.delete(e.pointerId);
+      pointers.delete(id);
       if (p.stick) {
         this.stick = null; this.move.x = 0; this.move.y = 0;
         base.classList.remove('on');
       }
-      if (!p.moved && performance.now() - p.t0 < 350 && (p.touch || e.button === 0)) this.emit('tap', { x: e.clientX, y: e.clientY, mouse: !p.touch });
+      if (!p.moved && performance.now() - p.t0 < 350 && (p.touch || button === 0)) this.emit('tap', { x: cx, y: cy, mouse: !p.touch });
     };
+    // スマホの指は Touch Events で受ける（v2.8.1。Pointer Events だと、2本目の指を置いたときにスマホが
+    // 1本目の指を「取り消し」にしてしまい、歩くのが止まることがあったため）
+    const tEach = (e, fn) => { e.preventDefault(); for (const t of e.changedTouches) fn(`t${t.identifier}`, t.clientX, t.clientY); };
+    layer.addEventListener('touchstart', (e) => tEach(e, (id, x, y) => down(id, x, y, true)), { passive: false });
+    layer.addEventListener('touchmove', (e) => tEach(e, (id, x, y) => moveTo(id, x, y)), { passive: false });
+    layer.addEventListener('touchend', (e) => tEach(e, (id, x, y) => up(id, x, y, 0)), { passive: false });
+    layer.addEventListener('touchcancel', (e) => tEach(e, (id, x, y) => up(id, x, y, -1)), { passive: false });
+    document.addEventListener('gesturestart', (e) => e.preventDefault()); // iPhone の2本指のズームをさせない
+    // マウス・ペンは Pointer Events
+    const isTouchPtr = (e) => e.pointerType === 'touch';
+    layer.addEventListener('pointerdown', (e) => {
+      if (isTouchPtr(e)) return;
+      e.preventDefault();
+      down(e.pointerId, e.clientX, e.clientY, e.pointerType !== 'mouse');
+      try { layer.setPointerCapture(e.pointerId); } catch { /* 無視 */ }
+    });
+    layer.addEventListener('pointermove', (e) => { if (!isTouchPtr(e)) moveTo(e.pointerId, e.clientX, e.clientY); });
+    const end = (e) => { if (!isTouchPtr(e)) up(e.pointerId, e.clientX, e.clientY, e.button); };
     layer.addEventListener('pointerup', end);
     // マウス：右クリックのメニューを出さない（右ドラッグでカメラを回すため）、ホイールで上下の角度
     layer.addEventListener('contextmenu', (e) => e.preventDefault());
