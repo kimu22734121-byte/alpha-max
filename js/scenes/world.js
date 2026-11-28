@@ -23,7 +23,7 @@ import {
   G, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
-import { openMapView, shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
+import { openMapView, itemMenu, shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
 import { addBuildings, updateBuildings, addProps, addChests, makeSparkle, addStructures, updateStructures } from './world-objects.js';
 
 const MACHINE_SCALE = 0.72;
@@ -67,12 +67,13 @@ const BIOME_LOOK = {
 const PARTICLES = { deep: { color: 0xbfefff, up: 0.9 }, fire: { color: 0xff8a3a, up: 1.3 } };
 const CHAR_SCALE = 0.9;
 // フィールドのカメラ（画面の右半分をスワイプ）
-//  左右（yaw）：正面から最大90度ずつ。360度にするときは CAM_MAX_YAW を外す
+//  左右（yaw）：360度ぐるりと回せる（v1.7〜。「正面に戻す」はいちばん近い正面へ）
 //  上下（pitch）：0度＝真横（地面すれすれ）〜 90度＝真上から。いつもの角度は CAM_PITCH0（約54度）
-const CAM_MAX_YAW = Math.PI / 2;
 const CAM_PITCH0 = Math.atan2(13, 9.6);
 const CAM_SWIPE = 0.007; // 1ピクセルあたりの回転（ラジアン）
-const clampYaw = (y) => Math.max(-CAM_MAX_YAW, Math.min(CAM_MAX_YAW, y));
+const TAU = Math.PI * 2;
+const clampYaw = (y) => y; // 360度回せる（角度は回した分だけ増える。正面に戻すときは近いほうの正面へ）
+const yawOff = (y) => { const r = ((y % TAU) + TAU) % TAU; return Math.min(r, TAU - r); }; // 正面からのずれ
 const clampPitch = (a) => Math.max(0, Math.min(Math.PI / 2, a));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -117,6 +118,12 @@ export class WorldScene {
     this.t = 0;
     input.on('action', () => { if (this.active && !this.busy && !ui.busy) this.onAction(); });
     input.on('menu', () => { if (this.active && !this.busy && !ui.busy) this.onMenu(); });
+    input.on('items', async () => {
+      if (!this.active || this.busy || ui.busy) return;
+      this.lock(true);
+      try { await itemMenu(false, this); } finally { if (this.active) this.lock(false); }
+      hud.update(true);
+    });
     input.on('mapview', async () => { if (!this.active || this.busy || ui.busy) return; this.lock(true); try { await openMapView(this); } finally { if (this.active) this.lock(false); } });
     input.on('tap', (p) => { if (this.active && !this.busy && !ui.busy) this.onTap(p); });
     // フィールドでは画面の右側を横にスワイプするとカメラが左右に回る（最大90度ずつ。指を離した角度で止まる）
@@ -130,7 +137,7 @@ export class WorldScene {
     this.camResetBtn = document.createElement('button');
     this.camResetBtn.className = 'cam-reset';
     this.camResetBtn.textContent = '⟲ 正面に戻す';
-    this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = 0; this.camPitchTarget = CAM_PITCH0; });
+    this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = Math.round((this.camYaw || 0) / TAU) * TAU; this.camPitchTarget = CAM_PITCH0; });
     this.camResetBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
     // 調べられる物の正面に立つと出る「調べる」ボタン
     this.pop = document.createElement('button');
@@ -252,6 +259,7 @@ export class WorldScene {
       // 本棚が動いたあと（隠し階段が見えている）
       if (pr.data.secret && G.flags.stairsOpen) { pr.x += 1.1; if (pr.obj) pr.obj.position.x = pr.x; }
     }
+    this.spinners = this.props.map((pr) => pr.obj?.getObjectByName('spin')).filter(Boolean);
     this.refreshShowcases();
     const op = (G.flags.opened ||= {});
     this.chests = addChests(this.scene, map, (c) => !!op[`${map.id}:${c.id}`]);
@@ -505,6 +513,7 @@ export class WorldScene {
     // NPC・シンボル
     for (const n of this.npcs) animateChar(n.obj, t + n.x, 0);
     for (const mk of this.npcMarks || []) mk.position.y = mk.userData.baseY + Math.sin(t * 2.5) * 0.15;
+    for (const sp of this.spinners || []) sp.rotation.z += dt * 2.2; // 建物の中の小さな風車
     for (const s of this.symbols) {
       animateEnemy(s.obj, t);
       const fly = s.obj.userData.flying;
@@ -632,7 +641,7 @@ export class WorldScene {
     const p = G.pos;
     const town = this.map.type === 'town';
     const indoor = this.map.type === 'interior';
-    const off = indoor ? V(0, 8, 6.4) : town ? V(0, 11, 8.2) : V(0, 13, 9.6);
+    const off = indoor ? V(0, 8, 6.4).multiplyScalar(Math.min(1.3, Math.max(1, this.map.width / 17))) : town ? V(0, 11, 8.2) : V(0, 13, 9.6);
     // フィールドで町の門に近づくと、カメラが少し寄る
     let zoom = 1;
     for (const st of this.structures || []) {
@@ -650,6 +659,8 @@ export class WorldScene {
       if (kq && !ui.busy) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) + kq * dt * 1.6); }
       if (kr && !ui.busy) { this.camPitchTarget = null; this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + kr * dt * 1.2); }
       const ease = Math.min(1, dt * 4);
+      if (!Number.isFinite(this.camYaw)) this.camYaw = 0;
+      if (!Number.isFinite(this.camPitch)) this.camPitch = CAM_PITCH0;
       if (this.camYawTarget != null) { this.camYaw += (this.camYawTarget - this.camYaw) * ease; if (Math.abs(this.camYaw - this.camYawTarget) < 0.003) { this.camYaw = this.camYawTarget; this.camYawTarget = null; } }
       if (this.camPitchTarget != null) { this.camPitch += (this.camPitchTarget - this.camPitch) * ease; if (Math.abs(this.camPitch - this.camPitchTarget) < 0.003) { this.camPitch = this.camPitchTarget; this.camPitchTarget = null; } }
       // 見た目は少しなめらかに追いかける
@@ -658,7 +669,7 @@ export class WorldScene {
       // キャラを中心にした球の上にカメラを置く（距離はいつもと同じ）
       const dist = off.length(), yw = this.camYawView, pt = this.camPitchView;
       off.set(dist * Math.cos(pt) * Math.sin(yw), dist * Math.sin(pt), dist * Math.cos(pt) * Math.cos(yw));
-      rotated = Math.abs(this.camYaw || 0) > 0.01 || Math.abs((this.camPitch ?? CAM_PITCH0) - CAM_PITCH0) > 0.01;
+      rotated = yawOff(this.camYaw || 0) > 0.01 || Math.abs((this.camPitch ?? CAM_PITCH0) - CAM_PITCH0) > 0.01;
     } else { this.camYaw = 0; this.camYawTarget = null; this.camPitch = CAM_PITCH0; this.camPitchTarget = null; this.camYawView = 0; this.camPitchView = CAM_PITCH0; }
     this.camResetBtn.classList.toggle('on', rotated && !ui.busy);
     let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
@@ -679,19 +690,35 @@ export class WorldScene {
       this.camera.position.lerp(want, k);
     }
     this.camera.lookAt(this.camLook);
-    if (this.map.type === 'dungeon') this.updateCutaway();
+    if (this.map.type === 'dungeon' || this.map.type === 'interior') this.updateCutaway();
     this.sun.position.set(p.x - 9, 20, p.y + 7);
     this.sun.target.position.set(p.x, 0, p.y);
     if (this.lamp) this.lamp.position.set(p.x, 2.5, p.y + 0.5);
   }
 
-  // カメラを回せるマップ：フィールドと町の中（v0.12〜）。建物の中・ダンジョンは固定
-  canRotate() { const t = this.map?.type; return t === 'field' || t === 'town' || t === 'dungeon'; }
+  // カメラを回せるマップ：フィールド・町・ダンジョン・建物の中（v1.7〜 建物の中も）
+  canRotate() { const t = this.map?.type; return t === 'field' || t === 'town' || t === 'dungeon' || t === 'interior'; }
 
   // ダンジョン：キャラとカメラの間にある壁を低く縮める（カメラを回しても中が見えるように）
   updateCutaway() {
     const view = this.mapView;
     if (!view?.cut) return;
+    // 建物の中：カメラのある側の壁をぜんぶ低くする（ドールハウスのように中が見える）
+    if (this.map.type === 'interior') {
+      const W = this.map.width, H = this.map.height, cx = W / 2, cz = H / 2;
+      const yw = this.camYawView || 0, dx = Math.sin(yw), dz = Math.cos(yw);
+      const key = `in${Math.round(yw * 20)}`;
+      if (key === this.cutKey) return;
+      this.cutKey = key;
+      const cells = new Set();
+      for (const k of view.cut.keys()) {
+        const [x, y] = k.split(',').map(Number);
+        const ux = (x + 0.5 - cx) / (W / 2), uz = (y + 0.5 - cz) / (H / 2);
+        if (ux * dx + uz * dz > 0.35) cells.add(k);
+      }
+      cutawayWalls(view, cells);
+      return;
+    }
     const p = G.pos, c = this.camera.position;
     const dx = c.x - p.x, dz = c.z - p.y, len = Math.hypot(dx, dz) || 1;
     const cy = c.y - heightAt(this.map, p.x, p.y);
@@ -717,10 +744,11 @@ export class WorldScene {
       return false;
     }
     if (!map.dive || tileAt(map, x, z) !== 8) return false;
-    if (G.flags.diveUnit && this.avatars?.[0]?.kind === 'machine') return true;
+    const lead = this.avatars?.[0];
+    if (lead?.kind === 'machine' && (G.flags.diveUnit || MACHINES[lead.mc?.type]?.amphibious)) return true;
     if (!this.diveHint && this.active) {
       this.diveHint = true;
-      ui.banner('この先は海の中', G.flags.diveUnit ? 'マシンに乗っていないと入れない' : '水中仕様のマシンでないと進めない（タイドウォークの工房で改造できるらしい）');
+      ui.banner('この先は海の中', G.flags.diveUnit ? 'マシンに乗っていないと入れない' : '水中仕様のマシンでないと進めない（タイドウォークの工房で改造できるらしい。伝説の機体ならそのまま歩ける）');
     }
     return false;
   }

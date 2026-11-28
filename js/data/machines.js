@@ -39,6 +39,7 @@ export const MACHINES = {
   omega: {
     name: 'オメガ',
     desc: 'レンの家の地下に眠っていた漆黒の機体。アルファの兄弟機',
+    amphibious: true, // 伝説の機体：水中ユニットなしで海の底を歩ける（v1.7〜）
     pilot: 'any',
     pilots: ['ren', 'shion'], // オメガ＝シオンの最強機（レンも乗れる）
     owned: false,
@@ -52,6 +53,7 @@ export const MACHINES = {
   alpha: {
     name: 'アルファ',
     desc: '伝説の機体。メカニック専用。封印が解けるたびに力を取り戻す',
+    amphibious: true, // 伝説の機体：水中ユニットなしで海の底を歩ける（v1.7〜）
     fixedName: true,
     pilot: 'mechanic',
     pilots: ['ren'], // アルファ＝レンの最強機（レン専用）
@@ -126,6 +128,7 @@ export const MACHINES = {
   gaia: {
     name: 'ガイア',
     desc: '大地の名を持つ深紅の重装機。アルファ・オメガに続く3機目の特別機。ジーナの最強機',
+    amphibious: true, // 伝説の機体：水中ユニットなしで海の底を歩ける（v1.7〜）
     pilot: 'any',
     pilots: ['ren', 'gina'],
     owned: false,

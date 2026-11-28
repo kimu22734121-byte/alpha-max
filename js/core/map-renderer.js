@@ -612,7 +612,10 @@ function add3D(map, group, disposables, view) {
     dark: { m3: 0x2a2434, w4: 0x2e2a3a, c24: 0x201c2a, r1: 0x2a2636, r0: 0x3a3448, trunk: 0x1e1a24, leaf: 0x5a1a24, glow: 0xff3a4a },
     core: { m3: 0xf0ecff, w4: 0xe8e4ff, c24: 0xe0dcff, r1: 0xf0ecff, r0: 0xffffff, trunk: 0xf0ecff, leaf: 0xffffff, glow: 0xffffff },
   }[map.biome];
+  const indoor = map.type === 'interior';
   const kinds = {
+    // 建物の中の壁（v1.7〜 部屋の中もカメラを回せるので立体に。カメラ側の壁は world.js が低くする）
+    ...(indoor ? { 29: { geo: new THREE.BoxGeometry(1, 2.2, 1), mat: S(new THREE.Color(map.theme?.wallColor || '#5a4a3e').getHex()), y: 1.1, h: [1, 1], w: [1, 1], straight: true } } : {}),
     3: field
       ? { geo: new THREE.ConeGeometry(0.85, 1.6, 6), mat: S(BC ? BC.m3 : sea ? 0x4a5058 : wind ? 0x7a8a7c : 0x8a6442, BC?.glow && map.biome !== 'light' ? { emissive: BC.glow, emissiveIntensity: 0.12 } : {}), y: 0.6, h: [0.9, 1.9], w: [1.0, 1.5], onTerrain: true }
       : { geo: new THREE.ConeGeometry(0.7, 1.5, 6), mat: S(0x7a5a3a), y: 0.75, h: [0.9, 1.4], w: [1, 1.3] },
@@ -633,7 +636,7 @@ function add3D(map, group, disposables, view) {
     const hs = k.h[0] + rng(x, y, 3) * (k.h[1] - k.h[0]);
     const ws = k.w[0] + rng(x, y, 4) * (k.w[1] - k.w[0]);
     const gy = k.onTerrain || map.tiers ? heightAt(map, x + 0.5, y + 0.5) : 0;
-    e.set(0, k.rotZ ? 0 : rng(x, y, 1) * 6.28, k.rotZ ? Math.PI / 2 : 0);
+    e.set(0, k.rotZ || k.straight ? 0 : rng(x, y, 1) * 6.28, k.rotZ ? Math.PI / 2 : 0);
     q.setFromEuler(e);
     v.set(x + 0.5 + (kx || 0), gy + k.y * hs, y + 0.5 + (ky || 0));
     sc.set(ws, hs, ws);
@@ -646,7 +649,7 @@ function add3D(map, group, disposables, view) {
     return out;
   };
   // ダンジョンの壁：カメラを回したとき、キャラとカメラの間の壁を低く縮められるように、1つずつの元の形を覚えておく
-  const cutIds = map.type === 'dungeon' ? new Set([4, 24, 27, 15, 16, 18]) : null;
+  const cutIds = map.type === 'dungeon' ? new Set([4, 24, 27, 15, 16, 18]) : indoor ? new Set([29]) : null;
   if (cutIds) view.cut = new Map();
   for (const [id, k] of Object.entries(kinds)) {
     const cells = cellsOf([Number(id)]);

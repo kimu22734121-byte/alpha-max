@@ -870,6 +870,60 @@ const FURNITURE = {
     for (const s2 of [-1, 1]) { add(r, Bx(0.12, 1.2, 0.12), m('accent'), 1.1 * s2, 0.6, -0.9); add(r, Bx(0.16, 0.04, 1.8), m('accent'), 1.0 * s2, 0.14, 0); }
     for (let i = 0; i < 6; i++) add(r, Bx(0.3, 0.02, 0.06), m('dark'), -0.9 + i * 0.36, 0.13, 0.95, 0, 0, 0.6);
   }, { accent: 0xe8b030 }),
+  // 建物の中の町ごとの飾り（v1.7〜）：窓・トロッコ・カンテラ・ソファ・水槽・水晶・炉・柱・風車
+  f_window: (c) => furniture('window', c, (r, m) => {
+    add(r, Bx(1.5, 1.1, 0.12), m('secondary'), 0, 1.45, 0);
+    add(r, Bx(1.3, 0.9, 0.04), m('glow'), 0, 1.45, 0.06);
+    add(r, Bx(0.06, 0.9, 0.08), m('secondary'), 0, 1.45, 0.08);
+    add(r, Bx(1.3, 0.06, 0.08), m('secondary'), 0, 1.45, 0.08);
+    add(r, Bx(1.6, 0.08, 0.25), m('accent'), 0, 0.88, 0.1);
+  }, { glow: 0xbfe8ff }),
+  f_cart: (c) => furniture('cart', c, (r, m) => {
+    add(r, Bx(1.1, 0.5, 0.7), m('metal'), 0, 0.55, 0);
+    for (const sx of [-0.4, 0.4]) for (const sz of [-0.36, 0.36]) add(r, Cy(0.16, 0.16, 0.08, 10), m('dark'), sx, 0.18, sz, Math.PI / 2, 0, 0);
+    for (let i = 0; i < 5; i++) add(r, Sp(0.17, 0), m('accent'), -0.35 + (i % 3) * 0.35, 0.85 + (i > 2 ? 0.12 : 0), (i % 2 ? 0.12 : -0.12));
+  }, { metal: 0x6a5a4a, accent: 0x9a8a7a, dark: 0x2a2420 }),
+  f_lantern: (c) => furniture('lantern', c, (r, m) => {
+    add(r, Cy(0.04, 0.04, 1.6, 6), m('dark'), 0, 0.8, 0);
+    add(r, Bx(0.5, 0.06, 0.06), m('dark'), 0.2, 1.6, 0);
+    add(r, Cy(0.16, 0.2, 0.36, 6), m('glow'), 0.4, 1.36, 0);
+    add(r, Co(0.22, 0.14, 6), m('dark'), 0.4, 1.6, 0);
+  }, { glow: 0xffc070 }),
+  f_sofa: (c) => furniture('sofa', c, (r, m) => {
+    add(r, Bx(1.8, 0.4, 0.8), m('primary'), 0, 0.3, 0);
+    add(r, Bx(1.8, 0.6, 0.2), m('primary'), 0, 0.7, -0.32);
+    for (const sx of [-0.95, 0.95]) add(r, Bx(0.2, 0.55, 0.8), m('secondary'), sx, 0.4, 0);
+    add(r, Bx(0.5, 0.15, 0.35), m('accent'), -0.4, 0.58, 0.05);
+  }, { primary: 0x7a3a2a, secondary: 0x5a2a1e, accent: 0xd8c08a }),
+  f_tank: (c) => furniture('tank', c, (r, m) => {
+    add(r, Bx(1.6, 0.6, 0.6), m('secondary'), 0, 0.3, 0);
+    const glass = new THREE.MeshStandardMaterial({ name: 'glow', color: 0x4ab8e8, emissive: 0x2a88c8, emissiveIntensity: 0.9, transparent: true, opacity: 0.6 });
+    add(r, Bx(1.5, 0.9, 0.5), glass, 0, 1.05, 0);
+    for (let i = 0; i < 4; i++) add(r, Co(0.06, 0.18, 4), m('accent'), -0.5 + i * 0.32, 0.9 + (i % 2) * 0.25, 0.05, 0, 0, Math.PI / 2);
+    for (let i = 0; i < 3; i++) add(r, Co(0.06, 0.4, 4), new THREE.MeshStandardMaterial({ name: 'leaf', color: 0x3a9a5a, flatShading: true }), -0.55 + i * 0.5, 0.8, -0.1);
+  }, { secondary: 0x3a4a5a, accent: 0xff8a3a }),
+  f_crystal: (c) => furniture('crystal', c, (r, m) => {
+    add(r, Cy(0.35, 0.45, 0.3, 6), m('secondary'), 0, 0.15, 0);
+    add(r, Co(0.22, 1.3, 5), m('glow'), 0, 0.95, 0, 0, 0, 0.08);
+    add(r, Co(0.13, 0.7, 5), m('glow'), 0.2, 0.6, 0.05, 0, 0, -0.4);
+    add(r, Co(0.12, 0.6, 5), m('glow'), -0.2, 0.55, -0.05, 0, 0, 0.45);
+  }, { secondary: 0x8a8aa0, glow: 0x9ad8ff }),
+  f_furnace: (c) => furniture('furnace', c, (r, m) => {
+    add(r, Bx(1.2, 1.1, 0.9), m('secondary'), 0, 0.55, 0);
+    add(r, Bx(0.6, 0.45, 0.04), m('glow'), 0, 0.45, 0.46);
+    add(r, Cy(0.18, 0.22, 1.2, 8), m('dark'), 0.3, 1.6, -0.2);
+  }, { secondary: 0x4a3a34, dark: 0x2a2220, glow: 0xff7a2a }),
+  f_pillar: (c) => furniture('pillar', c, (r, m) => {
+    add(r, Bx(0.7, 0.2, 0.7), m('accent'), 0, 0.1, 0);
+    add(r, Cy(0.24, 0.27, 2.0, 10), m('primary'), 0, 1.2, 0);
+    add(r, Bx(0.7, 0.2, 0.7), m('accent'), 0, 2.3, 0);
+    add(r, Sp(0.12, 1), m('glow'), 0, 2.5, 0);
+  }, { primary: 0xf0e8d4, accent: 0xd8b040, glow: 0xfff0a0 }),
+  f_pinwheel: (c) => furniture('pinwheel', c, (r, m) => {
+    add(r, Cy(0.05, 0.08, 1.5, 6), m('secondary'), 0, 0.75, 0);
+    const hub = grp(r, 'spin', 0, 1.5, 0.08);
+    for (let i = 0; i < 4; i++) add(hub, Bx(0.12, 0.6, 0.02), m('accent'), Math.cos(i * Math.PI / 2) * 0.3, Math.sin(i * Math.PI / 2) * 0.3, 0, 0, 0, i * Math.PI / 2);
+  }, { secondary: 0x8a6a4a, accent: 0xf0f0e8 }),
   // ガレージ：円形の転送台（青白く光る。上に乗って調べると転送できる）
   f_teleporter: (c) => furniture('teleporter', c, (r, m) => {
     add(r, Cy(1.05, 1.15, 0.2, 24), m('metal'), 0, 0.1, 0);
