@@ -282,8 +282,9 @@ export class WorldScene {
     // ガレージの中には預けてあるマシンが並ぶ
     if (map.showMachines) {
       // 仲間が使っているマシンだけを並べる（台数が増えても重くならない）。目覚めたアルファは、だれも乗っていなくても必ず並べる（v1.4.3）
+      // オメガ・ガイアも、持っていてだれも乗っていなければ並べる（v2.8.2。最強スタートでガレージにいるのに見えなかったため）
       const piloted = (mc) => partyMembers().some((m) => m.machine === mc.id);
-      const freeAlpha = (mc) => mc.type === 'alpha' && alphaSeal() >= 1 && !piloted(mc);
+      const freeAlpha = (mc) => !piloted(mc) && mc.owned && (mc.type === 'alpha' ? alphaSeal() >= 1 : mc.type === 'omega' || mc.type === 'gaia');
       machinesInGarage(map.town).filter((mc) => piloted(mc) || freeAlpha(mc)).sort((a, b) => freeAlpha(b) - freeAlpha(a)).slice(0, map.showMachines.length).forEach((mc, i) => {
         const obj = buildMachineModel(machineSpec(mc));
         obj.scale.setScalar(0.78);
@@ -292,8 +293,8 @@ export class WorldScene {
         this.scene.add(obj);
         this.extras.push(obj);
         if (freeAlpha(mc)) {
-          // だれも乗っていないアルファ：調べると「乗る」（光の目印つき）
-          const pr = { data: { id: `mc_${mc.id}`, block: [1.6, 1.4], search: { event: 'rideAlpha' } }, obj, x: obj.position.x, z: obj.position.z, taken: false };
+          // だれも乗っていない伝説の機体：調べると「乗る」（光の目印つき）
+          const pr = { data: { id: `mc_${mc.id}`, block: [1.6, 1.4], search: { event: 'rideAlpha' } }, obj, x: obj.position.x, z: obj.position.z, taken: false, mc };
           this.props.push(pr);
           this.addSparkle(pr, pr.x, pr.z, 2.2);
           return;
@@ -1170,13 +1171,24 @@ export class WorldScene {
 
   async propEvent(name, pr) {
     if (name === 'rideAlpha') {
-      // 目覚めたアルファに乗る（レンが乗る。いままでのマシンはこのガレージに預ける）
-      const r = G.members.ren;
-      await ui.say([{ name: '', text: '目を覚ましたアルファが、ガレージで静かに待っている。胸のコアが青白く光った。' }]);
-      if (!(await ui.confirm(`${esc(r.name)}がアルファに乗りますか？（いまのマシンはこのガレージに預けます）`))) return;
-      r.machine = 'alpha';
+      // だれも乗っていない伝説の機体に乗る（いままでのマシンはこのガレージに預ける）。
+      // アルファはレン。オメガ・ガイアは専用の仲間がいればその仲間、いなければレン（v2.8.2）
+      const mc = pr?.mc || G.machines.alpha;
+      const nm = machineName(mc);
+      const own = { omega: 'shion', gaia: 'gina' }[mc.type];
+      const cands = partyMembers().filter((m) => canPilot(m, mc));
+      const intro = { alpha: '目を覚ましたアルファが、ガレージで静かに待っている。胸のコアが青白く光った。', omega: `${nm}が、ガレージで静かに待っている。漆黒の装甲に赤い光が走った。`, gaia: `${nm}が、ガレージで静かに待っている。深紅の装甲が熱をおびて光った。` }[mc.type];
+      await ui.say([{ name: '', text: intro }]);
+      let r = cands.find((m) => m.id === own) || G.members.ren;
+      if (cands.length > 1) {
+        const pick = await ui.menu({ title: `${esc(nm)}にだれが乗る？`, items: cands.map((m) => ({ label: esc(m.name), right: m.machine ? esc(machineName(G.machines[m.machine])) : '', value: m })), cancel: true });
+        if (!pick) return;
+        r = pick;
+      } else if (!(await ui.confirm(`${esc(r.name)}が${esc(nm)}に乗りますか？（いまのマシンはこのガレージに預けます）`))) return;
+      r.machine = mc.id;
       audio.sfx('seal');
-      await ui.say([{ name: r.name, text: 'いくぞ、アルファ！ ……今度は、いっしょに戦おう！' }, { name: '', text: '（店の人に話して「乗り込んで出発」で、アルファに乗って出られる）' }]);
+      const line = { alpha: 'いくぞ、アルファ！ ……今度は、いっしょに戦おう！', omega: '……行こう、オメガ。', gaia: 'さあ、暴れるよ、ガイア！' }[mc.type];
+      await ui.say([{ name: r.name, text: line }, { name: '', text: `（店の人に話して「乗り込んで出発」で、${nm}に乗って出られる）` }]);
       this.build();
       hud.update(true);
       return;
