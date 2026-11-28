@@ -63,15 +63,15 @@ button { font-family: inherit; color: inherit; }
 .hud.hidden { display: none; }
 /* 左上：ミュート → 仲間の体力（v2.9.1：ミュートを左上の角に。体力は右上のボタンにかぶらない幅に収め、画面が狭いと縮む） */
 .hud-party { position: fixed; left: calc(50px + var(--safe-l)); top: 6px; display: flex; gap: 4px; align-items: flex-start; max-width: calc(100vw - 50px - 168px - var(--safe-l) - var(--safe-r)); }
-.plate { background: var(--panel); border: 1px solid var(--line2); border-left: 3px solid var(--line); padding: 2px 5px 3px; flex: 0 1 100px; min-width: 0; box-sizing: border-box; font-size: 10px; line-height: 1.15; border-radius: 3px; }
+.plate { background: var(--panel); border: 1px solid var(--line2); border-left: 3px solid var(--line); padding: 3px 6px 4px; flex: 0 1 114px; min-width: 0; box-sizing: border-box; font-size: 11px; line-height: 1.15; border-radius: 3px; }
 .plate.ko { opacity: 0.55; border-left-color: var(--warn); }
 .plate.riding { border-left-color: var(--en); }
-.pl-name { display: flex; justify-content: space-between; gap: 3px; font-size: 11px; white-space: nowrap; overflow: hidden; }
-.pl-lv { color: var(--dim); font-size: 9px; }
+.pl-name { display: flex; justify-content: space-between; gap: 3px; font-size: 12px; white-space: nowrap; overflow: hidden; }
+.pl-lv { color: var(--dim); font-size: 10px; }
 .pl-hp, .pl-mc { display: flex; align-items: center; gap: 3px; margin-top: 1px; flex-wrap: wrap; }
-.pl-mcname { width: 100%; color: var(--en); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pl-num { font-size: 9px; color: var(--dim); min-width: 20px; text-align: right; }
-.bar { flex: 1; min-width: 24px; height: 5px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; }
+.pl-mcname { width: 100%; color: var(--en); font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pl-num { font-size: 10px; color: var(--dim); min-width: 22px; text-align: right; }
+.bar { flex: 1; min-width: 24px; height: 6px; background: rgba(255, 255, 255, 0.12); border-radius: 2px; overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--hp); transition: width 0.3s; }
 .bar.armor i { background: var(--armor); }
 .bar.en i { background: var(--en); }
@@ -202,7 +202,7 @@ b.fire { color: #ff8a5a; font-weight: normal; }
 
 /* 背の低い横画面（スマホ）向け */
 @media (max-height: 430px) {
-  .plate { padding: 1px 4px 2px; flex-basis: 92px; }
+  .plate { padding: 2px 5px 3px; flex-basis: 104px; }
   .menu-item { min-height: 34px; padding-top: 6px; padding-bottom: 6px; font-size: 14px; }
   .menu-title { font-size: 14px; padding-top: 6px; }
   .say-box { min-height: 80px; padding: 12px 16px 14px; }
