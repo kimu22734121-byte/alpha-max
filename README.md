@@ -77,10 +77,10 @@ tools/viewer.html              マシン・キャラの見た目確認ページ�
 
 ### サウンドフォント（楽器の音）
 - **FluidR3_GM** — Frank Wen 作のGMサウンドフォント
-  - 使用したのは [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts) が mp3 に書き出したもの（ピアノ・ストリングス・ブラス・エレキベース・オーバードライブギター・パッド・ハープ）から、一部の音程だけを切り出したファイル
+  - 使用したのは [gleitz/midi-js-soundfonts](https://github.com/gleitz/midi-js-soundfonts) が mp3 に書き出したもの（ピアノ・ストリングス・ブラス・エレキベース・オーバードライブギター・パッド・ハープ、高音質版のフルート・バイオリン・ホルン・トランペット・コーラス・グロッケン・マリンバ・ウッドベース・チェロ・ティンパニ・エレピ・オーボエ・オルガン・ピチカート・和太鼓）から、一部の音程だけを切り出したファイル
   - ライセンス：**Creative Commons Attribution 3.0（CC BY 3.0）** — 商用利用・再配布OK（クレジット表記が必要）
   - https://creativecommons.org/licenses/by/3.0/
-  - ドラム・シンセ音・効果音はすべて WebAudio でその場で合成しています
+  - ドラム・シンセ音・効果音・ホールの響きは WebAudio でその場で合成しています（高音質版のタムは和太鼓のサンプル）
 
 ### ライブラリ
 - **three.js**（r170）— MIT License（`js/lib/THREE_LICENSE.txt`）

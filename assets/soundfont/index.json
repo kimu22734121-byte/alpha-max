@@ -109,5 +109,248 @@
       "Ab5",
       "C6"
     ]
+  },
+  "flute": {
+    "gm": "flute",
+    "notes": [
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6",
+      "E6",
+      "Ab6",
+      "C7"
+    ],
+    "hq": true
+  },
+  "violin": {
+    "gm": "violin",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6",
+      "E6",
+      "Ab6",
+      "C7"
+    ],
+    "hq": true
+  },
+  "horn": {
+    "gm": "french_horn",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5"
+    ],
+    "hq": true
+  },
+  "trumpet": {
+    "gm": "trumpet",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "choir": {
+    "gm": "choir_aahs",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "glock": {
+    "gm": "glockenspiel",
+    "notes": [
+      "C5",
+      "E5",
+      "Ab5",
+      "C6",
+      "E6",
+      "Ab6",
+      "C7"
+    ],
+    "hq": true
+  },
+  "marimba": {
+    "gm": "marimba",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "abass": {
+    "gm": "acoustic_bass",
+    "notes": [
+      "C1",
+      "E1",
+      "Ab1",
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4"
+    ],
+    "hq": true
+  },
+  "cello": {
+    "gm": "cello",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5"
+    ],
+    "hq": true
+  },
+  "timpani": {
+    "gm": "timpani",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4"
+    ],
+    "hq": true
+  },
+  "epiano": {
+    "gm": "electric_piano_1",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "oboe": {
+    "gm": "oboe",
+    "notes": [
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "organ": {
+    "gm": "church_organ",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "pizz": {
+    "gm": "pizzicato_strings",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4",
+      "E4",
+      "Ab4",
+      "C5",
+      "E5",
+      "Ab5",
+      "C6"
+    ],
+    "hq": true
+  },
+  "taiko": {
+    "gm": "taiko_drum",
+    "notes": [
+      "C2",
+      "E2",
+      "Ab2",
+      "C3",
+      "E3",
+      "Ab3",
+      "C4"
+    ],
+    "hq": true
   }
 }

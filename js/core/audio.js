@@ -43,6 +43,34 @@ export const INSTRUMENTS = {
   drums: { drums: true },
 };
 
+// ---------------- 高音質版（アレンジ）v2.1〜 ----------------
+// 「せってい」の「音」で高音質を選ぶと、電子音の楽器を本物の楽器のサンプルに置きかえて、いくつか重ねて鳴らす。
+// layers：[サンプル, オクターブ, 音量, 定位(左右)]。env：[attack, release]。読み込み前の楽器は電子音のまま鳴る
+export const HQ_INSTRUMENTS = {
+  lead: { layers: [['violin', 0, 0.5, 0], ['flute', 0, 0.22, 0.15]], env: [0.03, 0.35], rev: 0.4 },
+  pulse: { layers: [['oboe', 0, 0.5, -0.1], ['pizz', 0, 0.18, 0.2]], env: [0.02, 0.3], rev: 0.35 },
+  flute: { layers: [['flute', 0, 0.55, 0.1]], env: [0.05, 0.4], rev: 0.45 },
+  saw: { layers: [['horn', 0, 0.45, -0.15], ['strings', 0, 0.3, 0.15]], env: [0.04, 0.35], rev: 0.4 },
+  synbass: { layers: [['bass', 0, 0.75, 0], ['cello', 1, 0.12, 0]], env: [0.005, 0.12], rev: 0.08 },
+  tribass: { layers: [['abass', 0, 0.85, 0]], env: [0.005, 0.15], rev: 0.1 },
+  pad: { layers: [['strings', 0, 0.36, -0.25], ['choir', 0, 0.26, 0.25]], env: [0.35, 0.9], rev: 0.65 },
+  organ: { layers: [['organ', 0, 0.38, 0]], env: [0.02, 0.4], rev: 0.5 },
+  pluck: { layers: [['harp', 0, 0.45, -0.1], ['marimba', 0, 0.25, 0.15]], env: [0.002, 0.5], rev: 0.4 },
+  bell: { layers: [['glock', 0, 0.45, 0.2]], env: [0.002, 1.2], rev: 0.55 },
+  epiano: { layers: [['epiano', 0, 0.55, 0]], env: [0.003, 0.5], rev: 0.35 },
+  powerchord: { layers: [['guitar', 0, 0.42, -0.2], ['brass', 0, 0.16, 0.2]], env: [0.005, 0.12], rev: 0.2 },
+  piano: { layers: [['piano', 0, 0.6, 0]], env: [0.004, 0.5], rev: 0.4 },
+  strings: { layers: [['strings', 0, 0.42, -0.2], ['cello', -1, 0.2, 0.2]], env: [0.15, 0.7], rev: 0.6 },
+  brass: { layers: [['brass', 0, 0.42, -0.1], ['trumpet', 0, 0.22, 0.15]], env: [0.03, 0.3], rev: 0.4 },
+  ebass: { layers: [['bass', 0, 0.75, 0]], env: [0.004, 0.1], rev: 0.06 },
+  guitar: { layers: [['guitar', 0, 0.42, -0.15]], env: [0.004, 0.1], rev: 0.2 },
+  warmpad: { layers: [['pad', 0, 0.32, -0.2], ['choir', 0, 0.24, 0.2]], env: [0.4, 1.0], rev: 0.65 },
+  harp: { layers: [['harp', 0, 0.5, 0]], env: [0.002, 0.7], rev: 0.5 },
+};
+// アレンジ：ベースの音に合わせて、ストリングスとコーラスの和音（1オクターブ上の根音と5度）をそっと重ねる
+const HQ_BASS = new Set(['synbass', 'tribass', 'ebass']);
+const HQ_MAX_VOICES = 44;
+
 // ---------------- MML ----------------
 // o4 オクターブ / > < 上下 / l8 長さ / v12 音量(0-15) / q7 音の長さ(1-8) / r 休符 / c+ d- 半音 / ^ タイ
 // (ceg) 和音 / [ ... ]4 くり返し / . 付点
@@ -163,6 +191,13 @@ export const audio = {
     this.reverb.buffer = this.makeImpulse(2.4, 2.8);
     this.reverbIn = ctx.createGain(); this.reverbIn.gain.value = 0.6;
     this.reverbIn.connect(this.reverb); this.reverb.connect(this.master);
+    // 高音質版の広いホールの響き（前に少し間をあけ、高い音をやわらげる）
+    this.hall = ctx.createConvolver();
+    this.hall.buffer = this.makeHall(3.6);
+    this.hallIn = ctx.createGain(); this.hallIn.gain.value = 0.55;
+    const pre = ctx.createDelay(0.1); pre.delayTime.value = 0.025;
+    const hlp = ctx.createBiquadFilter(); hlp.type = 'lowpass'; hlp.frequency.value = 6500;
+    this.hallIn.connect(pre); pre.connect(this.hall); this.hall.connect(hlp); hlp.connect(this.master);
     // ディレイ
     this.delay = ctx.createDelay(1.0); this.delay.delayTime.value = 0.32;
     const fb = ctx.createGain(); fb.gain.value = 0.32;
@@ -188,6 +223,22 @@ export const audio = {
     for (let ch = 0; ch < 2; ch++) {
       const d = buf.getChannelData(ch);
       for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, decay);
+    }
+    return buf;
+  },
+  // ホールの響き：左右で少しずつ違う、なめらかに消えていく響き
+  makeHall(sec) {
+    const ctx = this.ctx, n = Math.floor(ctx.sampleRate * sec);
+    const buf = ctx.createBuffer(2, n, ctx.sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+      const d = buf.getChannelData(ch);
+      let lp = 0;
+      for (let i = 0; i < n; i++) {
+        const x = i / n;
+        lp += ((Math.random() * 2 - 1) - lp) * (0.35 + 0.6 * (1 - x)); // 後ろほど高い音が消える
+        const early = i < ctx.sampleRate * 0.08 && Math.random() < 0.004 ? (Math.random() * 2 - 1) * 1.5 : 0;
+        d[i] = (lp + early) * Math.exp(-x * 5.2);
+      }
     }
     return buf;
   },
@@ -220,6 +271,8 @@ export const audio = {
       const index = await res.json();
       const jobs = [];
       for (const [bank, info] of Object.entries(index)) {
+        if (this.banks[bank]) continue; // 読み込み済み・読み込み中
+        if (info.hq && !this.hq) continue; // 高音質版の楽器は、高音質を選んだときだけ
         this.banks[bank] = { notes: [], loaded: false };
         for (const name of info.notes) jobs.push({ bank, name });
       }
@@ -241,10 +294,11 @@ export const audio = {
   },
 
   // 同時発音数の管理：16音を超えたら一番古い音を止める
+  get hq() { return this.settings.sound === 'hq'; },
   allocVoice(start, end) {
     const now = this.ctx.currentTime;
     this.voices = this.voices.filter((v) => v.end > now);
-    while (this.voices.length >= MAX_VOICES) {
+    while (this.voices.length >= (this.hq ? HQ_MAX_VOICES : MAX_VOICES)) {
       this.voices.sort((a, b) => a.start - b.start);
       const old = this.voices.shift();
       old.kill(Math.max(now, start - 0.01));
@@ -335,7 +389,22 @@ export const audio = {
     v.kill = (t) => { env.gain.cancelScheduledValues(t); env.gain.setTargetAtTime(0, t, 0.01); for (const o of oscs) { try { o.stop(t + 0.05); } catch { /* 無視 */ } } };
   },
 
-  playSample(inst, bank, midi, time, dur, vel, bus, pan) {
+  // 高音質版：サンプルを重ねて鳴らす（読み込み前の楽器は電子音で鳴らす）
+  playNoteHQ(instName, midi, time, dur, vel = 1, bus = this.musicBus, pan = 0) {
+    const hq = HQ_INSTRUMENTS[instName];
+    if (!hq || INSTRUMENTS[instName]?.drums) { this.playNote(instName, midi, time, dur, vel, bus, pan); return; }
+    let played = false;
+    for (const [bankName, oct, g, p] of hq.layers) {
+      const bank = this.banks[bankName];
+      if (!bank?.loaded || !bank.notes.length) continue;
+      const inst = { env: [hq.env[0], 0, 1, hq.env[1]], gain: g, rev: 0, dly: 0 };
+      this.playSample(inst, bank, midi + oct * 12, time, dur, vel, bus, Math.max(-1, Math.min(1, pan + p)), hq.rev);
+      played = true;
+    }
+    if (!played) this.playNote(instName, midi, time, dur, vel, bus, pan);
+  },
+
+  playSample(inst, bank, midi, time, dur, vel, bus, pan, hall = 0) {
     const ctx = this.ctx;
     let best = bank.notes[0];
     for (const n of bank.notes) if (Math.abs(n.midi - midi) < Math.abs(best.midi - midi)) best = n;
@@ -353,6 +422,7 @@ export const audio = {
     env.gain.setTargetAtTime(0, time + Math.max(dur, a), Math.max(0.01, r / 4));
     src.connect(env);
     this.route(env, bus, inst.rev, inst.dly, pan);
+    if (hall > 0) { const hg = this.ctx.createGain(); hg.gain.value = hall; env.connect(hg); hg.connect(this.hallIn); }
     src.start(time);
     src.stop(end + 0.05);
     v.kill = (t) => { env.gain.cancelScheduledValues(t); env.gain.setTargetAtTime(0, t, 0.01); try { src.stop(t + 0.05); } catch { /* 無視 */ } };
@@ -386,10 +456,17 @@ export const audio = {
       nodes.push(o);
     };
     let rev = 0.08;
-    if (kind === 0) { toneHit(160, 42, 0.9, 0.32); noiseHit('lowpass', 1200, 1, 0.15, 0.02); }
+    if (kind === 0 && this.hq) { toneHit(120, 38, 1.0, 0.45); toneHit(900, 120, 0.12, 0.03, 'triangle'); noiseHit('lowpass', 900, 1, 0.12, 0.03); }
+    else if (kind === 0) { toneHit(160, 42, 0.9, 0.32); noiseHit('lowpass', 1200, 1, 0.15, 0.02); }
     else if (kind === 2) { toneHit(220, 160, 0.35, 0.12, 'triangle'); noiseHit('bandpass', 1900, 0.8, 0.55, 0.2); rev = 0.18; }
     else if (kind === 4) noiseHit('highpass', 7500, 1, 0.22, 0.05);
     else if (kind === 5) noiseHit('highpass', 6500, 1, 0.2, 0.28);
+    else if ((kind === 7 || kind === 9) && this.hq && this.banks.taiko?.loaded) {
+      // 高音質版：タムは和太鼓のサンプル
+      const bank = this.banks.taiko;
+      this.playSample({ env: [0.002, 0, 1, 0.3], gain: 0.7 * vel }, bank, kind === 7 ? 41 : 47, time, 0.3, 1, bus, kind === 7 ? -0.2 : 0.2, 0.3);
+      return;
+    }
     else if (kind === 7) { toneHit(130, 80, 0.6, 0.35); rev = 0.2; }
     else if (kind === 9) { toneHit(200, 130, 0.5, 0.28); rev = 0.2; }
     else if (kind === 11) { noiseHit('highpass', 4500, 0.6, 0.3, 1.3); rev = 0.3; }
@@ -444,10 +521,25 @@ export const audio = {
         const tr = s.c.tracks[ev.track];
         const dur = ev.d * spb * (ev.q / 8);
         const vel = (ev.vel / 15) * (tr.vol ?? 1);
+        const hq = this.hq;
         for (const n of ev.notes) {
-          this.playNote(tr.inst, n + (tr.transpose || 0), at, dur, vel, s.gain, tr.pan || 0);
+          const m = n + (tr.transpose || 0);
+          if (hq) {
+            // 高音質版：少しだけ人が弾いたようなゆれ（タイミングと強さ）
+            const hAt = at + (Math.random() - 0.5) * 0.012, hv = vel * (0.92 + Math.random() * 0.12);
+            this.playNoteHQ(tr.inst, m, hAt, dur, hv, s.gain, tr.pan || 0);
+          } else this.playNote(tr.inst, m, at, dur, vel, s.gain, tr.pan || 0);
           const v = this.voices[this.voices.length - 1];
           if (v && !v.song) v.song = s;
+        }
+        // アレンジ：ベースの音に、ストリングスとコーラスの和音をそっと重ねる（長い音だけ）
+        if (hq && HQ_BASS.has(tr.inst) && ev.d >= 1 && ev.notes.length) {
+          const root = ev.notes[0] + (tr.transpose || 0);
+          for (const [bankName, iv, g, p] of [['strings', 12, 0.12, -0.3], ['strings', 19, 0.09, 0.3], ['choir', 24, 0.07, 0]]) {
+            const bank = this.banks[bankName];
+            if (!bank?.loaded) continue;
+            this.playSample({ env: [0.4, 0, 1, 0.9], gain: g }, bank, root + iv, at, ev.d * spb, vel, s.gain, p, 0.7);
+          }
         }
       }
       s.idx++;

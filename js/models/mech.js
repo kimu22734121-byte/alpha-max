@@ -133,6 +133,18 @@ export function buildMachineModel(spec) {
     }
     root.userData.wingBase = [(wR?.rotation.z || 0) - 0.25, (wL?.rotation.z || 0) + 0.25];
   }
+  // オメガマックス・ガイアマックス（v2.1〜）：足もとと背中に光の輪のオーラ（機体の光の色）
+  if (spec.maxForm) {
+    const col = c.glow ?? 0xffffff;
+    const mat = new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.25, 0.05, 6, 40), mat);
+    ring.rotation.x = Math.PI / 2; ring.position.y = 0.06; ring.name = 'maxRing';
+    root.add(ring);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.035, 6, 32), mat.clone());
+    halo.position.set(0, 2.6, -0.55); halo.name = 'maxHalo';
+    root.add(halo);
+    root.userData.maxAura = [ring, halo];
+  }
   if (spec.glow != null) setGlow(root, spec.glow);
   return root;
 }
@@ -222,6 +234,11 @@ export function animateMachine(obj, t, speed) {
     if (u.wings[1]) u.wings[1].rotation.z = u.wingBase[1] + k;
   }
   if (u.radar) u.radar.rotation.y = t * 2;
+  if (u.maxAura) {
+    const [ring, halo] = u.maxAura;
+    ring.rotation.z = t * 0.8; ring.material.opacity = 0.35 + 0.25 * Math.sin(t * 3);
+    halo.rotation.z = -t * 1.2; halo.material.opacity = 0.4 + 0.25 * Math.sin(t * 2.4 + 1);
+  }
 }
 
 // キャラの歩くアニメーション

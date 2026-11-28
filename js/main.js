@@ -12,6 +12,7 @@ import { G, alphaSeal, newGame, setState, partyMembers, healParty, machineName, 
 import { MAPS } from './data/maps.js';
 import { CHARACTERS } from './data/characters.js';
 import { MACHINES } from './data/machines.js';
+import { EndingScene } from './scenes/ending.js';
 import { OpeningScene } from './scenes/opening.js';
 import { TitleScene } from './scenes/title.js';
 import { WorldScene } from './scenes/world.js';
@@ -36,8 +37,27 @@ const scenes = {
   world: new WorldScene(),
   battle: new BattleScene(),
   flight: new FlightScene(),
+  ending: new EndingScene(),
 };
 flow.scenes = scenes;
+
+// レンの修理屋に帰ったときのエンディング（v2.1〜。約3分）。終わったら修理屋の中にもどる
+flow.homeEnding = async () => {
+  if (flow.inEnding) return;
+  flow.inEnding = true;
+  ui.closeAll();
+  await ui.fade(true, 0.8);
+  await engine.setScene(scenes.ending, {
+    onDone: async () => {
+      G.flags.homeEnding = true;
+      G.pos = { map: 'town1_shop', x: 6.5, y: 7.3, dir: Math.PI };
+      await engine.setScene(scenes.world, { after: async () => { await ui.say('……ここから、また新しい毎日がはじまる。（クリア後もこのまま遊べます。ベッドで「エンディングをもう一度見る」こともできます）'); } });
+      await ui.fade(false, 0.8);
+      autosave();
+      flow.inEnding = false;
+    },
+  });
+};
 
 flow.toTitle = async () => {
   ui.closeAll();
@@ -215,6 +235,38 @@ const BOSS_TALK = {
 };
 
 // 第4〜6章のクリア
+// オメガ・ガイアの最強の姿（v2.1〜）：第4章クリアでガイアマックス、第5章クリアでオメガマックス
+async function maxFormEvent(type) {
+  const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
+  const f = MACHINES[type].maxForm;
+  const already = G.flags[f.flag] || G.flags.legendStart;
+  G.flags[f.flag] = true;
+  if (already) return;
+  const have = G.machines[type]?.owned;
+  audio.sfx('seal');
+  if (type === 'gaia') {
+    await ui.say([
+      { name: '', text: '火山の底から、地鳴りのような低い音が響いてきた。' },
+      { name: '', text: have ? 'ガレージのガイアの装甲が、溶岩のように赤く光りはじめる。大地の熱が、深紅の機体に流れこんでいく。' : '遠い風の星の地の底で、何か大きなものが目を覚ました気配がした。' },
+      { name: g, text: have ? '……ガイアが、熱い。まるで心臓が動きだしたみたいだ！' : '……なんだい、今の地鳴り。胸の奥まで響いたよ。' },
+      { name: '', text: '古代の記録：「大地の機体は、星の核の熱に触れて真の姿を取りもどす」' },
+      { name: r, text: 'ガイアの封印も解けたんだ！ ジーナ、これでガイアは――「ガイアマックス」だ！' },
+      { name: g, text: 'ははっ、いいねえ！ 大地ごとたたき割ってやろうじゃないか！' },
+    ]);
+  } else {
+    await ui.say([
+      { name: '', text: '神殿の像の胸から、細い光がほとばしった。その光は、まっすぐオメガへ――。' },
+      { name: '', text: have ? '漆黒の装甲を走る赤い光が、刃のように鋭く輝きだす。' : '地下の格納庫のどこかで、赤い光が一度だけまたたいた。' },
+      { name: s, text: '……オメガが、呼んでいる。アルファと同じ光を、ずっと待っていたんだ。' },
+      { name: '', text: '古代の記録：「黒き翼は、白き翼の影。白き光に触れたとき、影はもうひとつの光となる」' },
+      { name: r, text: 'オメガの封印も解けた……！ シオン、オメガは「オメガマックス」になったんだ！' },
+      { name: s, text: '……ありがとう。この力で、最後まで飛ぶ。' },
+    ]);
+  }
+  ui.banner(`${f.name} 覚醒`, '装甲・防御・エネルギーが大きく上がり、専用武器の威力も上がった');
+  await wait(2.8);
+}
+
 async function chapterEnding(ch) {
   const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
   G.flags[`ch${ch}Clear`] = true;
@@ -231,6 +283,7 @@ async function chapterEnding(ch) {
       { name: g, text: 'いい親父さんじゃないか。最後まで付き合うよ、レン。' },
       { name: '', text: '記録の最後に、光の惑星への星図が残されていた。' },
     ]);
+    await maxFormEvent('gaia');
   } else if (ch === 5) {
     audio.sfx('seal');
     await ui.say([
@@ -243,6 +296,7 @@ async function chapterEnding(ch) {
       { name: g, text: 'それなら、あたしたちが一番のごちそうってわけだ。望むところさ！' },
       { name: '', text: 'アルファのモニターに、闇の惑星への星図が浮かび上がった。' },
     ]);
+    await maxFormEvent('omega');
   } else if (ch === 6) {
     G.seal = Math.max(G.seal, 4);
     audio.sfx('seal');
@@ -302,19 +356,19 @@ async function finalEnding() {
     { name: '', text: 'アルファマックスの翼が、ゆっくりとたたまれる。胸のコアの光が、やさしく瞬いた。まるで、ありがとうと言うように。' },
     { name: r, text: '父さん……見てる？ 三機は、ちゃんと目覚めたよ。' },
   ]);
-  audio.playSong('ending', { restart: true });
+  await ui.say([
+    { name: s, text: '……帰ろう。わたしたちの帰る場所へ。' },
+    { name: g, text: 'そうだね。ラストヘイヴンの、あんたの修理屋にさ。' },
+    { name: r, text: 'うん。……帰ろう、みんな！' },
+  ]);
+  audio.sfx('seal');
+  ui.banner('マザーコアをたおした！', 'ラストヘイヴンのレンの修理屋に帰ろう');
+  await wait(2.6);
   await ui.panel(`<div class="ending">
-    <div class="ending-big">ALPHA MAX</div>
-    <p>星の果て、鋼を駆る者</p>
-    <p>――マザーコアは倒れ、宇宙じゅうのマシンが、寄生体から解き放たれた。</p>
-    <p>土の星では、ラストヘイヴンの修理屋に、今日も壊れたマシンが運びこまれる。</p>
-    <p>風の星の風車は、やわらかな風に回り、水の星の海は、どこまでも青い。</p>
-    <p>火の星の溶岩は静かに冷え、光の星の遺跡は、星の光を受けて輝いている。</p>
-    <p>そして闇の星にも――はじめての朝が来た。</p>
-    <p>メカニックのレン、パイロットのシオン、傭兵のジーナ。そして三機の兄弟機、アルファ、オメガ、ガイア。</p>
-    <p>彼らの旅は、ここで終わる。けれど、星の海は、まだどこまでも続いている。</p>
-    <p class="note">THE END　――　遊んでくれて、ありがとう！</p>
-    <p class="note">（クリア後もこのまま遊び続けられます。行ったことのある星へは、宇宙船と転送台で自由に行けます）</p></div>`, { title: 'エンディング', closeText: 'おわり' });
+    <div class="ending-big">マザーコア撃破！</div>
+    <p>宇宙じゅうのマシンが、寄生体から解き放たれた。</p>
+    <p>さあ、ふるさとへ帰ろう。土の惑星ラストヘイヴンの、レンの修理屋へ。</p>
+    <p class="note">（宇宙船の船長キールか転送台で土の惑星へ。修理屋に入るとエンディングが始まります）</p></div>`, { title: 'クリア！', closeText: '帰り道へ' });
   audio.playSong(MAPS[G.pos.map].bgm, { restart: true });
   autosave();
 }
@@ -457,7 +511,9 @@ async function continueGame(data) {
   if (!data) return;
   setState(data.state);
   await ui.fade(true, 0.5);
-  await engine.setScene(scenes.world, { banner: true });
+  // 第4・5章をクリアずみのセーブ（v2.1 より前）は、つづきから始めたときにガイア・オメガの覚醒のイベントを見られる
+  const late = [G.flags.ch4Clear && !G.flags.gaiaMax && 'gaia', G.flags.ch5Clear && !G.flags.omegaMax && 'omega'].filter(Boolean);
+  await engine.setScene(scenes.world, { banner: true, after: late.length ? async () => { for (const t of late) await maxFormEvent(t); autosave(); } : undefined });
   await ui.fade(false, 0.6);
 }
 

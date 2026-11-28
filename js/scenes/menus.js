@@ -242,7 +242,8 @@ async function bar() {
 
 // レンの家のベッド：休む（無料）とセーブ
 export async function restAtHome() {
-  const v = await ui.menu({ title: '自分のベッド', items: [{ label: '休む（無料）', value: 'rest' }, { label: 'セーブ', value: 'save' }, { label: 'やめる', value: null }] });
+  const v = await ui.menu({ title: '自分のベッド', items: [{ label: '休む（無料）', value: 'rest' }, { label: 'セーブ', value: 'save' }, ...(G.flags.homeEnding ? [{ label: 'エンディングをもう一度見る', value: 'ending' }] : []), { label: 'やめる', value: null }] });
+  if (v === 'ending') { ui.closeAll(); flow.homeEnding?.(); return; }
   if (v === 'rest') { await ui.fade(true, 0.5); healParty(); await ui.fade(false, 0.5); audio.sfx('heal'); await ui.say('ぐっすり眠った。みんなの体力が回復した！'); if (await ui.confirm('セーブしますか？')) await saveMenu(); }
   if (v === 'save') await saveMenu();
 }
@@ -1625,6 +1626,7 @@ async function settingsMenu(world) {
         { label: 'BGMの音量', right: pct(settings.bgm), value: 'bgm' },
         { label: '効果音の音量', right: pct(settings.se), value: 'se' },
         { label: 'マップ表示', right: settings.mapMode === '3d' ? '立体（標準）' : '2D（軽量）', value: 'map' },
+        { label: '音', right: settings.sound === 'hq' ? '高音質（アレンジ版）' : 'レトロ（電子音）', value: 'sound' },
         { label: 'むずかしさ', right: `${difficultyOf(settings).name}`, value: 'diff' },
         { label: 'ミニ地図', right: settings.minimap === false ? 'オフ' : 'オン', value: 'mini' },
         { label: '全画面表示', value: 'fs' },
@@ -1639,6 +1641,20 @@ async function settingsMenu(world) {
       audio.sfx('ok');
     }
     if (v === 'map') { settings.mapMode = settings.mapMode === '3d' ? '2d' : '3d'; audio.saveSettings(); world.build(); }
+    if (v === 'sound') {
+      const cur = settings.sound === 'hq' ? 'hq' : 'retro';
+      const d = await ui.menu({ title: '音（いつでも切り替えられます）', wide: true, desc: true, items: [
+        { label: `${cur === 'retro' ? '● ' : ''}レトロ（電子音）`, value: 'retro', desc: 'スーファミ風の電子音。軽くて、どの端末でもよく鳴る' },
+        { label: `${cur === 'hq' ? '● ' : ''}高音質（アレンジ版）`, value: 'hq', desc: 'バイオリン・フルート・ホルン・コーラスなど本物の楽器の音で、今の曲をアレンジして鳴らす。広いホールの響きつき（はじめて選んだときは楽器の読み込みに少し時間がかかる）' },
+      ] });
+      if (d && d !== cur) {
+        settings.sound = d; audio.saveSettings();
+        if (d === 'hq') { ui.toast('高音質の楽器を読み込んでいます…'); await audio.loadBanks(); }
+        const song = audio.currentSong;
+        if (song) audio.playSong(song, { restart: true });
+        ui.toast(d === 'hq' ? '高音質（アレンジ版）にした' : 'レトロ（電子音）にした');
+      }
+    }
     if (v === 'diff') {
       const cur = settings.difficulty || 'normal';
       const d = await ui.menu({ title: 'むずかしさ（いつでも切り替えられます）', wide: true, desc: true, items: DIFF_ORDER.map((k) => ({ label: `${k === cur ? '● ' : ''}${DIFFICULTY[k].name}`, value: k, desc: DIFFICULTY[k].desc })) });

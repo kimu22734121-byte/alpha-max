@@ -428,3 +428,17 @@ table.cmp td.arr { color: var(--dim); }
 @media (max-height: 430px) { .hud-mini { width: 126px; height: 84px; } .cam-reset { top: 186px; } }
 /* 今いる場所の名前は左下（v1.6.4） */
 .hud > .hud-map { position: fixed; left: calc(8px + var(--safe-l)); bottom: 10px; }
+
+/* 家に帰ったときのエンディング（v2.1） */
+.ending-sub { bottom: 12vh; font-size: clamp(16px, 2.6vw, 22px); line-height: 1.6; }
+.ending-sub.ending-logo { bottom: 30vh; }
+.ending-logo-main { font-size: clamp(42px, 9vw, 96px); font-weight: 900; letter-spacing: 0.12em; background: linear-gradient(180deg, #fff8e0, #ffd070 55%, #b8862a); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 14px rgba(140, 220, 255, 0.8)); text-shadow: none; }
+.ending-logo-sub { font-size: clamp(15px, 2.4vw, 22px); color: #cfe8ff; letter-spacing: 0.3em; margin-top: 4px; }
+.ending-logo-end { font-size: clamp(13px, 2vw, 17px); color: #ffe8b0; margin-top: 18px; }
+.ending-roll { position: fixed; inset: 0; z-index: 6; pointer-events: none; overflow: hidden; opacity: 0; transition: opacity 1s; }
+.ending-roll.on { opacity: 1; }
+.ending-roll .roll-inner { position: absolute; right: 8vw; width: min(440px, 44vw); text-align: center; text-shadow: 0 2px 4px #000, 0 0 10px #000; }
+.ending-roll .roll-sec { margin-bottom: 9vh; }
+.ending-roll .roll-head { color: #ffd070; font-size: clamp(13px, 2vw, 17px); letter-spacing: 0.2em; margin-bottom: 10px; }
+.ending-roll .roll-row { color: #f0f4ff; font-size: clamp(15px, 2.4vw, 21px); line-height: 1.9; }
+.ending-roll .roll-sec:first-child .roll-head { font-size: clamp(30px, 5vw, 54px); color: #fff0c0; letter-spacing: 0.1em; }

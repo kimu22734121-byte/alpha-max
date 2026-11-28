@@ -50,6 +50,8 @@ export function newGame(names, opts = {}) {
     s.flags.legendStart = true;
     s.flags.omegaFound = true;
     s.flags.gaiaFound = true;
+    s.flags.omegaMax = true;
+    s.flags.gaiaMax = true;
     if (!s.machines.gaia) createMachine('gaia', { key: 'gaia' });
     for (const id of ['alpha', 'omega', 'gaia']) {
       const mc = s.machines[id];
@@ -155,7 +157,7 @@ export function createMachine(type, { key, owned = true, loc, test = false } = {
 // 名前：同じ種類を2台以上持っているときは「アルファ（1）」「アルファ（2）」
 export function machineName(mc) {
   const def = MACHINES[mc.type];
-  let name = mc.name || (mc.type === 'alpha' ? def.seal[alphaSeal()]?.finalName || def.name : def.name);
+  let name = mc.name || (mc.type === 'alpha' ? def.seal[alphaSeal()]?.finalName || def.name : maxFormOf(mc)?.name || def.name);
   const same = Object.values(G.machines).filter((m) => m.owned && m.type === mc.type);
   const i = same.indexOf(mc);
   if (same.length > 1 && i >= 0) name += `（${i + 1}）`;
@@ -187,6 +189,13 @@ export function typeBoost(mc, def) {
 // 伝説の機体をすべて最強にして始めたとき（legendStart）は、物語の封印とは別にアルファはいつもアルファマックス
 export const alphaSeal = () => (G?.flags?.legendStart ? 4 : G.seal);
 export const sealOf = (mc) => (mc?.sealOverride ?? alphaSeal());
+// オメガ・ガイアの最強の姿（v2.1〜）：イベントのフラグか、伝説の機体をすべて最強にして始めたとき。展示台の機体は sealOverride 4 で最強
+export function maxFormOf(mc) {
+  const f = mc && MACHINES[mc.type]?.maxForm;
+  if (!f) return null;
+  if (mc.sealOverride != null) return mc.sealOverride >= 4 ? f : null;
+  return G?.flags?.[f.flag] || G?.flags?.legendStart ? f : null;
+}
 // ステラ・ブレイカーの段階（v1.5〜）：章で決まる。第1・2章＝0（撃てない）、第3章＝1 … 第6章＝4、第6章クリア後＝5
 // 展示台の機体（sealOverride）は封印の段階から読みかえる
 export function stellaStage(mc) {
@@ -206,7 +215,7 @@ export const hasCoreSlot = (mc) => !!PARTS[mc.parts.body]?.coreSlot;
 
 export function machineStats(mc) {
   const p = Object.fromEntries(Object.entries(mc.parts).map(([k, v]) => [k, partNow(v, mc)]));
-  const mul = mc.type === 'alpha' ? (MACHINES.alpha.seal[sealOf(mc)] || MACHINES.alpha.seal[0]).mul : 1;
+  const mul = mc.type === 'alpha' ? (MACHINES.alpha.seal[sealOf(mc)] || MACHINES.alpha.seal[0]).mul : maxFormOf(mc)?.mul || 1;
   const t = typeInfo(mc);
   const sum = (k) => ['head', 'body', 'armR', 'armL', 'legs'].reduce((a, s) => a + (p[s]?.[k] || 0), 0);
   const weapons = mc.slots.map((uid) => (uid ? weaponByUid(uid) : null));
@@ -265,7 +274,8 @@ export function weaponEquippedOn(uid) {
 export function weaponAtk(w, mc) {
   const def = WEAPONS[w.id];
   const base = def.sealAtk ? def.sealAtk[Math.min(def.sealAtk.length - 1, stellaStage(mc))] : def.atk;
-  return Math.round(base * (1 + UPGRADE.atkRate * (w.plus || 0)));
+  const mf = def.only || def.sig ? maxFormOf(mc) : null; // 最強の姿のオメガ・ガイアは専用武器が強くなる
+  return Math.round(base * (1 + UPGRADE.atkRate * (w.plus || 0)) * (mf?.atk || 1));
 }
 // 撃てない武器（ステラ・ブレイカーの封印中）
 export const weaponLocked = (w, mc) => { const def = WEAPONS[w.id]; return !!def.sealAtk && !def.sealAtk[stellaStage(mc)]; };
