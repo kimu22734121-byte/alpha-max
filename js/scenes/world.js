@@ -20,7 +20,7 @@ import { CHARACTERS } from '../data/characters.js';
 import { MACHINES } from '../data/machines.js';
 import { ENEMIES, BOUNTIES } from '../data/enemies.js';
 import {
-  G, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
+  G, alphaSeal, partyMembers, machineStats, machineName, canPilot, sealOf, stellaStage, partNow, machinesOnMap, hiddenMachinesOnMap, weaponByUid, giveLoot, machinesInGarage, createMachine,
 } from '../game/state.js';
 import { flow } from '../game/flow.js';
 import { openMapView, itemMenu, shuttleReady, openFacility, openFieldMenu, autosave, settings, runEvent, bountyList, restAtHome, alphaInShop, teleportMenu, keypad, gearMachine, devDoorOpen, openDevDoor, tuningMenu } from './menus.js';
@@ -44,8 +44,8 @@ const townGate = (id) => {
 // 惑星ごとの空・霧・光（out＝屋外、in＝暗いダンジョン）
 const BIOME_LOOK = {
   fire: {
-    out: { bg: 0x2a1008, fog: 0x5a2a14, near: 20, far: 52, sky: 0xffb080, ground: 0x3a1a0a, hemi: 0.95, sun: 0xff9a5a, sunK: 1.5 },
-    in: { bg: 0x140604, fog: 0x2a0c06, near: 14, far: 36, sky: 0xff8a5a, ground: 0x200804, hemi: 0.6, sun: 0xff8a5a, sunK: 0.5, lamp: 0xffa060 },
+    out: { bg: 0x3a1a10, fog: 0x7a3a1e, near: 26, far: 64, sky: 0xffd0a8, ground: 0x6a3a22, hemi: 1.45, sun: 0xffc090, sunK: 2.2 }, // v2.0 で明るく
+    in: { bg: 0x200a06, fog: 0x3e1a0e, near: 18, far: 44, sky: 0xffb08a, ground: 0x3a1a0e, hemi: 1.05, sun: 0xffa070, sunK: 0.9, lamp: 0xffb878, lampK: 30 },
   },
   // 光＝天上の聖域：黄昏の金色の光と、群青・紫の空（空と光の柱などは climax-fx.js）
   light: {
@@ -54,8 +54,8 @@ const BIOME_LOOK = {
   },
   // 闇＝終焉の夜：赤い日食の光・血の色の霧・赤い稲妻
   dark: {
-    out: { bg: 0x1a0408, fog: 0x2a060e, near: 14, far: 42, sky: 0xc04a6a, ground: 0x0a0204, hemi: 0.7, sun: 0xff5a4a, sunK: 0.9, lamp: 0xffb878, lampK: 24 },
-    in: { bg: 0x0a0206, fog: 0x18040a, near: 10, far: 30, sky: 0x8a3a5a, ground: 0x060104, hemi: 0.5, sun: 0xff5a4a, sunK: 0.4, lamp: 0xffb878, lampK: 26 },
+    out: { bg: 0x2a0a12, fog: 0x4a1622, near: 20, far: 56, sky: 0xe89ab0, ground: 0x3a1a26, hemi: 1.25, sun: 0xff9a8a, sunK: 1.5, lamp: 0xffd0a0, lampK: 34 }, // v2.0 で明るく
+    in: { bg: 0x221020, fog: 0x3a1a2a, near: 18, far: 50, sky: 0xe8b0c8, ground: 0x4a2a3a, hemi: 1.3, sun: 0xffb0a0, sunK: 1.1, lamp: 0xffe0b8, lampK: 44 },
   },
   // 虹の深淵（v1.2〜）：宇宙色の空と、七色に移り変わる光（色の動きは climax-fx.js）
   core: {
@@ -153,7 +153,7 @@ export class WorldScene {
   // 目覚めたアルファがほかの星のガレージに取り残されていたら、いまの星の町のガレージへ運ぶ（v1.4.2。以前のセーブの直し）
   alphaFollow() {
     const alpha = G.machines.alpha, here = planetOfTown(G.lastTown);
-    if (!alpha?.owned || G.seal < 1 || !here || alpha.loc.type !== 'garage') return;
+    if (!alpha?.owned || alphaSeal() < 1 || !here || alpha.loc.type !== 'garage') return;
     if (planetOfTown(alpha.loc.town)?.id === here.id) return;
     alpha.loc = { type: 'garage', town: G.lastTown };
     setTimeout(() => ui.toast(`アルファが${MAPS[G.lastTown].name}のガレージに届いた！ ガレージの「乗る人を決める」で乗れる`, 4.5), 1200);
@@ -281,7 +281,7 @@ export class WorldScene {
     if (map.showMachines) {
       // 仲間が使っているマシンだけを並べる（台数が増えても重くならない）。目覚めたアルファは、だれも乗っていなくても必ず並べる（v1.4.3）
       const piloted = (mc) => partyMembers().some((m) => m.machine === mc.id);
-      const freeAlpha = (mc) => mc.type === 'alpha' && G.seal >= 1 && !piloted(mc);
+      const freeAlpha = (mc) => mc.type === 'alpha' && alphaSeal() >= 1 && !piloted(mc);
       machinesInGarage(map.town).filter((mc) => piloted(mc) || freeAlpha(mc)).sort((a, b) => freeAlpha(b) - freeAlpha(a)).slice(0, map.showMachines.length).forEach((mc, i) => {
         const obj = buildMachineModel(machineSpec(mc));
         obj.scale.setScalar(0.78);
@@ -581,7 +581,7 @@ export class WorldScene {
     this.particles ||= [];
     for (const a of this.avatars) {
       const color = a.kind === 'machine' ? MACHINES[a.mc.type].particle : null;
-      if (!color || (a.mc.type === 'alpha' && G.seal < 1)) continue;
+      if (!color || (a.mc.type === 'alpha' && alphaSeal() < 1)) continue;
       const rate = moving ? 40 : 5;
       a.pAcc = (a.pAcc || 0) + dt * rate;
       while (a.pAcc > 1) {

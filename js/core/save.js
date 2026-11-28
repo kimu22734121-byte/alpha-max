@@ -1,5 +1,6 @@
 // セーブ（localStorage）。手動セーブ3枠＋オートセーブ
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
+import { ORIENT } from '../data/orient.js';
 import { START_EQUIP } from '../data/footgear.js';
 import { MAPS } from '../data/maps.js';
 const KEY_AUTO = 'alphamax.auto';
@@ -128,14 +129,39 @@ function migrate(data) {
     for (const id of Object.keys(G.explored || {})) if (k(id) !== 1) delete G.explored[id];
     data.v = 8;
   }
+  // v8 → v9：第4〜7章のフィールドの向きを変えた（orient.js）。いる場所・置いてあるマシンの位置を新しい向きに直し、ちずの記録は消す
+  if (data.v < 9) {
+    const G = data.state;
+    const fix = (mapId, o) => {
+      const ch = Number((/^field([4-7])$/.exec(mapId || '') || [])[1]);
+      const mode = ORIENT[ch];
+      if (!mode || o.x == null) return;
+      const m = MAPS[mapId], W = m.width, H = m.height; // 新しい向きでの大きさ
+      if (mode === 't') { const x = o.x; o.x = o.y; o.y = x; return; }
+      if (mode.includes('h')) o.x = W - o.x;
+      if (mode.includes('v')) o.y = H - o.y;
+    };
+    if (G.pos) fix(G.pos.map, G.pos);
+    for (const mc of Object.values(G.machines || {})) if (mc.loc?.type === 'map') fix(mc.loc.map, mc.loc);
+    for (const id of ['field4', 'field5', 'field6', 'field7']) delete G.explored?.[id];
+    data.v = 9;
+  }
   return data;
 }
+
+// 一度でも最後までクリアしたか（2回目からの「伝説の機体をすべて最強にして始める」に使う。v2.0〜）
+const KEY_CLEARED = 'alphamax.cleared';
+export function markCleared() { try { localStorage.setItem(KEY_CLEARED, '1'); } catch { /* 無視 */ } }
 
 export const save = {
   auto(state, label) { return write(KEY_AUTO, state, label); },
   slot(n, state, label) { return write(slotKey(n), state, label); },
   loadAuto() { return read(KEY_AUTO); },
   loadSlot(n) { return read(slotKey(n)); },
+  hasCleared() {
+    try { if (localStorage.getItem(KEY_CLEARED) === '1') return true; } catch { /* 無視 */ }
+    return [read(KEY_AUTO), ...[1, 2, 3].map((n) => read(slotKey(n)))].some((d) => d?.state?.flags?.gameClear);
+  },
   hasAny() { return !!(read(KEY_AUTO) || [1, 2, 3].some((n) => read(slotKey(n)))); },
   summaries() {
     return [1, 2, 3].map((n) => ({ n, data: read(slotKey(n)) }));

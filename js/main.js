@@ -1,4 +1,5 @@
 // 起動とシーン切り替え
+import { swapDirs } from './data/orient.js';
 import { engine } from './core/engine.js';
 import { CHAPTERS } from './data/chapters.js';
 import { input } from './core/input.js';
@@ -7,7 +8,7 @@ import { hud } from './core/hud.js';
 import { audio } from './core/audio.js';
 import { loadModels } from './core/assets.js';
 import { flow } from './game/flow.js';
-import { G, newGame, setState, partyMembers, healParty, machineName, machineStats } from './game/state.js';
+import { G, alphaSeal, newGame, setState, partyMembers, healParty, machineName, machineStats } from './game/state.js';
 import { MAPS } from './data/maps.js';
 import { CHARACTERS } from './data/characters.js';
 import { MACHINES } from './data/machines.js';
@@ -17,6 +18,7 @@ import { WorldScene } from './scenes/world.js';
 import { BattleScene } from './scenes/battle.js';
 import { FlightScene } from './scenes/flight.js';
 import { autosave } from './scenes/menus.js';
+import { markCleared } from './core/save.js';
 import { applyTuning } from './game/tuning.js';
 // 開発者の部屋で調整した数値（ブラウザに保存）を、お店や戦闘で使う表に反映する
 applyTuning();
@@ -66,7 +68,7 @@ flow.flyTo = async ({ to, at, from, planet, lines, after, chapter }) => {
   // 目覚めたアルファは、ガレージに置いたままでも必ず一緒に運ぶ（v1.4.2）。だれも乗っていなければレンが乗る
   let alphaNote = false;
   const alpha = G.machines.alpha;
-  if (alpha?.owned && G.seal >= 1 && alpha.loc.type !== 'map') {
+  if (alpha?.owned && alphaSeal() >= 1 && alpha.loc.type !== 'map') {
     alpha.loc = { type: 'garage', town: to };
     if (!partyMembers().some((m) => m.machine === 'alpha')) { G.members.ren.machine = 'alpha'; alphaNote = true; }
   }
@@ -209,7 +211,7 @@ const BOSS_TALK = {
   gravemech: { lines: [['r', '墓場の重機も止まった！'], ['', '重機のコックピットに、照準用の手袋が残されていた。']] },
   dockBoss: { key: 'spireKey', banner: ['霧払いの装置を手に入れた', '闇の尖塔に入れるようになった'], lines: [['', 'ドックマスターが崩れ落ちると、霧を払う装置が転がり出た。'], ['g', 'これで闇の尖塔の霧が晴れるね。……それと、このごつい籠手、あたしにぴったりだ。']] },
   corewarden: { lines: [['r', 'マザーコアの番人を倒した！'], ['s', '……次は、虹の回廊。その奥に女王がいる。']] },
-  broodqueen: { key: 'heartKey', banner: ['心臓への道が開いた', 'マザーコアの心臓に入れるようになった'], lines: [['', '女王が崩れ落ちると、大地が七色に光り、北の結晶の壁が砕け散った。'], ['r', 'マザーコアの心臓への道だ……！'], ['g', '行くよ、二人とも。最後の戦いだ！']] },
+  broodqueen: { key: 'heartKey', banner: ['心臓への道が開いた', 'マザーコアの心臓に入れるようになった'], lines: [['', swapDirs('女王が崩れ落ちると、大地が七色に光り、北の結晶の壁が砕け散った。', 7)], ['r', 'マザーコアの心臓への道だ……！'], ['g', '行くよ、二人とも。最後の戦いだ！']] },
 };
 
 // 第4〜6章のクリア
@@ -283,6 +285,7 @@ async function finalEnding() {
   const r = G.members.ren.name, s = G.members.shion.name, g = G.members.gina.name;
   G.flags.ch7Clear = true;
   G.flags.gameClear = true;
+  markCleared(); // 2回目からは「伝説の機体をすべて最強にして始める」を選べる
   audio.sfx('bigexplosion');
   await ui.say([
     { name: '', text: 'アルファマックスの光の翼、オメガの赤い刃、ガイアの深紅の拳――三機の光がひとつになり、マザーコアの核を貫いた。' },
@@ -420,9 +423,9 @@ async function endingChapter1() {
   autosave();
 }
 
-async function startNewGame() {
+async function startNewGame(opts = {}) {
   const names = await ui.nameEntry(['ren', 'shion', 'gina'].map((id) => ({ role: `${CHARACTERS[id].roleName}`, value: CHARACTERS[id].defaultName })));
-  newGame(names);
+  newGame(names, opts);
   await ui.fade(true, 0.5);
   await ui.chapterTitle({ num: 1, ...CHAPTERS[1] });
   await engine.setScene(scenes.world, {
@@ -434,8 +437,14 @@ async function startNewGame() {
         { name: r, text: 'よし……装甲も関節も、ぜんぶ直した。がらくたの山で拾った、白と金のロボット。' },
         { name: r, text: '名前は「アルファ」。コアに刻まれてた文字なんだ。……なのに、コアの「封印」だけが開かない。' },
         { name: r, text: '封印を解く手がかりを探さなきゃ。それに、宇宙生物に乗っ取られたマシンが荒野で暴れてる。' },
-        { name: r, text: 'アルファが動けるようになるまで、相棒のハウンドで出発だ！' },
-        { name: '', text: '（ハウンドは町の入口のガレージに預けてある。ハンターオフィスで手配書を見てみよう）' },
+        ...(G.flags.legendStart ? [
+          { name: '', text: '――そのとき、胸のコアが白くまばゆく輝いた。封印が、ぜんぶ一度にほどけていく。' },
+          { name: r, text: 'う、うそだろ……!? アルファの翼が、光で広がって……これが、アルファの本当の姿……？' },
+          { name: '', text: '（伝説の機体をすべて最強にして始めました。アルファマックス・オメガ・ガイアは町の入口のガレージにいます）' },
+        ] : [
+          { name: r, text: 'アルファが動けるようになるまで、相棒のハウンドで出発だ！' },
+          { name: '', text: '（ハウンドは町の入口のガレージに預けてある。ハンターオフィスで手配書を見てみよう）' },
+        ]),
         { name: '', text: '【操作】左手で画面をなぞると移動／右下のボタンで調べる・話す／右上でメニュー。PCは矢印キー・Enter・Esc' },
       ]);
     },

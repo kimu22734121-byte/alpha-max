@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { ui, esc } from '../core/ui.js';
 import { audio } from '../core/audio.js';
+import { difficultyOf } from '../data/difficulty.js';
 import { tween, tweenTo, wait, Ease, rand, clamp, pick, timeScale } from '../core/tween.js';
 import { input } from '../core/input.js';
 import { getModel, flashModel, resetFlash, setGlow, setOpacity, disposeObject } from '../core/assets.js';
@@ -237,8 +238,11 @@ export class BattleScene {
     const bossIdx = ens.findIndex((id) => ENEMIES[id].boss);
     const others = ens.filter((_, i) => i !== bossIdx);
     let oi = 0;
+    // むずかしさで敵の強さを変える（イージー×1.0・ノーマル×1.1・ハード×1.5。試し撃ちは変えない）
+    const dk = this.test ? 1 : difficultyOf(audio.settings).enemy;
     this.enemies = ens.map((id, i) => {
-      const def = ENEMIES[id];
+      const base = ENEMIES[id];
+      const def = dk === 1 ? base : { ...base, hp: Math.round(base.hp * dk), atk: Math.round((base.atk || 0) * dk), def: Math.round((base.def || 0) * dk) };
       seen[id] = (seen[id] || 0) + 1;
       const letter = count[id] > 1 ? LETTERS[seen[id] - 1] : '';
       const obj = getModel(def.model, def.colors || {}, { metal: def.metal || def.rare });
@@ -1203,7 +1207,7 @@ export class BattleScene {
     audio.sfx('charge');
     this.camIdle = false;
     const c = u.home.clone().add(V(0, 1.4, 0));
-    const base = MACHINES[u.mc.type].seal ? MACHINES.alpha.seal[G.seal].glow : 1;
+    const base = MACHINES[u.mc.type].seal ? MACHINES.alpha.seal[sealOf(u.mc)].glow : 1;
     await tween(1.3, (k) => {
       const a = Math.PI * 0.2 + k * Math.PI * 1.6;
       this.camera.position.set(c.x + Math.sin(a) * 5, c.y + 1.5 - k * 0.5, c.z + Math.cos(a) * 5);

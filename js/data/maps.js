@@ -14,6 +14,7 @@ import { MAPS4 } from './maps4.js';
 import { MAPS5 } from './maps5.js';
 import { MAPS6 } from './maps6.js';
 import { MAPS7 } from './maps7.js';
+import { orientChapters } from './orient.js';
 
 export const MAPS = {
   // ================================================================ 町1
@@ -763,6 +764,8 @@ Object.assign(MAPS, MAPS2);
 Object.assign(MAPS, MAPS3);
 // 第4〜7章のマップ（maps4.js 〜 maps7.js）
 Object.assign(MAPS, MAPS4, MAPS5, MAPS6, MAPS7);
+// 第4〜7章のフィールドは章ごとに向きを変える（町・ダンジョンの位置がそろわないように。orient.js）
+orientChapters(MAPS, { 4: MAPS4, 5: MAPS5, 6: MAPS6, 7: MAPS7 });
 
 for (const m of Object.values(MAPS)) {
   m.grid = parseRows(m.rows);
