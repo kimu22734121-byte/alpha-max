@@ -171,7 +171,10 @@ export const audio = {
     try { localStorage.setItem('alphamax.settings', JSON.stringify(this.settings)); } catch { /* 無視 */ }
     if (this.musicBus) this.musicBus.gain.value = this.settings.bgm;
     if (this.sfxBus) this.sfxBus.gain.value = this.settings.se;
+    if (this.master) this.master.gain.value = this.settings.mute ? 0 : 0.9;
   },
+  // ミュート（v2.9〜）：BGMも効果音もまとめて消す。設定に覚える
+  setMute(v) { this.settings.mute = !!v; this.saveSettings(); },
 
   // 最初のタップで呼ぶ（ブラウザの決まりで、操作の後でないと音が出せない）
   unlock() {
@@ -183,7 +186,7 @@ export const audio = {
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
     comp.connect(ctx.destination);
-    this.master = ctx.createGain(); this.master.gain.value = 0.9; this.master.connect(comp);
+    this.master = ctx.createGain(); this.master.gain.value = this.settings.mute ? 0 : 0.9; this.master.connect(comp);
     this.musicBus = ctx.createGain(); this.musicBus.gain.value = this.settings.bgm; this.musicBus.connect(this.master);
     this.sfxBus = ctx.createGain(); this.sfxBus.gain.value = this.settings.se; this.sfxBus.connect(this.master);
     // リバーブ

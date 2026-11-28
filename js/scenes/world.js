@@ -132,6 +132,7 @@ export class WorldScene {
     input.on('swipe', ({ dx, dy }) => {
       if (!this.active || ui.busy || !this.canRotate()) return;
       this.camYawTarget = null; this.camPitchTarget = null;
+      this.manualCamT = this.t || 0; // 自分で回した直後は、自動で後ろへ回さない
       this.camYaw = clampYaw((this.camYaw || 0) - dx * CAM_SWIPE);
       this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + (dy || 0) * CAM_SWIPE);
     });
@@ -140,6 +141,14 @@ export class WorldScene {
     this.camResetBtn.textContent = '⟲ 正面に戻す';
     this.camResetBtn.addEventListener('click', (e) => { e.stopPropagation(); this.camYawTarget = Math.round((this.camYaw || 0) / TAU) * TAU; this.camPitchTarget = CAM_PITCH0; });
     this.camResetBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    // 歩く向きに合わせて、カメラが自動でキャラの後ろに回る（v2.9〜。押すたびにオン・オフ、設定に覚える）
+    this.camFollowBtn = document.createElement('button');
+    this.camFollowBtn.className = 'cam-follow';
+    const drawFollow = () => { const on = !!audio.settings.followCam; this.camFollowBtn.textContent = on ? '🎥 自動で後ろへ：オン' : '🎥 自動で後ろへ：オフ'; this.camFollowBtn.classList.toggle('active', on); };
+    drawFollow();
+    this.camFollowBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    this.camFollowBtn.addEventListener('click', (e) => { e.stopPropagation(); audio.settings.followCam = !audio.settings.followCam; audio.saveSettings(); audio.sfx('cursor'); drawFollow(); });
+    document.body.appendChild(this.camFollowBtn);
     // 調べられる物の正面に立つと出る「調べる」ボタン
     this.pop = document.createElement('button');
     this.pop.className = 'examine-pop';
@@ -178,6 +187,7 @@ export class WorldScene {
     this.active = false;
     this.pop.classList.remove('on');
     this.camResetBtn.classList.remove('on');
+    this.camFollowBtn.classList.remove('show');
     input.setEnabled(false);
     hud.hide();
   }
@@ -476,6 +486,7 @@ export class WorldScene {
     if (!this.avatars) return;
     const lead = this.avatars[0];
     let moving = 0;
+    this.followMag = 0;
     if (!this.busy && !ui.busy) {
       const mv = input.getMove();
       let mag = Math.hypot(mv.x, mv.y);
@@ -504,6 +515,7 @@ export class WorldScene {
         const target = Math.atan2(wx, wz);
         p.dir = target;
         moving = Math.min(1, mag * 1.3);
+        this.followDir = target; this.followMag = moving;
         const last = this.trail[0];
         if (Math.hypot(p.x - last.x, p.y - last.z) > 0.05) {
           this.trail.unshift({ x: p.x, z: p.y });
@@ -669,6 +681,13 @@ export class WorldScene {
       const kr = (input.isDown('f') || input.isDown('F') ? 1 : 0) - (input.isDown('r') || input.isDown('R') ? 1 : 0);
       if (kq && !ui.busy) { this.camYawTarget = null; this.camYaw = clampYaw((this.camYaw || 0) + kq * dt * 1.6); }
       if (kr && !ui.busy) { this.camPitchTarget = null; this.camPitch = clampPitch((this.camPitch ?? CAM_PITCH0) + kr * dt * 1.2); }
+      // 自動で後ろへ（v2.9）：歩いている間、カメラがゆっくりキャラの後ろへ回る（建物の中では回さない。自分で回した直後の1秒も回さない）
+      if (audio.settings.followCam && !indoor && this.followMag > 0 && !ui.busy && (this.t || 0) - (this.manualCamT ?? -9) > 1) {
+        const want = this.followDir + Math.PI;
+        let d = (want - (this.camYaw || 0)) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU;
+        this.camYawTarget = null;
+        this.camYaw = (this.camYaw || 0) + d * Math.min(1, dt * 1.6 * this.followMag);
+      }
       const ease = Math.min(1, dt * 4);
       if (!Number.isFinite(this.camYaw)) this.camYaw = 0;
       if (!Number.isFinite(this.camPitch)) this.camPitch = CAM_PITCH0;
@@ -683,6 +702,7 @@ export class WorldScene {
       rotated = yawOff(this.camYaw || 0) > 0.01 || Math.abs((this.camPitch ?? CAM_PITCH0) - CAM_PITCH0) > 0.01;
     } else { this.camYaw = 0; this.camYawTarget = null; this.camPitch = CAM_PITCH0; this.camPitchTarget = null; this.camYawView = 0; this.camPitchView = CAM_PITCH0; }
     this.camResetBtn.classList.toggle('on', rotated && !ui.busy);
+    this.camFollowBtn.classList.toggle('show', this.canRotate() && !indoor && !ui.busy && this.active);
     let target = V(p.x, heightAt(this.map, p.x, p.y), p.y - 0.6);
     // 部屋の中は部屋全体が見えるように、カメラを部屋の真ん中寄りにする
     if (indoor) target = V(this.map.width / 2 + (p.x - this.map.width / 2) * 0.4, 0, this.map.height / 2 - 0.6 + (p.y - this.map.height / 2) * 0.3);
