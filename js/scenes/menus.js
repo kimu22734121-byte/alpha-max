@@ -32,7 +32,7 @@ import { flow } from '../game/flow.js';
 import { bestAll, bestFoot, bestMachine } from '../game/best-gear.js';
 import { nextObjective, CHAPTERS, mapRevealed } from '../data/chapters.js';
 import { swapDirs } from '../data/orient.js';
-import { mapMarks, blinkAlpha } from '../core/map-marks.js';
+import { mapMarks, blinkAlpha, warpGroups, drawLabel } from '../core/map-marks.js';
 import { DIFFICULTY, DIFF_ORDER, difficultyOf } from '../data/difficulty.js';
 import { AUTO_MODES, AUTO_ORDER } from '../data/auto.js';
 // 町の番号から章（town10〜12＝第4章 … town19＝第7章）
@@ -1387,7 +1387,9 @@ export async function openMapView(world) {
   const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
   const g = cv.getContext('2d');
   g.fillStyle = '#05060a'; g.fillRect(0, 0, cv.width, cv.height);
-  const revealed = mapRevealed(G, map); // クリアした章の地図は全部見える（v1.9）
+  const dm = difficultyOf(settings);
+  const cleared = mapRevealed(G, map);
+  const revealed = cleared || !!dm.map.reveal; // クリアした章（v1.9）とイージー（v2.7）は地図が全部見える
   const ex = revealed ? '1'.repeat(map.width * map.height) : (G.explored?.[map.id] || '');
   const walkCol = { 5: '#c8a060', 2: '#7a8496', 1: '#9a8672', 25: '#9a8672', 26: '#6a7090', 17: '#7a5a90', 12: '#6a6a6a', 9: '#a8a060', 0: '#c8b088' };
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
@@ -1399,17 +1401,18 @@ export async function openMapView(world) {
     g.fillRect(x * k, y * k, k, k);
   }
   const dot = (x, y, col, r = k * 0.9) => { g.fillStyle = col; g.beginPath(); g.arc((x + 0.5) * k, (y + 0.5) * k, r, 0, 7); g.fill(); };
-  for (const w of map.warps || []) if (ex[w.y * W + w.x] === '1') dot(w.x, w.y, '#ffd040', k);
+  // 出入口：町＝緑、ダンジョン＝黄（v2.7）。名前は上に重ねたキャンバスに描く
+  const wg = warpGroups(map, MAPS, (x, y) => ex[y * W + x] === '1');
+  for (const w of wg) for (const c of w.cells) dot(c.x, c.y, w.color, k);
   dot(G.pos.x - 0.5, G.pos.y - 0.5, '#5ff2ff', k * 1.3);
   const known = ex.split('').filter((c) => c === '1').length;
   // 宝箱と賞金首の印は、上に重ねたキャンバスに描いて点滅させる（むずかしさで変わる。map-marks.js）
   const mk = mapMarks(map, G, settings, { seen: (x, y) => ex[y * W + x] === '1', revealed });
-  const dm = difficultyOf(settings);
   const legend = dm.map.chests === 'all' ? '● 赤＝レアな宝箱　● 青＝宝箱　（開けた宝箱は点滅しない）　● 紫の点滅＝手配書の賞金首'
     : dm.map.chests === 'found' ? '● 青＝見つけた宝箱（開けた宝箱は点滅しない）　● 紫の点滅＝手配書の賞金首　● 赤＝ボス'
       : revealed ? '■ 金＝まだ開けていない宝箱　● 紫の点滅＝手配書の賞金首　● 赤＝ボス' : '（ハード：宝箱とボスの印は出ません）';
   const p = ui.panel(`<div class="mapview-zoom"><button class="mz-btn" data-z="in">＋</button><button class="mz-btn" data-z="out">－</button><button class="mz-btn" data-z="fit">全体</button><button class="mz-btn" data-z="me">自分</button></div><div class="mapview"><div class="mapview-wrap"><img src="${cv.toDataURL()}" alt="地図"><canvas class="mapmarks" width="${cv.width}" height="${cv.height}"></canvas></div></div>
-    <div class="note">● 水色＝いまいる場所　● 黄＝出入口　${legend}　［${dm.name}］${revealed ? '（クリアした章なので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
+    <div class="note">● 水色＝いまいる場所　● 緑＝町　● 黄＝ダンジョン　○ 白＝出口　${legend}　［${dm.name}］${cleared ? '（クリアした章なので地図は全部見えます）' : revealed ? '（イージーなので地図は全部見えます）' : `（歩いた場所が地図に残ります：${Math.round(100 * known / (W * H))}%）`}</div>`, { title: `ちず：${esc(map.name)}`, className: 'map-panel' });
   setupMapZoom(document.querySelector('.map-panel'), cv.width, cv.height, (G.pos.x) / W, (G.pos.y) / H);
   const ov = document.querySelector('.map-panel canvas.mapmarks');
   if (ov) {
@@ -1425,6 +1428,10 @@ export async function openMapView(world) {
       }
       for (const b of mk.bosses) { og.globalAlpha = b.blink ? a : 1; og.fillStyle = b.color; og.beginPath(); og.arc((b.x + 0.5) * k, (b.y + 0.5) * k, Math.max(6, k * 2), 0, 7); og.fill(); og.strokeStyle = '#ffe0ff'; og.lineWidth = 1.5; og.stroke(); }
       og.globalAlpha = 1;
+      // 町・ダンジョンの名前（拡大しても同じくらいの大きさの文字に）
+      const sc = ov.width / Math.max(1, ov.clientWidth || ov.width);
+      const fs = Math.round(13 * sc);
+      for (const w of wg) if (w.name) drawLabel(og, w.name, (w.x + 0.5) * k, (w.y + 0.5) * k - Math.max(k, 5 * sc), w.color, fs);
       requestAnimationFrame(draw);
     };
     draw();
@@ -1445,7 +1452,7 @@ function setupMapZoom(panel, cw, ch, px, py) {
     const cx = fx ?? (view.scrollLeft + view.clientWidth / 2) / (base * z);
     const cy = fy ?? (view.scrollTop + view.clientHeight / 2) / (base * z * ch / cw);
     z = Math.max(1, Math.min(MAX, nz));
-    img.style.width = `${base * z}px`; img.style.maxWidth = 'none'; img.style.maxHeight = 'none'; img.style.height = 'auto';
+    img.style.width = `${base * z}px`; img.style.maxWidth = 'none'; img.parentElement.style.maxWidth = 'none'; img.style.maxHeight = 'none'; img.style.height = 'auto';
     view.scrollLeft = cx * base * z - view.clientWidth / 2;
     view.scrollTop = cy * base * z * ch / cw - view.clientHeight / 2;
     panel.querySelector('[data-z="out"]').disabled = z <= 1;

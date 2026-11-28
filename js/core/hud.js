@@ -7,7 +7,8 @@ import { TILES } from '../data/tiles.js';
 import { audio } from './audio.js';
 import { nextObjective, currentChapter, CHAPTERS, mapRevealed } from '../data/chapters.js';
 import { input } from './input.js';
-import { mapMarks, blinkAlpha } from './map-marks.js';
+import { mapMarks, blinkAlpha, warpGroups, drawLabel } from './map-marks.js';
+import { difficultyOf } from '../data/difficulty.js';
 import { ui, esc, fmt } from './ui.js';
 
 let root, plates, gearEl, mapEl, goalEl, actBtn, menuBtn, mapBtn, mini, miniG, dashBtn, last = '', actLabel = '調べる', actReady = false, shown = false;
@@ -69,7 +70,8 @@ export const hud = {
     if (off) return;
     const W = map.width, H = map.height, RX = 25, RY = 17, k = mini.width / RX;
     const px = G.pos.x, py = G.pos.y, x0 = px - RX / 2, y0 = py - RY / 2;
-    const fog = map.type !== 'town' && !mapRevealed(G, map); // クリアした章の地図は全部見える
+    const revealed = mapRevealed(G, map) || !!difficultyOf(audio.settings).map.reveal; // クリアした章・イージーは地図が全部見える
+    const fog = map.type !== 'town' && !revealed;
     const ex = fog ? (G.explored?.[map.id] || '') : '';
     const g = miniG;
     g.fillStyle = 'rgba(6,8,14,0.92)'; g.fillRect(0, 0, mini.width, mini.height);
@@ -83,15 +85,21 @@ export const hud = {
     }
     const dot = (x, y, col, r) => { const sx = (x + 0.5 - x0) * k, sy = (y + 0.5 - y0) * k; if (sx < -r || sy < -r || sx > mini.width + r || sy > mini.height + r) return; g.fillStyle = col; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); };
     const seen = (x, y) => !fog || ex[y * W + x] === '1';
-    for (const w of map.warps || []) if (seen(w.x, w.y)) dot(w.x, w.y, '#ffd040', k * 0.7);
+    const wg = warpGroups(map, MAPS, seen); // 町＝緑、ダンジョン＝黄（v2.7）
+    for (const w of wg) for (const c of w.cells) dot(c.x, c.y, w.color, k * 0.7);
     // 宝箱と賞金首の印はむずかしさで変わる（map-marks.js）
-    const mk = mapMarks(map, G, audio.settings, { seen: (x, y) => ex[y * W + x] === '1', revealed: !fog || mapRevealed(G, map) });
+    const mk = mapMarks(map, G, audio.settings, { seen: (x, y) => ex[y * W + x] === '1', revealed: !fog || revealed });
     const ba = blinkAlpha(performance.now() / 1000);
     for (const c of mk.chests) { g.globalAlpha = c.blink ? ba : 1; dot(c.x, c.y, c.color, k * 0.8 * c.size); }
     g.globalAlpha = 1;
     for (const s of mk.bosses) { g.globalAlpha = s.blink ? ba : 1; dot(s.x, s.y, s.color, k * 1.1); }
     g.globalAlpha = 1;
     for (const n of map.npcs || []) if (n.event === 'shuttleCaptain') dot(n.x, n.y, '#8ad8ff', k * 0.9);
+    // 町・ダンジョンの名前（ミニ地図に入っているものだけ）
+    if (map.type !== 'town') for (const w of wg) {
+      const sx = (w.x + 0.5 - x0) * k, sy = (w.y + 0.5 - y0) * k;
+      if (w.name && w.kind !== 'other' && sx > 0 && sy > 0 && sx < mini.width && sy < mini.height) drawLabel(g, w.name, Math.max(40, Math.min(mini.width - 40, sx)), Math.max(18, sy - k), w.color, 16);
+    }
     // 自分（向きの三角）
     const cx = (px - x0) * k, cy = (py - y0) * k, a = G.pos.dir || 0;
     g.save(); g.translate(cx, cy); g.rotate(-a + Math.PI);
