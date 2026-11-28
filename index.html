@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Orbitron:wght@800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=20261128-2151">
+  <link rel="stylesheet" href="css/style.css?v=20261128-2157">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b0b10'/%3E%3Cpath d='M32 8 L54 54 H42 L32 32 L22 54 H10 Z' fill='%23ff8a3a'/%3E%3Ccircle cx='32' cy='40' r='5' fill='%235ff2ff'/%3E%3C/svg%3E">
   <script type="importmap">
   {
@@ -43,6 +43,23 @@
   </div>
 
   <noscript>このゲームを遊ぶには JavaScript を有効にしてください。</noscript>
-  <script type="module" src="js/main.js?v=20261128-2151"></script>
+  <script>
+  // 新しい版の確認（v2.9.5）：ブラウザが古い index.html を覚えていたら、新しい版を読み直す（version.txt は tools/bump-version.sh が書く）
+  (function () {
+    var V = '20261128-2157';
+    try {
+      fetch('version.txt?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (t) {
+        t = (t || '').trim();
+        if (!t || t === V) return;
+        var k = 'alphamax.reloadedFor';
+        if (sessionStorage.getItem(k) === t) return;
+        sessionStorage.setItem(k, t);
+        var q = new URLSearchParams(location.search); q.set('r', t);
+        location.replace(location.pathname + '?' + q.toString() + location.hash);
+      }).catch(function () {});
+    } catch (e) { /* 無視 */ }
+  })();
+  </script>
+  <script type="module" src="js/main.js?v=20261128-2157"></script>
 </body>
 </html>
