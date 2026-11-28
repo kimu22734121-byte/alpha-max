@@ -21,6 +21,7 @@ export const hud = {
     root.className = 'hud hidden';
     root.innerHTML = `
       <div class="hud-party"></div>
+      <button class="hud-mute" aria-label="ミュート"></button>
       <div class="hud-top"><div class="hud-gear"></div></div>
       <div class="hud-map"></div>
       <div class="hud-goal"></div>
@@ -37,6 +38,12 @@ export const hud = {
     mini.addEventListener('pointerdown', (e) => e.stopPropagation());
     mini.addEventListener('click', (e) => { e.stopPropagation(); input.emit('mapview'); });
     setInterval(() => this.drawMini(), 200);
+    // ミュートボタン（v2.9〜）：左上、仲間の体力の下。押すたびに音を消す・出す
+    const muteBtn = root.querySelector('.hud-mute');
+    const drawMute = () => { const m = !!audio.settings.mute; muteBtn.textContent = m ? '🔇' : '🔊'; muteBtn.classList.toggle('muted', m); muteBtn.title = m ? '音を出す' : 'ミュート'; };
+    drawMute();
+    muteBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+    muteBtn.addEventListener('click', (e) => { e.stopPropagation(); audio.setMute(!audio.settings.mute); if (!audio.settings.mute) audio.sfx('cursor'); drawMute(); });
     menuBtn = root.querySelector('.hud-menu');
     mapBtn = root.querySelector('.hud-mapbtn');
     // 調べる／決定ボタンとダッシュボタンは、メニューの上にも出せるように画面のいちばん上の層に置く
