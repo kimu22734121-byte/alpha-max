@@ -1,6 +1,6 @@
-// 入力：指を置いた所に出るバーチャルスティック／タップ／キーボード（矢印・S/Z/X/C・Enter・Esc）
+// 入力：指を置いた所に出るバーチャルスティック／タップ・クリック／キーボード（矢印・S/Z/X/C・Enter・Esc）
 // v2.5〜：スマホは画面のどこに指を置いてもスティック（左利きでも使える）、2本指でなぞるとカメラを回す。
-//         PC（マウス）はどこをドラッグしてもカメラを回す。キーボードは S＝上・Z＝左・X＝下・C（Y）＝右、矢印キーも使える
+//         PC（マウス）は左クリックで歩いていく（v2.6〜）、ドラッグ（右ボタンでも）でカメラを回す、ホイールで上下の角度。キーボードは S＝上・Z＝左・X＝下・C＝右、矢印キーも使える
 const listeners = {};
 const keys = new Set();
 export const STICK_ZONE = 0.5; // 画面の左からこの割合までがスティック。右側はカメラのスワイプ
@@ -71,9 +71,12 @@ export const input = {
         this.stick = null; this.move.x = 0; this.move.y = 0;
         base.classList.remove('on');
       }
-      if (!p.moved && performance.now() - p.t0 < 350) this.emit('tap', { x: e.clientX, y: e.clientY });
+      if (!p.moved && performance.now() - p.t0 < 350 && (p.touch || e.button === 0)) this.emit('tap', { x: e.clientX, y: e.clientY, mouse: !p.touch });
     };
     layer.addEventListener('pointerup', end);
+    // マウス：右クリックのメニューを出さない（右ドラッグでカメラを回すため）、ホイールで上下の角度
+    layer.addEventListener('contextmenu', (e) => e.preventDefault());
+    layer.addEventListener('wheel', (e) => { e.preventDefault(); this.emit('swipe', { dx: 0, dy: e.deltaY * 0.35 }); }, { passive: false });
     layer.addEventListener('pointercancel', end);
 
     window.addEventListener('keydown', (e) => {
@@ -98,10 +101,10 @@ export const input = {
   getMove() {
     if (!this.enabled) return { x: 0, y: 0 };
     let x = this.move.x, y = this.move.y;
-    // S＝上・Z＝左・X＝下・C（または Y）＝右（v2.5〜）。矢印キーも使える
+    // S＝上・Z＝左・X＝下・C＝右（v2.5〜）。矢印キーも使える
     const any = (...ks) => ks.some((k) => keys.has(k));
     if (any('ArrowLeft', 'z', 'Z')) x -= 1;
-    if (any('ArrowRight', 'c', 'C', 'y', 'Y')) x += 1;
+    if (any('ArrowRight', 'c', 'C')) x += 1;
     if (any('ArrowUp', 's', 'S')) y -= 1;
     if (any('ArrowDown', 'x', 'X')) y += 1;
     const len = Math.hypot(x, y);

@@ -191,6 +191,7 @@ export class WorldScene {
   clear() {
     this.particles = [];
     this.npcMarks = [];
+    this.clickPath = null; this.clickAfter = null; this.clickMark = null; // クリック移動の目印も作り直す
     for (const o of [...this.scene.children]) { this.scene.remove(o); disposeObject(o); }
     this.mapView?.dispose();
   }
@@ -476,21 +477,29 @@ export class WorldScene {
     let moving = 0;
     if (!this.busy && !ui.busy) {
       const mv = input.getMove();
-      const mag = Math.hypot(mv.x, mv.y);
+      let mag = Math.hypot(mv.x, mv.y);
+      // カメラが回っていても、スティックを倒した画面上の向きに進む
+      const yaw = this.camYawView || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
+      let wx = mv.x * cy + mv.y * sy, wz = -mv.x * sy + mv.y * cy;
+      if (mag > 0.05) this.clearClickPath(); // スティックやキーで動かしたらクリック移動はやめる
+      else if (this.clickPath) {
+        // クリックした場所へ歩いていく（v2.6〜。PCのマウス）
+        const st = this.clickStep(dt);
+        if (st) { wx = st.x; wz = st.z; mag = 1; }
+      }
       if (mag > 0.05) {
         const mspd = lead.kind === 'machine' ? machineStats(lead.mc).spd : 0;
         // ダッシュ（ボタンかShift）で1.8倍の速さ
         const speed = (lead.kind === 'machine' ? 4.4 + mspd * 0.18 : 3.6) * Math.min(1, mag * 1.2) * (input.dashing ? 1.8 : 1);
-        // カメラが回っていても、スティックを倒した画面上の向きに進む
-        const yaw = this.camYawView || 0, cy = Math.cos(yaw), sy = Math.sin(yaw);
-        const wx = mv.x * cy + mv.y * sy, wz = -mv.x * sy + mv.y * cy;
         const dx = wx * speed * dt / Math.max(mag, 1), dz = wz * speed * dt / Math.max(mag, 1);
         const r = lead.kind === 'machine' ? 0.4 : 0.26;
         const p = G.pos;
+        const ox = p.x, oy = p.y;
         let nx = p.x + dx, ny = p.y;
         if (this.canStand(nx, ny, r)) p.x = nx;
         nx = p.x; ny = p.y + dz;
         if (this.canStand(nx, ny, r)) p.y = ny;
+        if (this.clickPath) this.clickStuck = Math.hypot(p.x - ox, p.y - oy) < speed * dt * 0.2 ? (this.clickStuck || 0) + dt : 0;
         const target = Math.atan2(wx, wz);
         p.dir = target;
         moving = Math.min(1, mag * 1.3);
@@ -1255,15 +1264,123 @@ export class WorldScene {
     autosave();
   }
 
+  // ---------------------------------------------------------------- クリックで歩く（v2.6〜。PCのマウス）
+  clearClickPath() {
+    this.clickPath = null; this.clickAfter = null; this.clickStuck = 0;
+    if (this.clickMark) this.clickMark.visible = false;
+  }
+  // (tx, tz) へ歩く。after を渡すと、着いたらその物に話しかける・調べる
+  walkTo(tx, tz, after = null) {
+    const p = G.pos, r = this.avatars?.[0]?.kind === 'machine' ? 0.4 : 0.26;
+    const path = this.findPath(Math.floor(p.x), Math.floor(p.y), Math.floor(tx), Math.floor(tz), !!after);
+    if (!path) { ui.toast('そこへは行けないようだ'); return; }
+    // 最後の点は、物なら手前のマス、地面ならクリックした場所そのもの
+    if (!after && this.canStand(tx, tz, r)) path.push({ x: tx, z: tz });
+    this.clickPath = path; this.clickAfter = after; this.clickStuck = 0;
+    if (!this.clickMark) {
+      this.clickMark = new THREE.Mesh(new THREE.RingGeometry(0.25, 0.4, 24), new THREE.MeshBasicMaterial({ color: 0x7af0ff, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+      this.clickMark.rotation.x = -Math.PI / 2;
+    }
+    if (this.clickMark.parent !== this.scene) this.scene.add(this.clickMark);
+    const last = path[path.length - 1] || { x: tx, z: tz };
+    this.clickMark.position.set(after ? tx : last.x, heightAt(this.map, last.x, last.z) + 0.05, after ? tz : last.z);
+    this.clickMark.visible = true;
+  }
+  // 1フレーム分：つぎの点への向き（着いたら null）
+  clickStep() {
+    const p = G.pos;
+    while (this.clickPath.length && Math.hypot(this.clickPath[0].x - p.x, this.clickPath[0].z - p.y) < 0.18) this.clickPath.shift();
+    if (this.clickAfter) {
+      const o = this.clickAfter;
+      const ent = o.userData.entity;
+      const ref = ent?.ref;
+      const d = ref ? Math.hypot(ref.x - p.x, ref.z - p.y) : Math.hypot(o.position.x - p.x, o.position.z - p.y);
+      const reach = { parked: 2.6, hiddenMachine: 2.6, npc: 2.2, prop: 1.6, chest: 1.6, symbol: 3 }[ent?.kind] ?? 1.8;
+      if (d < reach) { this.clearClickPath(); p.dir = Math.atan2(o.position.x - p.x, o.position.z - p.y); this.actOn(o); return null; }
+    }
+    if (!this.clickPath.length || (this.clickStuck || 0) > 0.6) { this.clearClickPath(); return null; }
+    const w = this.clickPath[0];
+    const dx = w.x - p.x, dz = w.z - p.y, len = Math.hypot(dx, dz) || 1;
+    return { x: dx / len, z: dz / len };
+  }
+  // マスの上の道のり（A*、斜めも）。toObj＝行き先が物のときは、その手前の歩けるマスまで
+  findPath(sx, sy, tx, ty, toObj) {
+    const map = this.map, W = map.width, H = map.height;
+    const ok = (x, y) => x >= 0 && y >= 0 && x < W && y < H && (isWalkable(map, x, y) || this.canDive(x, y));
+    if (!ok(tx, ty) || toObj) {
+      // 行き先が歩けないとき（物の上など）は、まわりのいちばん近い歩けるマス
+      let best = null;
+      for (let r = toObj ? 1 : 0; r <= 4 && !best; r++) for (let y = ty - r; y <= ty + r; y++) for (let x = tx - r; x <= tx + r; x++) {
+        if (!ok(x, y)) continue;
+        const d = Math.hypot(x - sx, y - sy);
+        if (!best || d < best.d) best = { x, y, d };
+      }
+      if (!best) return null;
+      tx = best.x; ty = best.y;
+    }
+    const key = (x, y) => y * W + x;
+    const open = [{ x: sx, y: sy, g: 0, f: 0 }];
+    const came = new Map(), gs = new Map([[key(sx, sy), 0]]);
+    const goal = key(tx, ty);
+    let n = 0;
+    while (open.length && n++ < 30000) {
+      let bi = 0; for (let i = 1; i < open.length; i++) if (open[i].f < open[bi].f) bi = i;
+      const c = open.splice(bi, 1)[0];
+      const ck = key(c.x, c.y);
+      if (ck === goal) {
+        const pts = [];
+        for (let k = ck; k !== key(sx, sy); k = came.get(k)) pts.unshift({ x: (k % W) + 0.5, z: Math.floor(k / W) + 0.5 });
+        return pts;
+      }
+      for (const [ddx, ddy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const nx = c.x + ddx, ny = c.y + ddy;
+        if (!ok(nx, ny)) continue;
+        if (ddx && ddy && (!ok(c.x + ddx, c.y) || !ok(c.x, c.y + ddy))) continue; // 角はすり抜けない
+        const g = c.g + (ddx && ddy ? 1.414 : 1);
+        const nk = key(nx, ny);
+        if (g >= (gs.get(nk) ?? Infinity)) continue;
+        gs.set(nk, g); came.set(nk, ck);
+        open.push({ x: nx, y: ny, g, f: g + Math.hypot(tx - nx, ty - ny) });
+      }
+    }
+    return null;
+  }
+
   async onTap(pt) {
     const ndc = new THREE.Vector2((pt.x / window.innerWidth) * 2 - 1, -(pt.y / window.innerHeight) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
+    const hit = this.pickEntity();
+    if (hit) {
+      // マウスで遠くの人・宝箱などをクリックしたら、近くまで歩いていってから話す・調べる
+      if (pt.mouse && hit.dist > hit.reach) { this.walkTo(hit.o.position.x, hit.o.position.z, hit.o); return; }
+      await this.actOn(hit.o);
+      return;
+    }
+    // マウスで地面をクリック：そこへ歩いていく
+    if (pt.mouse) {
+      const p = G.pos;
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -heightAt(this.map, p.x, p.y));
+      const at = new THREE.Vector3();
+      if (this.raycaster.ray.intersectPlane(plane, at)) this.walkTo(at.x, at.z);
+    }
+  }
+
+  // 画面でクリック・タップした物（人・マシン・賞金首・家具・宝箱）。reach＝そこから話せる・調べられる距離
+  pickEntity() {
     const objs = [...this.npcs.map((n) => n.obj), ...this.parked.map((p) => p.obj), ...this.symbols.map((s) => s.obj), ...this.avatars.map((a) => a.obj), ...this.props.filter((pr) => pr.obj && pr.data.search).map((pr) => { pr.obj.userData.entity = { kind: 'prop', ref: pr }; return pr.obj; }), ...this.chests.map((c) => { c.obj.userData.entity = { kind: 'chest', ref: c }; return c.obj; })];
     const hits = this.raycaster.intersectObjects(objs, true);
-    if (!hits.length) return;
+    if (!hits.length) return null;
     let o = hits[0].object;
     while (o && !o.userData.entity) o = o.parent;
-    if (!o) return;
+    if (!o) return null;
+    const ent = o.userData.entity;
+    const p = G.pos;
+    const dist = ent.ref ? Math.hypot(ent.ref.x - p.x, ent.ref.z - p.y) : Math.hypot(o.position.x - p.x, o.position.z - p.y);
+    const reach = { myMachine: 99, parked: 3, hiddenMachine: 3, npc: 2.6, prop: 2.0, chest: 2.0, symbol: 99 }[ent.kind] ?? 2;
+    return { o, ent, dist, reach };
+  }
+
+  async actOn(o) {
     const ent = o.userData.entity;
     const p = G.pos;
     const dist = o.position.distanceTo(V(p.x, 0, p.y));
