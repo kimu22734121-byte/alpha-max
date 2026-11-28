@@ -38,7 +38,7 @@ export const hud = {
     mini.addEventListener('pointerdown', (e) => e.stopPropagation());
     mini.addEventListener('click', (e) => { e.stopPropagation(); input.emit('mapview'); });
     setInterval(() => this.drawMini(), 200);
-    // ミュートボタン（v2.9〜）：左上、仲間の体力の下。押すたびに音を消す・出す
+    // ミュートボタン（v2.9〜）：左上の角。押すたびに音を消す・出す
     const muteBtn = root.querySelector('.hud-mute');
     const drawMute = () => { const m = !!audio.settings.mute; muteBtn.textContent = m ? '🔇' : '🔊'; muteBtn.classList.toggle('muted', m); muteBtn.title = m ? '音を出す' : 'ミュート'; };
     drawMute();
